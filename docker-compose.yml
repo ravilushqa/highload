@@ -1,0 +1,40 @@
+version: "3.7"
+
+services:
+  app:
+    build:
+      context: .
+    container_name: "social_network_app"
+    ports:
+      - 8080:8080
+    networks:
+      - db
+    depends_on:
+      - mysql
+    restart: on-failure
+    environment:
+      MYSQL_CONNECTION: "user:password@(mysql:3306)/app"
+  mysql:
+    image: mysql:5.7
+    restart: always
+    command: --init-file /data/application/init.sql
+    volumes:
+      - mysql_data:/var/lib/mysql
+      - ./init.sql:/data/application/init.sql
+    container_name: "social_network_mysql"
+    environment:
+      MYSQL_DATABASE: "app"
+      MYSQL_USER: "user"
+      MYSQL_PASSWORD: "password"
+      MYSQL_ROOT_PASSWORD: "secret"
+    networks:
+      - db
+    ports:
+      - "3306:3306"
+    expose:
+      - "3306"
+networks:
+  db:
+    driver: bridge
+volumes:
+  mysql_data:
