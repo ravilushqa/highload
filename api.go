@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"fmt"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -78,6 +77,10 @@ func (a *API) registerRoutes() {
 
 	// public group
 	a.mux.Group(func(r chi.Router) {
+		r.Get("/", func(w http.ResponseWriter, r *http.Request) {
+			http.Redirect(w, r, "/signin", http.StatusTemporaryRedirect)
+			return
+		})
 		// static files
 		workDir, _ := os.Getwd()
 		filesDir := http.Dir(filepath.Join(workDir, "public"))
@@ -89,16 +92,6 @@ func (a *API) registerRoutes() {
 	// auth group
 	a.mux.Group(func(r chi.Router) {
 		r.Use(jwtauth.Authenticator)
-
-		r.Get("/", func(w http.ResponseWriter, r *http.Request) {
-			if a.libAuth.IsAuth(r) {
-				uid, _ := a.libAuth.GetUsedIDFromCtx(r.Context())
-				http.Redirect(w, r, fmt.Sprintf("/users/%d", uid), http.StatusTemporaryRedirect)
-				return
-			}
-			http.Redirect(w, r, "/login", http.StatusTemporaryRedirect)
-			return
-		})
 
 		a.users.Router(r)
 	})

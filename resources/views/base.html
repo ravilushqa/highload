@@ -1,27 +1,52 @@
 {{define "layout"}}
-<!doctype html>
-<html lang="en">
+<!DOCTYPE html>
+<html dir="ltr" lang="en-US">
 <head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-    <meta name="description" content="">
-    <meta name="author" content="">
-    <link rel="icon" href="/docs/4.1/assets/img/favicons/favicon.ico">
+    <meta http-equiv="content-type" content="text/html; charset=utf-8" />
+    <meta name="author" content="SemiColonWeb" />
 
-    <title>Social network 2k20</title>
+    <!-- Stylesheets
+    ============================================= -->
+    <link href="https://fonts.googleapis.com/css?family=Lato:300,400,400i,700|Poppins:300,400,500,600,700|PT+Serif:400,400i&display=swap" rel="stylesheet" type="text/css" />
+    <link rel="stylesheet" href="/public/css/bootstrap.css" type="text/css" />
+    <link rel="stylesheet" href="/public/css/style.css" type="text/css" />
+    <link rel="stylesheet" href="/public/css/dark.css" type="text/css" />
+    <link rel="stylesheet" href="/public/css/font-icons.css" type="text/css" />
+    <link rel="stylesheet" href="/public/css/animate.css" type="text/css" />
+    <link rel="stylesheet" href="/public/css/magnific-popup.css" type="text/css" />
 
-    <link rel="canonical" href="https://getbootstrap.com/docs/4.1/examples/sign-in/">
-    §
-    <!-- Bootstrap core CSS -->
-    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css"
-          integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
+    <link rel="stylesheet" href="/public/css/custom.css" type="text/css" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
 
-    <!-- Custom styles for this template -->
-    <link href="/public/styles/style.css" rel="stylesheet">
+    <!-- Document Title
+    ============================================= -->
+    <title>Login</title>
+
 </head>
 
-<body class="text-center">
+<body class="stretched">
+
+<!-- Document Wrapper
+============================================= -->
 {{template "content" .}}
+
+
+<!-- JavaScripts
+============================================= -->
+<script src="/public/js/jquery.js"></script>
+<script src="/public/js/plugins.min.js"></script>
+
+<!-- Footer Scripts
+============================================= -->
+<script src="/public/js/functions.js"></script>
+
+<!-- todo for users profile-->
+<script>
+    $( "#tabs-profile" ).on( "tabsactivate", function( event, ui ) {
+        $( '.flexslider .slide' ).resize();
+    });
+</script>
+
 </body>
 </html>
 {{end}}

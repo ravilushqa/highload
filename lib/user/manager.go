@@ -43,7 +43,7 @@ func (m *Manager) Store(ctx context.Context, user *User) (int, error) {
 
 func (m *Manager) GetByID(ctx context.Context, id int) (*User, error) {
 	query := `
-		select email, password, firstname, lastname, birthday, sex, interests, city
+		select id, email, password, firstname, lastname, birthday, sex, interests, city
 		from users
 		where id = ? and deleted_at is null
 	`

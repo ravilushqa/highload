@@ -36,7 +36,7 @@ func (a *Auth) EncodeToken(uid int) (string, error) {
 
 func (a *Auth) IsAuth(r *http.Request) bool {
 	t, claims, err := jwtauth.FromContext(r.Context())
-	_, ok := claims["UID"]
+	_, ok := claims["uid"]
 	return err == nil && t != nil && ok
 }
 
@@ -45,5 +45,5 @@ func (a *Auth) GetUsedIDFromCtx(ctx context.Context) (int, error) {
 	if err != nil {
 		return 0, err
 	}
-	return claims["UID"].(int), nil
+	return int(claims["uid"].(float64)), nil
 }

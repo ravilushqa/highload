@@ -1,7 +1,7 @@
 package users
 
 import (
-	"fmt"
+	"html/template"
 	"net/http"
 	"strconv"
 
@@ -43,6 +43,13 @@ func (c *Controller) profile(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	w.Write([]byte(fmt.Sprintf("%v", *u)))
+	tmpl, err := template.ParseFiles("resources/views/base.html", "resources/views/users/profile.html")
+	if err != nil {
+		c.logger.Error("failed parse templates", zap.NamedError("error", err))
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	tmpl.ExecuteTemplate(w, "layout", u)
 	return
 }
