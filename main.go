@@ -25,7 +25,7 @@ func buildContainer() (*dig.Container, error) {
 			return lib.NewAuth(c.JwtSecret), nil
 		},
 		func(c *config) (*sqlx.DB, error) {
-			return sqlx.Connect("mysql", fmt.Sprint(c.MysqlConnection, "?parseTime=true"))
+			return sqlx.Connect("mysql", fmt.Sprint(c.DatabaseUrl, "?parseTime=true"))
 		},
 		NewAPI,
 		user.New,
