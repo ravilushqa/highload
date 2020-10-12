@@ -12,6 +12,7 @@ import (
 	"github.com/ravilushqa/highload/controllers/auth"
 	"github.com/ravilushqa/highload/controllers/users"
 	"github.com/ravilushqa/highload/lib"
+	"github.com/ravilushqa/highload/lib/friend"
 	"github.com/ravilushqa/highload/lib/user"
 )
 
@@ -28,6 +29,7 @@ func buildContainer() (*dig.Container, error) {
 		},
 		NewAPI,
 		user.New,
+		friend.New,
 		auth.NewController,
 		users.NewController,
 	}

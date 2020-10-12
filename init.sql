@@ -20,12 +20,11 @@ create table if not exists users
 create unique index users_email_uindex
     on users (email);
 
-
-
 create table if not exists friends
 (
-    user_id int not null,
+    user_id   int not null,
     friend_id int not null,
+    approved  bool default false,
     constraint friends_pk
         primary key (user_id, friend_id),
     constraint friends_users_id_fk
@@ -33,4 +32,3 @@ create table if not exists friends
     constraint friends_users_id_fk_2
         foreign key (friend_id) references users (id)
 );
-

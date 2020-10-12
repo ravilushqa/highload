@@ -8,16 +8,18 @@ import (
 	"github.com/go-chi/chi"
 	"go.uber.org/zap"
 
+	"github.com/ravilushqa/highload/lib/friend"
 	"github.com/ravilushqa/highload/lib/user"
 )
 
 type Controller struct {
 	logger *zap.Logger
-	m      *user.Manager
+	u      *user.Manager
+	f      *friend.Manager
 }
 
-func NewController(logger *zap.Logger, m *user.Manager) *Controller {
-	return &Controller{logger: logger, m: m}
+func NewController(logger *zap.Logger, u *user.Manager, f *friend.Manager) *Controller {
+	return &Controller{logger: logger, u: u, f: f}
 }
 
 func (c *Controller) Router(r chi.Router) chi.Router {
@@ -35,9 +37,24 @@ func (c *Controller) profile(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	u, err := c.m.GetByID(r.Context(), userID)
+	u, err := c.u.GetByID(r.Context(), userID)
 	// @todo check for no results
 	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		w.Write([]byte("something was wrong"))
+		return
+	}
+
+	friendIds, err := c.f.GetFriends(r.Context(), userID)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		w.Write([]byte("something was wrong"))
+		return
+	}
+
+	friends, err := c.u.GetListByIds(r.Context(), friendIds)
+	if err != nil {
+		c.logger.Error("failed GetListByIds", zap.Error(err))
 		w.WriteHeader(http.StatusInternalServerError)
 		w.Write([]byte("something was wrong"))
 		return
@@ -50,6 +67,9 @@ func (c *Controller) profile(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	tmpl.ExecuteTemplate(w, "layout", u)
+	tmpl.ExecuteTemplate(w, "layout", struct {
+		*user.User
+		Friends []user.User
+	}{u, friends})
 	return
 }

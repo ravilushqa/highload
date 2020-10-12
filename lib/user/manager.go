@@ -55,6 +55,29 @@ func (m *Manager) GetByID(ctx context.Context, id int) (*User, error) {
 	return res, err
 }
 
+func (m *Manager) GetListByIds(ctx context.Context, ids []int) ([]User, error) {
+	if len(ids) == 0 {
+		return nil, nil
+	}
+	query := `
+		select id, email, password, firstname, lastname, birthday, sex, interests, city
+		from users
+		where id in (?) and deleted_at is null
+	`
+
+	query, args, err := sqlx.In(query, ids)
+	if err != nil {
+		return nil, err
+	}
+
+	query = m.DB.Rebind(query)
+
+	res := make([]User, 0, len(ids))
+	err = m.DB.SelectContext(ctx, &res, query, args...)
+
+	return res, err
+}
+
 func (m *Manager) GetByEmail(ctx context.Context, email string) (*User, error) {
 	query := `
 		select id, email, password, firstname, lastname, birthday, sex, interests, city
