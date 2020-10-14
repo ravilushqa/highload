@@ -78,7 +78,7 @@ func (c *Controller) login(w http.ResponseWriter, r *http.Request) {
 
 func (c *Controller) signin(w http.ResponseWriter, r *http.Request) {
 	if lib.IsAuth(r) {
-		uid, _ := lib.GetUsedIDFromCtx(r.Context())
+		uid, _ := lib.GetAuthUserID(r.Context())
 		http.Redirect(w, r, fmt.Sprintf("/users/%d", uid), http.StatusTemporaryRedirect)
 	}
 	tmpl, err := template.ParseFiles("resources/views/base.html", "resources/views/auth/signin.html")

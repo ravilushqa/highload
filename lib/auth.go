@@ -40,7 +40,7 @@ func IsAuth(r *http.Request) bool {
 	return err == nil && t != nil && ok
 }
 
-func GetUsedIDFromCtx(ctx context.Context) (int, error) {
+func GetAuthUserID(ctx context.Context) (int, error) {
 	_, claims, err := jwtauth.FromContext(ctx)
 	if err != nil {
 		return 0, err

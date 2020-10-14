@@ -26,12 +26,16 @@ func NewController(logger *zap.Logger, u *user.Manager, f *friend.Manager) *Cont
 func (c *Controller) Router(r chi.Router) chi.Router {
 	return r.Route("/users", func(r chi.Router) {
 		r.Get("/", c.index)
-		r.HandleFunc("/{user_id}", c.profile)
+		r.Route("/{user_id}", func(r chi.Router) {
+			r.HandleFunc("/", c.profile)
+			r.Post("/add", c.add)
+			r.Post("/approve", c.approve)
+		})
 	})
 }
 
 func (c *Controller) index(w http.ResponseWriter, r *http.Request) {
-	uid, _ := lib.GetUsedIDFromCtx(r.Context())
+	uid, _ := lib.GetAuthUserID(r.Context())
 	users, err := c.u.GetAll(r.Context())
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
@@ -50,7 +54,7 @@ func (c *Controller) index(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	tmpl.ExecuteTemplate(w, "layout", struct {
+	_ = tmpl.ExecuteTemplate(w, "layout", struct {
 		ID    int
 		Users []user.User
 	}{uid, users})
@@ -58,10 +62,11 @@ func (c *Controller) index(w http.ResponseWriter, r *http.Request) {
 }
 
 func (c *Controller) profile(w http.ResponseWriter, r *http.Request) {
+	authUserID, _ := lib.GetAuthUserID(r.Context())
 	userID, err := strconv.Atoi(chi.URLParam(r, "user_id"))
 	if err != nil {
 		w.WriteHeader(http.StatusUnprocessableEntity)
-		w.Write([]byte("wrong user id"))
+		_, _ = w.Write([]byte("wrong user id"))
 		return
 	}
 
@@ -69,14 +74,14 @@ func (c *Controller) profile(w http.ResponseWriter, r *http.Request) {
 	// @todo check for no results
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
-		w.Write([]byte("something was wrong"))
+		_, _ = w.Write([]byte("something was wrong"))
 		return
 	}
 
 	friendIds, err := c.f.GetFriends(r.Context(), userID)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
-		w.Write([]byte("something was wrong"))
+		_, _ = w.Write([]byte("something was wrong"))
 		return
 	}
 
@@ -84,9 +89,15 @@ func (c *Controller) profile(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		c.logger.Error("failed GetListByIds", zap.Error(err))
 		w.WriteHeader(http.StatusInternalServerError)
-		w.Write([]byte("something was wrong"))
+		_, _ = w.Write([]byte("something was wrong"))
 		return
 	}
+
+	data := struct {
+		AuthUserID int
+		*user.User
+		Friends []user.User
+	}{authUserID, u, friends}
 
 	tmpl, err := template.ParseFiles(
 		"resources/views/base.html",
@@ -99,9 +110,46 @@ func (c *Controller) profile(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	tmpl.ExecuteTemplate(w, "layout", struct {
-		*user.User
-		Friends []user.User
-	}{u, friends})
+	_ = tmpl.ExecuteTemplate(w, "layout", data)
+	return
+}
+
+func (c *Controller) add(w http.ResponseWriter, r *http.Request) {
+	authUserID, _ := lib.GetAuthUserID(r.Context())
+	userID, err := strconv.Atoi(chi.URLParam(r, "user_id"))
+	if err != nil {
+		w.WriteHeader(http.StatusUnprocessableEntity)
+		_, _ = w.Write([]byte("wrong user id"))
+		return
+	}
+
+	err = c.f.FriendRequest(r.Context(), authUserID, userID)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		_, _ = w.Write([]byte("something was wrong"))
+		return
+	}
+
+	http.Redirect(w, r, r.Header.Get("Referer"), http.StatusFound)
+	return
+}
+
+func (c *Controller) approve(w http.ResponseWriter, r *http.Request) {
+	authUserID, _ := lib.GetAuthUserID(r.Context())
+	userID, err := strconv.Atoi(chi.URLParam(r, "user_id"))
+	if err != nil {
+		w.WriteHeader(http.StatusUnprocessableEntity)
+		_, _ = w.Write([]byte("wrong user id"))
+		return
+	}
+
+	err = c.f.ApproveFriendRequest(r.Context(), authUserID, userID)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		_, _ = w.Write([]byte("something was wrong"))
+		return
+	}
+
+	http.Redirect(w, r, r.Header.Get("Referer"), http.StatusFound)
 	return
 }

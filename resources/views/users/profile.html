@@ -15,6 +15,17 @@
                             <div class="heading-block border-0">
                                 <h3>{{ .FirstName}} {{ .LastName}}</h3>
                                 <span>{{.City}}</span>
+                                {{ if ne .ID .AuthUserID}}
+                                    <div class="row">
+                                        <form action="/users/{{.ID}}/add" method="post">
+                                            <button class="button">Add to friends</button>
+                                        </form>
+                                        <form action="/users/{{.ID}}/approve" method="post">
+                                            <button class="button">Approve request</button>
+                                        </form>
+                                    </div>
+
+                                {{end}}
                             </div>
                             <div class="clear"></div>
                             <div class="row clearfix">

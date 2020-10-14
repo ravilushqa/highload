@@ -63,6 +63,7 @@ func (m *Manager) ApproveFriendRequest(ctx context.Context, approverUser, reques
 		"friend_id": requesterUser,
 	})
 	if err != nil {
+		_ = tx.Rollback()
 		return err
 	}
 
@@ -72,8 +73,9 @@ func (m *Manager) ApproveFriendRequest(ctx context.Context, approverUser, reques
 		"friend_id": approverUser,
 	})
 	if err != nil {
+		_ = tx.Rollback()
 		return err
 	}
 
-	return nil
+	return tx.Commit()
 }
