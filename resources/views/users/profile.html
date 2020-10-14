@@ -13,18 +13,33 @@
                             <img src="/public/images/icons/avatar.jpg" class="alignleft img-circle img-thumbnail my-0"
                                  alt="Avatar" style="max-width: 84px;">
                             <div class="heading-block border-0">
-                                <h3>{{ .FirstName}} {{ .LastName}}</h3>
+                                <h3>{{ .FirstName}} {{ .LastName}}</h3>b
                                 <span>{{.City}}</span>
                                 {{ if ne .ID .AuthUserID}}
-                                    <div class="row">
+                                    {{if eq .Status ""}}
                                         <form action="/users/{{.ID}}/add" method="post">
                                             <button class="button">Add to friends</button>
                                         </form>
+                                    {{end}}
+                                    {{if eq .Status "requested"}}
                                         <form action="/users/{{.ID}}/approve" method="post">
                                             <button class="button">Approve request</button>
                                         </form>
-                                    </div>
-
+                                    {{end}}
+                                    {{if eq .Status "added"}}
+                                        <form action="/users/{{.ID}}/approve" method="post">
+                                            <button class="button button-dark" style="pointer-events: none"
+                                                    disabled="disabled">Wait for approve
+                                            </button>
+                                        </form>
+                                    {{end}}
+                                    {{if eq .Status "friends"}}
+                                        <form action="/users/{{.ID}}/approve" method="post">
+                                            <button class="button button-dark" style="pointer-events: none"
+                                                    disabled="disabled">You are friends
+                                            </button>
+                                        </form>
+                                    {{end}}
                                 {{end}}
                             </div>
                             <div class="clear"></div>

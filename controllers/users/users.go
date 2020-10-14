@@ -93,11 +93,19 @@ func (c *Controller) profile(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	status, err := c.f.GetRelation(r.Context(), authUserID, u.ID)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		_, _ = w.Write([]byte("something was wrong"))
+		return
+	}
+
 	data := struct {
 		AuthUserID int
 		*user.User
 		Friends []user.User
-	}{authUserID, u, friends}
+		Status  friend.Status
+	}{authUserID, u, friends, status}
 
 	tmpl, err := template.ParseFiles(
 		"resources/views/base.html",
