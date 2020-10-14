@@ -55,8 +55,8 @@ func (c *Controller) index(w http.ResponseWriter, r *http.Request) {
 	}
 
 	_ = tmpl.ExecuteTemplate(w, "layout", struct {
-		ID    int
-		Users []user.User
+		AuthUserID int
+		Users      []user.User
 	}{uid, users})
 	return
 }
