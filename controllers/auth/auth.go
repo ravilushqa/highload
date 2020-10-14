@@ -29,6 +29,7 @@ func (c *Controller) Router(r chi.Router) chi.Router {
 		r.Get("/signin", c.signin)
 		r.Post("/login", c.login)
 		r.Post("/register", c.register)
+		r.Get("/logout", c.logout)
 	})
 }
 
@@ -76,8 +77,8 @@ func (c *Controller) login(w http.ResponseWriter, r *http.Request) {
 }
 
 func (c *Controller) signin(w http.ResponseWriter, r *http.Request) {
-	if c.auth.IsAuth(r) {
-		uid, _ := c.auth.GetUsedIDFromCtx(r.Context())
+	if lib.IsAuth(r) {
+		uid, _ := lib.GetUsedIDFromCtx(r.Context())
 		http.Redirect(w, r, fmt.Sprintf("/users/%d", uid), http.StatusTemporaryRedirect)
 	}
 	tmpl, err := template.ParseFiles("resources/views/base.html", "resources/views/auth/signin.html")
@@ -142,4 +143,18 @@ func (c *Controller) register(w http.ResponseWriter, r *http.Request) {
 		http.Redirect(w, r, fmt.Sprintf("/users/%d", u.ID), http.StatusTemporaryRedirect)
 	}
 
+}
+
+func (c *Controller) logout(w http.ResponseWriter, r *http.Request) {
+	cookie := &http.Cookie{
+		Name:    "jwt",
+		Value:   "",
+		Path:    "/",
+		Expires: time.Unix(0, 0),
+
+		HttpOnly: true,
+	}
+
+	http.SetCookie(w, cookie)
+	http.Redirect(w, r, fmt.Sprintf("/signin"), http.StatusTemporaryRedirect)
 }

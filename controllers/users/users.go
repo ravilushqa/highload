@@ -8,6 +8,7 @@ import (
 	"github.com/go-chi/chi"
 	"go.uber.org/zap"
 
+	"github.com/ravilushqa/highload/lib"
 	"github.com/ravilushqa/highload/lib/friend"
 	"github.com/ravilushqa/highload/lib/user"
 )
@@ -24,12 +25,39 @@ func NewController(logger *zap.Logger, u *user.Manager, f *friend.Manager) *Cont
 
 func (c *Controller) Router(r chi.Router) chi.Router {
 	return r.Route("/users", func(r chi.Router) {
+		r.Get("/", c.index)
 		r.HandleFunc("/{user_id}", c.profile)
 	})
 }
 
-func (c *Controller) profile(w http.ResponseWriter, r *http.Request) {
+func (c *Controller) index(w http.ResponseWriter, r *http.Request) {
+	uid, _ := lib.GetUsedIDFromCtx(r.Context())
+	users, err := c.u.GetAll(r.Context())
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		w.Write([]byte("something was wrong"))
+		return
+	}
 
+	tmpl, err := template.ParseFiles(
+		"resources/views/base.html",
+		"resources/views/users/nav.html",
+		"resources/views/users/index.html",
+	)
+	if err != nil {
+		c.logger.Error("failed parse templates", zap.NamedError("error", err))
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	tmpl.ExecuteTemplate(w, "layout", struct {
+		ID    int
+		Users []user.User
+	}{uid, users})
+	return
+}
+
+func (c *Controller) profile(w http.ResponseWriter, r *http.Request) {
 	userID, err := strconv.Atoi(chi.URLParam(r, "user_id"))
 	if err != nil {
 		w.WriteHeader(http.StatusUnprocessableEntity)
@@ -60,7 +88,11 @@ func (c *Controller) profile(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	tmpl, err := template.ParseFiles("resources/views/base.html", "resources/views/users/profile.html")
+	tmpl, err := template.ParseFiles(
+		"resources/views/base.html",
+		"resources/views/users/nav.html",
+		"resources/views/users/profile.html",
+	)
 	if err != nil {
 		c.logger.Error("failed parse templates", zap.NamedError("error", err))
 		w.WriteHeader(http.StatusInternalServerError)

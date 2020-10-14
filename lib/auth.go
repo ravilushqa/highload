@@ -34,13 +34,13 @@ func (a *Auth) EncodeToken(uid int) (string, error) {
 	return tokenString, err
 }
 
-func (a *Auth) IsAuth(r *http.Request) bool {
+func IsAuth(r *http.Request) bool {
 	t, claims, err := jwtauth.FromContext(r.Context())
 	_, ok := claims["uid"]
 	return err == nil && t != nil && ok
 }
 
-func (a *Auth) GetUsedIDFromCtx(ctx context.Context) (int, error) {
+func GetUsedIDFromCtx(ctx context.Context) (int, error) {
 	_, claims, err := jwtauth.FromContext(ctx)
 	if err != nil {
 		return 0, err

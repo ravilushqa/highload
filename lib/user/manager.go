@@ -91,3 +91,17 @@ func (m *Manager) GetByEmail(ctx context.Context, email string) (*User, error) {
 
 	return res, err
 }
+
+func (m *Manager) GetAll(ctx context.Context) ([]User, error) {
+	// @todo filter
+	query := `
+		select id, email, password, firstname, lastname, birthday, sex, interests, city
+		from users
+		where deleted_at is null
+	`
+
+	res := make([]User, 0)
+	err := m.DB.SelectContext(ctx, &res, query)
+
+	return res, err
+}
