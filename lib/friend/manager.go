@@ -12,8 +12,8 @@ type Status string
 
 const (
 	Added     Status = "added"
-	Requested        = "requested"
-	Friends          = "friends"
+	Requested Status = "requested"
+	Friends   Status = "friends"
 )
 
 type Manager struct {

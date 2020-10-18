@@ -39,7 +39,7 @@ func (c *Controller) index(w http.ResponseWriter, r *http.Request) {
 	users, err := c.u.GetAll(r.Context())
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
-		w.Write([]byte("something was wrong"))
+		_, _ = w.Write([]byte("something was wrong"))
 		return
 	}
 
@@ -58,7 +58,6 @@ func (c *Controller) index(w http.ResponseWriter, r *http.Request) {
 		AuthUserID int
 		Users      []user.User
 	}{uid, users})
-	return
 }
 
 func (c *Controller) profile(w http.ResponseWriter, r *http.Request) {
@@ -119,7 +118,6 @@ func (c *Controller) profile(w http.ResponseWriter, r *http.Request) {
 	}
 
 	_ = tmpl.ExecuteTemplate(w, "layout", data)
-	return
 }
 
 func (c *Controller) add(w http.ResponseWriter, r *http.Request) {
@@ -139,7 +137,6 @@ func (c *Controller) add(w http.ResponseWriter, r *http.Request) {
 	}
 
 	http.Redirect(w, r, r.Header.Get("Referer"), http.StatusFound)
-	return
 }
 
 func (c *Controller) approve(w http.ResponseWriter, r *http.Request) {
@@ -159,5 +156,4 @@ func (c *Controller) approve(w http.ResponseWriter, r *http.Request) {
 	}
 
 	http.Redirect(w, r, r.Header.Get("Referer"), http.StatusFound)
-	return
 }

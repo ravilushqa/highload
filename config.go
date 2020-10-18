@@ -9,7 +9,7 @@ import (
 type config struct {
 	LogLevel    string        `env:"LOG_LEVEL" envDefault:"debug"`
 	Addr        string        `env:"ADDR" envDefault:":8080"`
-	DatabaseUrl string        `env:"DATABASE_URL" envDefault:"user:password@(localhost:3306)/app"`
+	DatabaseURL string        `env:"DATABASE_URL" envDefault:"user:password@(localhost:3306)/app"`
 	JwtSecret   string        `env:"JWT_SECRET" envDefault:"secret"`
 	APITimeout  time.Duration `env:"API_TIMEOUT" envDefault:"60s"`
 }

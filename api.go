@@ -53,7 +53,7 @@ func (a *API) Run(ctx context.Context) error {
 
 	go func() {
 		<-ctx.Done()
-		a.Shutdown(ctx)
+		_ = a.Shutdown(ctx)
 	}()
 
 	a.logger.Info("service started", zap.String("listen", a.config.Addr))
@@ -81,7 +81,6 @@ func (a *API) registerRoutes() {
 	a.mux.Group(func(r chi.Router) {
 		r.Get("/", func(w http.ResponseWriter, r *http.Request) {
 			http.Redirect(w, r, "/signin", http.StatusTemporaryRedirect)
-			return
 		})
 		// static files
 		workDir, _ := os.Getwd()

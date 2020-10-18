@@ -34,7 +34,7 @@ func (c *Controller) Router(r chi.Router) chi.Router {
 }
 
 func (c *Controller) login(w http.ResponseWriter, r *http.Request) {
-	r.ParseForm()
+	_ = r.ParseForm()
 	email := r.FormValue("login-form-email")
 	password := r.FormValue("login-form-password")
 
@@ -88,7 +88,7 @@ func (c *Controller) signin(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	tmpl.ExecuteTemplate(w, "layout", nil)
+	_ = tmpl.ExecuteTemplate(w, "layout", nil)
 }
 
 func (c *Controller) register(w http.ResponseWriter, r *http.Request) {
@@ -156,5 +156,5 @@ func (c *Controller) logout(w http.ResponseWriter, r *http.Request) {
 	}
 
 	http.SetCookie(w, cookie)
-	http.Redirect(w, r, fmt.Sprintf("/signin"), http.StatusTemporaryRedirect)
+	http.Redirect(w, r, "/signin", http.StatusTemporaryRedirect)
 }

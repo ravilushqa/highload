@@ -1,3 +1,4 @@
+//nolint
 package main
 
 import (
@@ -32,8 +33,8 @@ type Sex string
 
 const (
 	Male   Sex = "male"
-	Female     = "female"
-	Other      = "other"
+	Female Sex = "female"
+	Other  Sex = "other"
 )
 
 func CustomGenerator() {
