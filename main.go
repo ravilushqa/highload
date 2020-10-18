@@ -69,7 +69,10 @@ func main() {
 		tl.Error("run failed ", zap.NamedError("b2bError", err))
 	}
 
-	err = container.Invoke(func(l *zap.Logger) error {
+	err = container.Invoke(func(l *zap.Logger, db *sqlx.DB) error {
+		if err = db.Close(); err != nil {
+			l.Error("failed to close db", zap.Error(err))
+		}
 		l.Info("gracefully shutdown...")
 		return l.Sync()
 	})
