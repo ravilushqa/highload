@@ -98,6 +98,7 @@ func (m *Manager) GetAll(ctx context.Context) ([]User, error) {
 		select id, email, password, firstname, lastname, birthday, sex, interests, city
 		from users
 		where deleted_at is null
+		limit 100 offset 0
 	`
 
 	res := make([]User, 0)

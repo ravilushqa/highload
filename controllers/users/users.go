@@ -38,6 +38,7 @@ func (c *Controller) index(w http.ResponseWriter, r *http.Request) {
 	uid, _ := lib.GetAuthUserID(r.Context())
 	users, err := c.u.GetAll(r.Context())
 	if err != nil {
+		c.logger.Error("failed get users", zap.Error(err))
 		w.WriteHeader(http.StatusInternalServerError)
 		_, _ = w.Write([]byte("something was wrong"))
 		return
@@ -72,6 +73,7 @@ func (c *Controller) profile(w http.ResponseWriter, r *http.Request) {
 	u, err := c.u.GetByID(r.Context(), userID)
 	// @todo check for no results
 	if err != nil {
+		c.logger.Error("failed get user", zap.Error(err))
 		w.WriteHeader(http.StatusInternalServerError)
 		_, _ = w.Write([]byte("something was wrong"))
 		return
@@ -79,6 +81,7 @@ func (c *Controller) profile(w http.ResponseWriter, r *http.Request) {
 
 	friendIds, err := c.f.GetFriends(r.Context(), userID)
 	if err != nil {
+		c.logger.Error("failed get friends", zap.Error(err))
 		w.WriteHeader(http.StatusInternalServerError)
 		_, _ = w.Write([]byte("something was wrong"))
 		return
@@ -94,6 +97,7 @@ func (c *Controller) profile(w http.ResponseWriter, r *http.Request) {
 
 	status, err := c.f.GetRelation(r.Context(), authUserID, u.ID)
 	if err != nil {
+		c.logger.Error("failed get relation", zap.Error(err))
 		w.WriteHeader(http.StatusInternalServerError)
 		_, _ = w.Write([]byte("something was wrong"))
 		return
@@ -131,6 +135,7 @@ func (c *Controller) add(w http.ResponseWriter, r *http.Request) {
 
 	err = c.f.FriendRequest(r.Context(), authUserID, userID)
 	if err != nil {
+		c.logger.Error("failed find friend request", zap.Error(err))
 		w.WriteHeader(http.StatusInternalServerError)
 		_, _ = w.Write([]byte("something was wrong"))
 		return
@@ -150,6 +155,7 @@ func (c *Controller) approve(w http.ResponseWriter, r *http.Request) {
 
 	err = c.f.ApproveFriendRequest(r.Context(), authUserID, userID)
 	if err != nil {
+		c.logger.Error("approve friend request", zap.Error(err))
 		w.WriteHeader(http.StatusInternalServerError)
 		_, _ = w.Write([]byte("something was wrong"))
 		return
