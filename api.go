@@ -11,6 +11,7 @@ import (
 	"github.com/go-chi/chi/middleware"
 	"github.com/go-chi/jwtauth"
 	"github.com/go-chi/render"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"go.uber.org/zap"
 
 	"github.com/ravilushqa/highload/controllers/auth"
@@ -74,6 +75,7 @@ func (a *API) registerRoutes() {
 	a.mux.Get("/health-check", func(w http.ResponseWriter, r *http.Request) {
 		render.JSON(w, r, map[string]string{"status": "ok"})
 	})
+	a.mux.Handle("/metrics", promhttp.Handler())
 
 	// public group
 	a.mux.Group(func(r chi.Router) {
