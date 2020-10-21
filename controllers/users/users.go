@@ -36,7 +36,7 @@ func (c *Controller) Router(r chi.Router) chi.Router {
 
 func (c *Controller) index(w http.ResponseWriter, r *http.Request) {
 	uid, _ := lib.GetAuthUserID(r.Context())
-	users, err := c.u.GetAll(r.Context())
+	users, err := c.u.GetAll(r.Context(), r.URL.Query().Get("query"))
 	if err != nil {
 		c.logger.Error("failed get users", zap.Error(err))
 		w.WriteHeader(http.StatusInternalServerError)

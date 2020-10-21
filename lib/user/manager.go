@@ -2,6 +2,7 @@ package user
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/jmoiron/sqlx"
 )
@@ -92,17 +93,27 @@ func (m *Manager) GetByEmail(ctx context.Context, email string) (*User, error) {
 	return res, err
 }
 
-func (m *Manager) GetAll(ctx context.Context) ([]User, error) {
-	// @todo filter
-	query := `
+func (m *Manager) GetAll(ctx context.Context, filter string) ([]User, error) {
+	var query string
+	res := make([]User, 0)
+
+	if filter != "" {
+		query = `
+			select id, email, password, firstname, lastname, birthday, sex, interests, city
+			from users
+			where firstname like ? and lastname like ? and deleted_at is null
+			order by id
+		`
+		err := m.DB.SelectContext(ctx, &res, query, fmt.Sprintf("%s%%", filter), fmt.Sprintf("%s%%", filter))
+		return res, err
+	}
+	query = `
 		select id, email, password, firstname, lastname, birthday, sex, interests, city
 		from users
 		where deleted_at is null
 		limit 100 offset 0
 	`
 
-	res := make([]User, 0)
 	err := m.DB.SelectContext(ctx, &res, query)
-
 	return res, err
 }
