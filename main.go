@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"time"
 
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/jmoiron/sqlx"
@@ -25,7 +26,15 @@ func buildContainer() (*dig.Container, error) {
 			return lib.NewAuth(c.JwtSecret), nil
 		},
 		func(c *config) (*sqlx.DB, error) {
-			return sqlx.Connect("mysql", fmt.Sprint(c.DatabaseURL, "?parseTime=true"))
+			db, err := sqlx.Connect("mysql", fmt.Sprint(c.DatabaseURL, "?parseTime=true"))
+			if err != nil {
+				return nil, err
+			}
+			//db.SetMaxOpenConns(25)
+			//db.SetMaxIdleConns(25)
+			db.SetConnMaxLifetime(5 * time.Minute)
+
+			return db, nil
 		},
 		NewAPI,
 		user.New,
