@@ -29,7 +29,13 @@ type API struct {
 	libAuth *lib.Auth
 }
 
-func NewAPI(config *config, logger *zap.Logger, auth *auth.Controller, users *users.Controller, libAuth *lib.Auth) *API {
+func NewAPI(
+	config *config,
+	logger *zap.Logger,
+	auth *auth.Controller,
+	users *users.Controller,
+	libAuth *lib.Auth,
+) *API {
 	return &API{config: config, logger: logger, auth: auth, users: users, libAuth: libAuth}
 }
 

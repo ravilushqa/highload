@@ -1,3 +1,4 @@
+create database if not exists app;
 use app;
 
 create table if not exists users

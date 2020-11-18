@@ -4,37 +4,116 @@ services:
   app:
     build:
       context: .
-    container_name: "social_network_app"
+    container_name: "app"
     ports:
-      - 8080:8080
-    networks:
-      - db
+      - 80:8080
     depends_on:
-      - mysql
-    restart: on-failure
+      - mysql_master
+      - mysql_slave1
+      - mysql_slave2
     environment:
-      DATABASE_URL: "user:password@(mysql:3306)/app"
-  mysql:
+      DATABASE_URL: "user:password@(mysql_master:3306)/app"
+      SLAVES_URLS: "user:password@(mysql_slave1:3306)/app,user:password@(mysql_slave2:3306)/app"
+    networks:
+      - otus
+  mysql_master:
     image: mysql:5.7
+    container_name: "mysql_master"
+    ports:
+      - 3306:3306
     restart: always
-    command: --init-file /data/application/init.sql
     volumes:
-      - mysql_data:/var/lib/mysql
-      - ./init.sql:/data/application/init.sql
-    container_name: "social_network_mysql"
+      - mysql_master_data:/var/lib/mysql
+      - ./docker/mysql/master.cnf:/etc/mysql/my.cnf
     environment:
       MYSQL_DATABASE: "app"
       MYSQL_USER: "user"
       MYSQL_PASSWORD: "password"
       MYSQL_ROOT_PASSWORD: "secret"
     networks:
-      - db
+      - otus
+  mysql_slave1:
+    image: mysql:5.7
+    container_name: "mysql_slave1"
     ports:
-      - "3306:3306"
+      - 33061:3306
+    restart: always
+    depends_on:
+      - mysql_master
+    volumes:
+      - mysql_slave1_data:/var/lib/mysql
+      - ./docker/mysql/slave1.cnf:/etc/mysql/my.cnf
+    environment:
+      MYSQL_DATABASE: "app"
+      MYSQL_USER: "user"
+      MYSQL_PASSWORD: "password"
+      MYSQL_ROOT_PASSWORD: "secret"
+    networks:
+      - otus
+  mysql_slave2:
+    image: mysql:5.7
+    container_name: "mysql_slave2"
+    ports:
+      - 33062:3306
+    restart: always
+    depends_on:
+      - mysql_master
+    volumes:
+      - mysql_slave2_data:/var/lib/mysql
+      - ./docker/mysql/slave1.cnf:/etc/mysql/my.cnf
+    environment:
+      MYSQL_DATABASE: "app"
+      MYSQL_USER: "user"
+      MYSQL_PASSWORD: "password"
+      MYSQL_ROOT_PASSWORD: "secret"
+    networks:
+      - otus
+  prometheus:
+    build:
+      context: .
+      dockerfile: docker/prometheus/Dockerfile
+    ports:
+      - 9090:9090
+    networks:
+      - otus
+  cadvisor:
+    image: gcr.io/google-containers/cadvisor:latest
+    container_name: cadvisor
+    ports:
+      - 8080:8080
+    volumes:
+      - /:/rootfs:ro
+      - /var/run:/var/run:rw
+      - /sys:/sys:ro
+      - /var/lib/docker/:/var/lib/docker:ro
+      - /var/run/docker.sock:/var/run/docker.sock:rw
+    networks:
+      - otus
+  grafana:
+    image: grafana/grafana
+    container_name: grafana
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - grafana_data_provisioning:/etc/grafana/provisioning
+    environment:
+      - GF_SECURITY_ADMIN_USER=admin
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+      - GF_USERS_ALLOW_SIGN_UP=false
+    restart: unless-stopped
     expose:
-      - "3306"
+      - 3000
+    ports:
+      - 3000:3000
+    networks:
+      - otus
+    labels:
+      org.label-schema.group: "monitoring"
 networks:
-  db:
+  otus:
     driver: bridge
 volumes:
-  mysql_data:
+  mysql_master_data:
+  mysql_slave1_data:
+  mysql_slave2_data:
+  grafana_data:
+  grafana_data_provisioning:

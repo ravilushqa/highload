@@ -1,4 +1,4 @@
-FROM golang:1.13 as build-env
+FROM golang:1.15 as build-env
 ENV NAME "app"
 WORKDIR /opt/${NAME}
 COPY go.mod .
@@ -20,3 +20,14 @@ COPY --from=build /opt/${NAME}/public ./public
 RUN apk add --no-cache tzdata
 EXPOSE 8080
 CMD ./${NAME}
+
+
+#FROM golang:1.13-alpine
+#
+#WORKDIR "/app"
+#
+#RUN apk update \
+#    && apk add git \
+#    && go get github.com/cosmtrek/air \
+#    && go get github.com/go-delve/delve/cmd/dlv
+#CMD ["air"]
