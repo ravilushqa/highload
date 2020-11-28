@@ -5,16 +5,19 @@ import (
 	"time"
 
 	_ "github.com/go-sql-driver/mysql"
-	"github.com/jmoiron/sqlx"
 	"github.com/linxGnu/mssqlx"
 	"github.com/neonxp/rutina"
 	"go.uber.org/dig"
 	"go.uber.org/zap"
 
 	"github.com/ravilushqa/highload/controllers/auth"
+	"github.com/ravilushqa/highload/controllers/chats"
 	"github.com/ravilushqa/highload/controllers/users"
 	"github.com/ravilushqa/highload/lib"
+	"github.com/ravilushqa/highload/lib/chat"
+	chatuser "github.com/ravilushqa/highload/lib/chat_user"
 	"github.com/ravilushqa/highload/lib/friend"
+	"github.com/ravilushqa/highload/lib/message"
 	"github.com/ravilushqa/highload/lib/user"
 )
 
@@ -58,6 +61,10 @@ func buildContainer() (*dig.Container, error) {
 		friend.New,
 		auth.NewController,
 		users.NewController,
+		chat.NewManager,
+		chatuser.NewManager,
+		message.NewManager,
+		chats.NewController,
 	}
 
 	for _, c := range constructors {
@@ -79,7 +86,7 @@ func main() {
 	r := rutina.New(rutina.WithErrChan())
 	go func() {
 		for err := range r.Errors() {
-			tl.Error("runtime error", zap.NamedError("b2bError", err))
+			tl.Error("runtime error", zap.Error(err))
 		}
 	}()
 
@@ -88,22 +95,22 @@ func main() {
 		r.ListenOsSignals()
 	})
 	if err != nil {
-		tl.Fatal("invoke failed", zap.NamedError("b2bError", err))
+		tl.Fatal("invoke failed", zap.Error(err))
 	}
 
 	if err := r.Wait(); err != nil {
-		tl.Error("run failed ", zap.NamedError("b2bError", err))
+		tl.Error("run failed", zap.Error(err))
 	}
 
-	err = container.Invoke(func(l *zap.Logger, db *sqlx.DB) error {
-		if err = db.Close(); err != nil {
-			l.Error("failed to close db", zap.Error(err))
+	err = container.Invoke(func(l *zap.Logger, db *mssqlx.DBs) error {
+		if errs := db.Destroy(); len(errs) > 0 {
+			l.Error("failed to close db", zap.Errors("errors", errs))
 		}
 		l.Info("gracefully shutdown...")
 		return l.Sync()
 	})
 	if err != nil {
-		tl.Error("shutdown failed", zap.NamedError("b2bError", err))
+		tl.Error("shutdown failed", zap.Error(err))
 	}
 
 }

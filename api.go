@@ -15,6 +15,7 @@ import (
 	"go.uber.org/zap"
 
 	"github.com/ravilushqa/highload/controllers/auth"
+	"github.com/ravilushqa/highload/controllers/chats"
 	"github.com/ravilushqa/highload/controllers/users"
 	"github.com/ravilushqa/highload/lib"
 )
@@ -26,6 +27,7 @@ type API struct {
 	logger  *zap.Logger
 	auth    *auth.Controller
 	users   *users.Controller
+	chats   *chats.Controller
 	libAuth *lib.Auth
 }
 
@@ -34,9 +36,10 @@ func NewAPI(
 	logger *zap.Logger,
 	auth *auth.Controller,
 	users *users.Controller,
+	chats *chats.Controller,
 	libAuth *lib.Auth,
 ) *API {
-	return &API{config: config, logger: logger, auth: auth, users: users, libAuth: libAuth}
+	return &API{config: config, logger: logger, auth: auth, users: users, chats: chats, libAuth: libAuth}
 }
 
 func (a *API) Run(ctx context.Context) error {
@@ -101,6 +104,7 @@ func (a *API) registerRoutes() {
 		r.Use(jwtauth.Authenticator)
 
 		a.users.Router(r)
+		a.chats.Router(r)
 	})
 }
 

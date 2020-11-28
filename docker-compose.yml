@@ -14,6 +14,7 @@ services:
     environment:
       DATABASE_URL: "user:password@(mysql_master:3306)/app"
       SLAVES_URLS: "user:password@(mysql_slave1:3306)/app,user:password@(mysql_slave2:3306)/app"
+      MESSAGES_DATABASE_URL: "proxysql"
     networks:
       - otus
   mysql_master:
@@ -108,6 +109,65 @@ services:
       - otus
     labels:
       org.label-schema.group: "monitoring"
+  proxysql:
+    build:
+      context: docker/proxysql
+      dockerfile: Dockerfile
+    container_name: proxysql
+    volumes:
+      - proxysql-data:/var/lib/proxysql
+    depends_on:
+      - db-node-1
+      - db-node-2
+    networks:
+      - otus
+    ports:
+      # Mysql Client Port
+      - "6033:6033"
+      # Mysql Admin Port
+      - "6032:6032"
+  db-node-1:
+    build:
+      context: docker/mysql
+      dockerfile: Dockerfile
+    container_name: db-node-1
+    restart: unless-stopped
+    environment:
+      MYSQL_DATABASE: messages
+      MYSQL_USER: messages
+      MYSQL_PASSWORD: secret
+      MYSQL_ROOT_PASSWORD: '1'
+    command: >
+      --sql-mode='STRICT_TRANS_TABLES,ERROR_FOR_DIVISION_BY_ZERO,NO_AUTO_CREATE_USER,NO_ENGINE_SUBSTITUTION'
+      --general-log=ON
+      --log-queries-not-using-indexes=ON
+    networks:
+      - otus
+    ports:
+      - 3360:3306
+    volumes:
+      - db-node-1-data:/var/lib/mysql
+  db-node-2:
+    build:
+      context: docker/mysql
+      dockerfile: Dockerfile
+    container_name: db-node-2
+    restart: unless-stopped
+    environment:
+      MYSQL_DATABASE: test
+      MYSQL_USER: test
+      MYSQL_PASSWORD: pzjqUkMnc7vfNHET
+      MYSQL_ROOT_PASSWORD: '1'
+    command: >
+      --sql-mode='STRICT_TRANS_TABLES,ERROR_FOR_DIVISION_BY_ZERO,NO_AUTO_CREATE_USER,NO_ENGINE_SUBSTITUTION'
+      --general-log=ON
+      --log-queries-not-using-indexes=ON
+    networks:
+      - otus
+    ports:
+      - 3361:3306
+    volumes:
+      - db-node-2-data:/var/lib/mysql
 networks:
   otus:
     driver: bridge
@@ -115,5 +175,8 @@ volumes:
   mysql_master_data:
   mysql_slave1_data:
   mysql_slave2_data:
+  db-node-1-data:
+  db-node-2-data:
+  proxysql-data:
   grafana_data:
   grafana_data_provisioning:
