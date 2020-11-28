@@ -4,23 +4,24 @@ import (
 	"context"
 
 	"github.com/jmoiron/sqlx"
-	"github.com/linxGnu/mssqlx"
 )
 
 type Manager struct {
-	DB *mssqlx.DBs
+	Shard1 *sqlx.DB
+	Shard2 *sqlx.DB
 }
 
-func NewManager(db *mssqlx.DBs) *Manager {
-	return &Manager{DB: db}
+func NewManager(shard1 *sqlx.DB, shard2 *sqlx.DB) *Manager {
+	return &Manager{Shard1: shard1, Shard2: shard2}
 }
 
 func (m *Manager) Insert(ctx context.Context, message *Message) error {
+	shard := m.getShardByChatID(message.ChatID)
 	query := `insert into messages 
 		(user_id, chat_id, text)
 		values (:user_id, :chat_id, :text)
 	`
-	_, err := m.DB.NamedExecContext(ctx, query, map[string]interface{}{
+	_, err := shard.NamedExecContext(ctx, query, map[string]interface{}{
 		"user_id": message.UserID,
 		"chat_id": message.ChatID,
 		"text":    message.Text,
@@ -33,6 +34,8 @@ func (m *Manager) GetChatMessages(ctx context.Context, chatIDs []int) ([]Message
 	if len(chatIDs) == 0 {
 		return nil, nil
 	}
+	firstChatShard := m.getShardByChatID(chatIDs[0])
+
 	query := `
 		select id, user_id, chat_id, text, created_at, updated_at, deleted_at 
 		from messages where chat_id in (?)
@@ -43,10 +46,32 @@ func (m *Manager) GetChatMessages(ctx context.Context, chatIDs []int) ([]Message
 		return nil, err
 	}
 
-	query = m.DB.Rebind(query)
+	query = firstChatShard.Rebind(query)
 
-	res := make([]Message, 0, len(chatIDs))
-	err = m.DB.SelectContext(ctx, &res, query, args...)
+	res := make([]Message, 0, 1024)
+
+	if len(chatIDs) == 1 {
+		err = firstChatShard.SelectContext(ctx, &res, query, args...)
+		return res, err
+	}
+	err = m.Shard1.SelectContext(ctx, &res, query, args...)
+	if err != nil {
+		return nil, err
+	}
+	res2 := make([]Message, 0, 1024)
+	err = m.Shard1.SelectContext(ctx, &res2, query, args...)
+	if err != nil {
+		return nil, err
+	}
+	res = append(res, res2...)
 
 	return res, err
+}
+
+func (m *Manager) getShardByChatID(chatID int) *sqlx.DB {
+	switch chatID % 2 {
+	case 0:
+		return m.Shard1
+	}
+	return m.Shard2
 }
