@@ -6,7 +6,7 @@ import (
 )
 
 type Message struct {
-	ID        int          `json:"id"`
+	UUID      string       `json:"uuid" db:"uuid"`
 	UserID    int          `json:"user_id" db:"user_id"`
 	ChatID    int          `json:"chat_id" db:"chat_id"`
 	Text      string       `json:"text"`

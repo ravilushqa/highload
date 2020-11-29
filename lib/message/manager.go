@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/hashicorp/go-uuid"
 	"github.com/jmoiron/sqlx"
 	"github.com/neonxp/rutina"
 )
@@ -19,10 +20,12 @@ func NewManager(shards []*sqlx.DB) *Manager {
 func (m *Manager) Insert(ctx context.Context, message *Message) error {
 	shard := m.getShardByChatID(message.ChatID)
 	query := `insert into messages 
-		(user_id, chat_id, text)
-		values (:user_id, :chat_id, :text)
+		(uuid, user_id, chat_id, text)
+		values (:uuid, :user_id, :chat_id, :text)
 	`
+
 	_, err := shard.NamedExecContext(ctx, query, map[string]interface{}{
+		"uuid":    uuid.GenerateUUID,
 		"user_id": message.UserID,
 		"chat_id": message.ChatID,
 		"text":    message.Text,
@@ -38,7 +41,7 @@ func (m *Manager) GetChatMessages(ctx context.Context, chatIDs []int) ([]Message
 	firstChatShard := m.getShardByChatID(chatIDs[0])
 
 	query := `
-		select id, user_id, chat_id, text, created_at, updated_at, deleted_at 
+		select uuid, user_id, chat_id, text, created_at, updated_at, deleted_at 
 		from messages where chat_id in (?)
 	`
 
