@@ -9,6 +9,18 @@
             <div class="content-wrap">
                 <div class="container clearfix">
                     <div class="row clearfix">
+                        <div class="col-md-3">
+
+                            {{template "nav" .}}
+
+                            <div class="fancy-title topmargin title-border">
+                                <h4>Interests</h4>
+                            </div>
+
+                            <p>{{.Interests}}</p>
+
+                        </div>
+                        <div class="w-100 line d-block d-md-none"></div>
                         <div class="col-md-9">
                             <img src="/public/images/icons/avatar.jpg" class="alignleft img-circle img-thumbnail my-0"
                                  alt="Avatar" style="max-width: 84px;">
@@ -76,23 +88,7 @@
                                 </div>
                             </div>
                         </div>
-
-                        <div class="w-100 line d-block d-md-none"></div>
-
-                        <div class="col-md-3">
-
-                            {{template "nav" .}}
-
-                            <div class="fancy-title topmargin title-border">
-                                <h4>Interests</h4>
-                            </div>
-
-                            <p>{{.Interests}}</p>
-
-                        </div>
-
                     </div>
-
                 </div>
             </div>
         </section><!-- #content end -->

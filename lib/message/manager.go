@@ -2,17 +2,18 @@ package message
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/jmoiron/sqlx"
+	"github.com/neonxp/rutina"
 )
 
 type Manager struct {
-	Shard1 *sqlx.DB
-	Shard2 *sqlx.DB
+	Shards []*sqlx.DB
 }
 
-func NewManager(shard1 *sqlx.DB, shard2 *sqlx.DB) *Manager {
-	return &Manager{Shard1: shard1, Shard2: shard2}
+func NewManager(shards []*sqlx.DB) *Manager {
+	return &Manager{Shards: shards}
 }
 
 func (m *Manager) Insert(ctx context.Context, message *Message) error {
@@ -54,24 +55,26 @@ func (m *Manager) GetChatMessages(ctx context.Context, chatIDs []int) ([]Message
 		err = firstChatShard.SelectContext(ctx, &res, query, args...)
 		return res, err
 	}
-	err = m.Shard1.SelectContext(ctx, &res, query, args...)
-	if err != nil {
-		return nil, err
-	}
-	res2 := make([]Message, 0, 1024)
-	err = m.Shard1.SelectContext(ctx, &res2, query, args...)
-	if err != nil {
-		return nil, err
-	}
-	res = append(res, res2...)
 
+	r := rutina.New()
+
+	for _, shard := range m.Shards {
+		r.Go(func(ctx context.Context) error {
+			shardData := make([]Message, 0, 1024)
+			err := shard.SelectContext(ctx, &shardData, query, args...)
+
+			if err != nil {
+				return err
+			}
+			res = append(res, shardData...)
+			return nil
+		})
+	}
+	err = r.Wait()
 	return res, err
 }
 
 func (m *Manager) getShardByChatID(chatID int) *sqlx.DB {
-	switch chatID % 2 {
-	case 0:
-		return m.Shard1
-	}
-	return m.Shard2
+	fmt.Println(len(m.Shards))
+	return m.Shards[chatID%len(m.Shards)]
 }

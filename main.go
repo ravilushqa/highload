@@ -1,10 +1,12 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"time"
 
 	_ "github.com/go-sql-driver/mysql"
+	"github.com/jmoiron/sqlx"
 	"github.com/linxGnu/mssqlx"
 	"github.com/neonxp/rutina"
 	"go.uber.org/dig"
@@ -56,6 +58,28 @@ func buildContainer() (*dig.Container, error) {
 
 			return db, nil
 		},
+		func(c *config) (*message.Manager, error) {
+			dbs := make([]*sqlx.DB, 0)
+			r := rutina.New()
+			for _, shardURL := range c.MessagesShards {
+				r.Go(func(ctx context.Context) error {
+					db, err := sqlx.Connect("mysql", fmt.Sprint(shardURL, "?parseTime=true"))
+					if err != nil {
+						return err
+					}
+
+					db.SetConnMaxLifetime(5 * time.Minute)
+					dbs = append(dbs, db)
+					return nil
+				})
+			}
+
+			err := r.Wait()
+			if err != nil {
+				return nil, err
+			}
+			return message.NewManager(dbs), nil
+		},
 		NewAPI,
 		user.New,
 		friend.New,
@@ -63,7 +87,6 @@ func buildContainer() (*dig.Container, error) {
 		users.NewController,
 		chat.NewManager,
 		chatuser.NewManager,
-		message.NewManager,
 		chats.NewController,
 	}
 

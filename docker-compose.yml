@@ -11,10 +11,12 @@ services:
       - mysql_master
       - mysql_slave1
       - mysql_slave2
+      - db-node-1
+      - db-node-2
     environment:
       DATABASE_URL: "user:password@(mysql_master:3306)/app"
       SLAVES_URLS: "user:password@(mysql_slave1:3306)/app,user:password@(mysql_slave2:3306)/app"
-      MESSAGES_DATABASE_URL: "proxysql"
+      MESSAGES_SHARDS: "messages:secret@(db-node-1:3306)/messages,messages:secret@(db-node-2:3306)/messages"
     networks:
       - otus
   mysql_master:
@@ -109,23 +111,6 @@ services:
       - otus
     labels:
       org.label-schema.group: "monitoring"
-  proxysql:
-    build:
-      context: docker/proxysql
-      dockerfile: Dockerfile
-    container_name: proxysql
-    volumes:
-      - proxysql-data:/var/lib/proxysql
-    depends_on:
-      - db-node-1
-      - db-node-2
-    networks:
-      - otus
-    ports:
-      # Mysql Client Port
-      - "6033:6033"
-      # Mysql Admin Port
-      - "6032:6032"
   db-node-1:
     build:
       context: docker/mysql
@@ -152,11 +137,11 @@ services:
       context: docker/mysql
       dockerfile: Dockerfile
     container_name: db-node-2
-    restart: unless-stopped
+    restart: unless-stoppeddb-node-2
     environment:
-      MYSQL_DATABASE: test
-      MYSQL_USER: test
-      MYSQL_PASSWORD: pzjqUkMnc7vfNHET
+      MYSQL_DATABASE: messages
+      MYSQL_USER: messages
+      MYSQL_PASSWORD: secret
       MYSQL_ROOT_PASSWORD: '1'
     command: >
       --sql-mode='STRICT_TRANS_TABLES,ERROR_FOR_DIVISION_BY_ZERO,NO_AUTO_CREATE_USER,NO_ENGINE_SUBSTITUTION'
@@ -177,6 +162,5 @@ volumes:
   mysql_slave2_data:
   db-node-1-data:
   db-node-2-data:
-  proxysql-data:
   grafana_data:
   grafana_data_provisioning:
