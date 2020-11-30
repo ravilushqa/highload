@@ -4,9 +4,9 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/hashicorp/go-uuid"
 	"github.com/jmoiron/sqlx"
 	"github.com/neonxp/rutina"
+	"github.com/satori/go.uuid"
 )
 
 type Manager struct {
@@ -25,7 +25,7 @@ func (m *Manager) Insert(ctx context.Context, message *Message) error {
 	`
 
 	_, err := shard.NamedExecContext(ctx, query, map[string]interface{}{
-		"uuid":    uuid.GenerateUUID,
+		"uuid":    uuid.NewV4().String(),
 		"user_id": message.UserID,
 		"chat_id": message.ChatID,
 		"text":    message.Text,

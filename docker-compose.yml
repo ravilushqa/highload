@@ -137,7 +137,7 @@ services:
       context: docker/mysql
       dockerfile: Dockerfile
     container_name: db-node-2
-    restart: unless-stoppeddb-node-2
+    restart: unless-stopped
     environment:
       MYSQL_DATABASE: messages
       MYSQL_USER: messages
