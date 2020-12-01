@@ -51,7 +51,11 @@
                                                     disabled="disabled">You are friends
                                             </button>
                                         </form>
+                                        <form action="/users/{{.ID}}/chat" method="post">
+                                            <button class="button">Send message</button>
+                                        </form>
                                     {{end}}
+
                                 {{end}}
                             </div>
                             <div class="clear"></div>

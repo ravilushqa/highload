@@ -2,6 +2,7 @@ package chat
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/linxGnu/mssqlx"
 )
@@ -14,17 +15,30 @@ func NewManager(db *mssqlx.DBs) *Manager {
 	return &Manager{DB: db}
 }
 
-func (m *Manager) Insert(ctx context.Context, c *Chat) error {
+func (m *Manager) Insert(ctx context.Context, c *Chat) (int, error) {
 	query := `insert into chats 
 		(name, type)
 		values (:name, :type)
 	`
-	_, err := m.DB.NamedExecContext(ctx, query, map[string]interface{}{
+
+	fmt.Println(query)
+	fmt.Println(m)
+	fmt.Println(m.DB)
+	res, err := m.DB.NamedExecContext(ctx, query, map[string]interface{}{
 		"name": c.Name,
 		"type": c.Type,
 	})
 
-	return err
+	if err != nil {
+		return 0, err
+	}
+
+	chatID, err := res.LastInsertId()
+	if err != nil {
+		return 0, err
+	}
+
+	return int(chatID), nil
 }
 
 func (m *Manager) GetByIDs(ctx context.Context, c *Chat) error {

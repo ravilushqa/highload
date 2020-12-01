@@ -9,6 +9,8 @@ import (
 	"go.uber.org/zap"
 
 	"github.com/ravilushqa/highload/lib"
+	"github.com/ravilushqa/highload/lib/chat"
+	chatuser "github.com/ravilushqa/highload/lib/chat_user"
 	"github.com/ravilushqa/highload/lib/friend"
 	"github.com/ravilushqa/highload/lib/user"
 )
@@ -16,11 +18,13 @@ import (
 type Controller struct {
 	logger *zap.Logger
 	u      *user.Manager
+	c      *chat.Manager
 	f      *friend.Manager
+	cu     *chatuser.Manager
 }
 
-func NewController(logger *zap.Logger, u *user.Manager, f *friend.Manager) *Controller {
-	return &Controller{logger: logger, u: u, f: f}
+func NewController(logger *zap.Logger, u *user.Manager, f *friend.Manager, cu *chatuser.Manager, c *chat.Manager) *Controller {
+	return &Controller{logger: logger, u: u, f: f, cu: cu, c: c}
 }
 
 func (c *Controller) Router(r chi.Router) chi.Router {
@@ -30,6 +34,7 @@ func (c *Controller) Router(r chi.Router) chi.Router {
 			r.HandleFunc("/", c.profile)
 			r.Post("/add", c.add)
 			r.Post("/approve", c.approve)
+			r.Post("/chat", c.chatOpen)
 		})
 	})
 }
@@ -162,4 +167,62 @@ func (c *Controller) approve(w http.ResponseWriter, r *http.Request) {
 	}
 
 	http.Redirect(w, r, r.Header.Get("Referer"), http.StatusFound)
+}
+
+func (c *Controller) chatOpen(w http.ResponseWriter, r *http.Request) {
+	authUserID, _ := lib.GetAuthUserID(r.Context())
+	userID, err := strconv.Atoi(chi.URLParam(r, "user_id"))
+	if err != nil {
+		w.WriteHeader(http.StatusUnprocessableEntity)
+		_, _ = w.Write([]byte("wrong user id"))
+		return
+	}
+	if userID == authUserID {
+		_, _ = w.Write([]byte("own chat does not support"))
+		return
+	}
+
+	chatID, err := c.cu.GetUsersDialogChat(r.Context(), authUserID, userID)
+	if err != nil {
+		c.logger.Error("failed get users dialog chat", zap.Error(err))
+		w.WriteHeader(http.StatusInternalServerError)
+		_, _ = w.Write([]byte("something was wrong"))
+		return
+	}
+	if chatID == 0 {
+		chatID, err = c.c.Insert(r.Context(), &chat.Chat{
+			Type: "dialog",
+		})
+		if err != nil {
+			c.logger.Error("failed create chat", zap.Error(err))
+			w.WriteHeader(http.StatusInternalServerError)
+			_, _ = w.Write([]byte("something was wrong"))
+			return
+		}
+		err = c.cu.Insert(r.Context(), &chatuser.ChatUser{
+			UserID: authUserID,
+			ChatID: chatID,
+		})
+
+		if err != nil {
+			c.logger.Error("failed create chat user", zap.Error(err))
+			w.WriteHeader(http.StatusInternalServerError)
+			_, _ = w.Write([]byte("something was wrong"))
+			return
+		}
+		err = c.cu.Insert(r.Context(), &chatuser.ChatUser{
+			UserID: userID,
+			ChatID: chatID,
+		})
+
+		if err != nil {
+			c.logger.Error("failed create chat user", zap.Error(err))
+			w.WriteHeader(http.StatusInternalServerError)
+			_, _ = w.Write([]byte("something was wrong"))
+			return
+		}
+
+	}
+
+	http.Redirect(w, r, "/chats/"+strconv.Itoa(chatID), http.StatusFound)
 }
