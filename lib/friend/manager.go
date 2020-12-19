@@ -5,7 +5,7 @@ import (
 	"database/sql"
 	"fmt"
 
-	"github.com/jmoiron/sqlx"
+	"github.com/linxGnu/mssqlx"
 )
 
 type Status string
@@ -17,10 +17,10 @@ const (
 )
 
 type Manager struct {
-	DB *sqlx.DB
+	DB *mssqlx.DBs
 }
 
-func New(DB *sqlx.DB) *Manager {
+func New(DB *mssqlx.DBs) *Manager {
 	return &Manager{DB: DB}
 }
 

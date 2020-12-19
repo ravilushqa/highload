@@ -1,3 +1,4 @@
+create database if not exists app;
 use app;
 
 create table if not exists users
@@ -20,15 +21,15 @@ create table if not exists users
 create unique index users_email_uindex
     on users (email);
 
-create table if not exists friends
+create table messages
 (
-    user_id   int not null,
-    friend_id int not null,
-    approved  bool default false,
-    constraint friends_pk
-        primary key (user_id, friend_id),
-    constraint friends_users_id_fk
-        foreign key (user_id) references users (id),
-    constraint friends_users_id_fk_2
-        foreign key (friend_id) references users (id)
+    uuid       char(36)                            not null
+        primary key,
+    user_id    int                                 null,
+    chat_id    int                                 not null,
+    text       text                                not null,
+    created_at timestamp default CURRENT_TIMESTAMP not null,
+    updated_at timestamp                           null,
+    deleted_at timestamp                           null
 );
+

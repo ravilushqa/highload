@@ -1,20 +1,35 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"time"
 
+	cluster "github.com/bsm/sarama-cluster"
+	"github.com/go-redis/redis"
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/jmoiron/sqlx"
+	"github.com/linxGnu/mssqlx"
 	"github.com/neonxp/rutina"
 	"go.uber.org/dig"
 	"go.uber.org/zap"
 
 	"github.com/ravilushqa/highload/controllers/auth"
+	"github.com/ravilushqa/highload/controllers/chats"
+	"github.com/ravilushqa/highload/controllers/feed"
+	"github.com/ravilushqa/highload/controllers/posts"
 	"github.com/ravilushqa/highload/controllers/users"
 	"github.com/ravilushqa/highload/lib"
+	"github.com/ravilushqa/highload/lib/chat"
+	chatuser "github.com/ravilushqa/highload/lib/chat_user"
 	"github.com/ravilushqa/highload/lib/friend"
+	"github.com/ravilushqa/highload/lib/message"
+	"github.com/ravilushqa/highload/lib/post"
 	"github.com/ravilushqa/highload/lib/user"
+	"github.com/ravilushqa/highload/providers/db"
+	kafkaconsumerprovider "github.com/ravilushqa/highload/providers/kafka-consumer"
+	kafkaproducerprovider "github.com/ravilushqa/highload/providers/kafka-producer"
+	redisprovider "github.com/ravilushqa/highload/providers/redis"
 )
 
 func buildContainer() (*dig.Container, error) {
@@ -25,22 +40,52 @@ func buildContainer() (*dig.Container, error) {
 		func(c *config) (*lib.Auth, error) {
 			return lib.NewAuth(c.JwtSecret), nil
 		},
-		func(c *config) (*sqlx.DB, error) {
-			db, err := sqlx.Connect("mysql", fmt.Sprint(c.DatabaseURL, "?parseTime=true"))
+		func(c *config) (*mssqlx.DBs, error) {
+			return db.New(c.DatabaseURL, c.SlavesUrls)
+		},
+		func(c *config) (*redis.Client, error) {
+			return redisprovider.New(c.RedisURL)
+		},
+		func(c *config) (*kafkaproducerprovider.KafkaProducer, error) {
+			return kafkaproducerprovider.New(c.KafkaBrokers, c.KafkaTopic, nil)
+		},
+		func(c *config) (*cluster.Consumer, error) {
+			return kafkaconsumerprovider.New(c.KafkaBrokers, c.KafkaGroupID, []string{c.KafkaTopic}, nil)
+		},
+		func(c *config) (*message.Manager, error) {
+			dbs := make([]*sqlx.DB, 0)
+			r := rutina.New()
+			for _, shardURL := range c.MessagesShards {
+				r.Go(func(ctx context.Context) error {
+					database, err := sqlx.Connect("mysql", fmt.Sprint(shardURL, "?parseTime=true"))
+					if err != nil {
+						return err
+					}
+
+					database.SetConnMaxLifetime(5 * time.Minute)
+					dbs = append(dbs, database)
+					return nil
+				})
+			}
+
+			err := r.Wait()
 			if err != nil {
 				return nil, err
 			}
-			//db.SetMaxOpenConns(25)
-			//db.SetMaxIdleConns(25)
-			db.SetConnMaxLifetime(5 * time.Minute)
-
-			return db, nil
+			return message.NewManager(dbs), nil
 		},
 		NewAPI,
+		newDaemon,
 		user.New,
 		friend.New,
 		auth.NewController,
 		users.NewController,
+		chat.NewManager,
+		chatuser.NewManager,
+		post.NewManager,
+		chats.NewController,
+		posts.NewController,
+		feed.NewController,
 	}
 
 	for _, c := range constructors {
@@ -49,7 +94,7 @@ func buildContainer() (*dig.Container, error) {
 		}
 	}
 
-	return container, container.Invoke(func(a *API) {})
+	return container, container.Invoke(func(a *API, d *daemon) {})
 }
 
 func main() {
@@ -62,31 +107,32 @@ func main() {
 	r := rutina.New(rutina.WithErrChan())
 	go func() {
 		for err := range r.Errors() {
-			tl.Error("runtime error", zap.NamedError("b2bError", err))
+			tl.Error("runtime error", zap.Error(err))
 		}
 	}()
 
-	err = container.Invoke(func(api *API) {
-		r.Go(api.Run)
+	err = container.Invoke(func(api *API, d *daemon) {
+		r.Go(api.run)
+		r.Go(d.run)
 		r.ListenOsSignals()
 	})
 	if err != nil {
-		tl.Fatal("invoke failed", zap.NamedError("b2bError", err))
+		tl.Fatal("invoke failed", zap.Error(err))
 	}
 
 	if err := r.Wait(); err != nil {
-		tl.Error("run failed ", zap.NamedError("b2bError", err))
+		tl.Error("run failed", zap.Error(err))
 	}
 
-	err = container.Invoke(func(l *zap.Logger, db *sqlx.DB) error {
-		if err = db.Close(); err != nil {
-			l.Error("failed to close db", zap.Error(err))
+	err = container.Invoke(func(l *zap.Logger, db *mssqlx.DBs) error {
+		if errs := db.Destroy(); len(errs) > 0 {
+			l.Error("failed to close db", zap.Errors("errors", errs))
 		}
 		l.Info("gracefully shutdown...")
 		return l.Sync()
 	})
 	if err != nil {
-		tl.Error("shutdown failed", zap.NamedError("b2bError", err))
+		tl.Error("shutdown failed", zap.Error(err))
 	}
 
 }
