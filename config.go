@@ -14,6 +14,10 @@ type config struct {
 	MessagesShards []string      `env:"MESSAGES_SHARDS" envSeparator:","`
 	JwtSecret      string        `env:"JWT_SECRET" envDefault:"secret"`
 	APITimeout     time.Duration `env:"API_TIMEOUT" envDefault:"60s"`
+	KafkaBrokers   []string      `env:"KAFKA_BROKERS" envSeparator:","`
+	KafkaTopic     string        `env:"KAFKA_TOPIC"`
+	KafkaGroupID   string        `env:"KAFKA_GROUP_ID" envDefault:"app"`
+	RedisURL       string        `env:"REDIS_URL"`
 }
 
 func newConfig() (*config, error) {

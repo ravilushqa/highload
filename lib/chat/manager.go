@@ -2,7 +2,6 @@ package chat
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/linxGnu/mssqlx"
 )
@@ -21,9 +20,6 @@ func (m *Manager) Insert(ctx context.Context, c *Chat) (int, error) {
 		values (:name, :type)
 	`
 
-	fmt.Println(query)
-	fmt.Println(m)
-	fmt.Println(m.DB)
 	res, err := m.DB.NamedExecContext(ctx, query, map[string]interface{}{
 		"name": c.Name,
 		"type": c.Type,

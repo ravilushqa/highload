@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"time"
 
+	cluster "github.com/bsm/sarama-cluster"
+	"github.com/go-redis/redis"
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/jmoiron/sqlx"
 	"github.com/linxGnu/mssqlx"
@@ -14,13 +16,20 @@ import (
 
 	"github.com/ravilushqa/highload/controllers/auth"
 	"github.com/ravilushqa/highload/controllers/chats"
+	"github.com/ravilushqa/highload/controllers/feed"
+	"github.com/ravilushqa/highload/controllers/posts"
 	"github.com/ravilushqa/highload/controllers/users"
 	"github.com/ravilushqa/highload/lib"
 	"github.com/ravilushqa/highload/lib/chat"
 	chatuser "github.com/ravilushqa/highload/lib/chat_user"
 	"github.com/ravilushqa/highload/lib/friend"
 	"github.com/ravilushqa/highload/lib/message"
+	"github.com/ravilushqa/highload/lib/post"
 	"github.com/ravilushqa/highload/lib/user"
+	"github.com/ravilushqa/highload/providers/db"
+	kafkaconsumerprovider "github.com/ravilushqa/highload/providers/kafka-consumer"
+	kafkaproducerprovider "github.com/ravilushqa/highload/providers/kafka-producer"
+	redisprovider "github.com/ravilushqa/highload/providers/redis"
 )
 
 func buildContainer() (*dig.Container, error) {
@@ -32,44 +41,29 @@ func buildContainer() (*dig.Container, error) {
 			return lib.NewAuth(c.JwtSecret), nil
 		},
 		func(c *config) (*mssqlx.DBs, error) {
-			dsns := make([]string, 0, len(c.SlavesUrls)+1)
-			dsns = append(dsns, c.DatabaseURL)
-			dsns = append(dsns, c.SlavesUrls...)
-			for i := range dsns {
-				dsns[i] = dsns[i] + "?parseTime=true"
-			}
-			db, errs := mssqlx.ConnectMasterSlaves("mysql", dsns[:1], dsns[1:])
-
-			for _, err := range errs {
-				if err != nil {
-					return nil, fmt.Errorf("failed init db connection: %v", errs)
-				}
-			}
-
-			//db.SetMaxOpenConns(25)
-			//db.SetMaxIdleConns(25)
-			db.SetConnMaxLifetime(5 * time.Minute)
-			errs = db.Ping()
-			for _, err := range errs {
-				if err != nil {
-					return nil, fmt.Errorf("database is unreachable: %v", errs)
-				}
-			}
-
-			return db, nil
+			return db.New(c.DatabaseURL, c.SlavesUrls)
+		},
+		func(c *config) (*redis.Client, error) {
+			return redisprovider.New(c.RedisURL)
+		},
+		func(c *config) (*kafkaproducerprovider.KafkaProducer, error) {
+			return kafkaproducerprovider.New(c.KafkaBrokers, c.KafkaTopic, nil)
+		},
+		func(c *config) (*cluster.Consumer, error) {
+			return kafkaconsumerprovider.New(c.KafkaBrokers, c.KafkaGroupID, []string{c.KafkaTopic}, nil)
 		},
 		func(c *config) (*message.Manager, error) {
 			dbs := make([]*sqlx.DB, 0)
 			r := rutina.New()
 			for _, shardURL := range c.MessagesShards {
 				r.Go(func(ctx context.Context) error {
-					db, err := sqlx.Connect("mysql", fmt.Sprint(shardURL, "?parseTime=true"))
+					database, err := sqlx.Connect("mysql", fmt.Sprint(shardURL, "?parseTime=true"))
 					if err != nil {
 						return err
 					}
 
-					db.SetConnMaxLifetime(5 * time.Minute)
-					dbs = append(dbs, db)
+					database.SetConnMaxLifetime(5 * time.Minute)
+					dbs = append(dbs, database)
 					return nil
 				})
 			}
@@ -81,13 +75,17 @@ func buildContainer() (*dig.Container, error) {
 			return message.NewManager(dbs), nil
 		},
 		NewAPI,
+		newDaemon,
 		user.New,
 		friend.New,
 		auth.NewController,
 		users.NewController,
 		chat.NewManager,
 		chatuser.NewManager,
+		post.NewManager,
 		chats.NewController,
+		posts.NewController,
+		feed.NewController,
 	}
 
 	for _, c := range constructors {
@@ -96,7 +94,7 @@ func buildContainer() (*dig.Container, error) {
 		}
 	}
 
-	return container, container.Invoke(func(a *API) {})
+	return container, container.Invoke(func(a *API, d *daemon) {})
 }
 
 func main() {
@@ -113,8 +111,9 @@ func main() {
 		}
 	}()
 
-	err = container.Invoke(func(api *API) {
-		r.Go(api.Run)
+	err = container.Invoke(func(api *API, d *daemon) {
+		r.Go(api.run)
+		r.Go(d.run)
 		r.ListenOsSignals()
 	})
 	if err != nil {

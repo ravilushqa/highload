@@ -43,7 +43,7 @@ func (c *Controller) index(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if len(chatIDs) == 0 {
-		w.Write([]byte("no chats"))
+		_, _ = w.Write([]byte("no chats"))
 		return
 	}
 

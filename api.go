@@ -16,6 +16,8 @@ import (
 
 	"github.com/ravilushqa/highload/controllers/auth"
 	"github.com/ravilushqa/highload/controllers/chats"
+	"github.com/ravilushqa/highload/controllers/feed"
+	"github.com/ravilushqa/highload/controllers/posts"
 	"github.com/ravilushqa/highload/controllers/users"
 	"github.com/ravilushqa/highload/lib"
 )
@@ -28,6 +30,8 @@ type API struct {
 	auth    *auth.Controller
 	users   *users.Controller
 	chats   *chats.Controller
+	posts   *posts.Controller
+	feed    *feed.Controller
 	libAuth *lib.Auth
 }
 
@@ -38,11 +42,13 @@ func NewAPI(
 	users *users.Controller,
 	chats *chats.Controller,
 	libAuth *lib.Auth,
+	posts *posts.Controller,
+	feed *feed.Controller,
 ) *API {
-	return &API{config: config, logger: logger, auth: auth, users: users, chats: chats, libAuth: libAuth}
+	return &API{config: config, logger: logger, auth: auth, users: users, chats: chats, libAuth: libAuth, posts: posts, feed: feed}
 }
 
-func (a *API) Run(ctx context.Context) error {
+func (a *API) run(ctx context.Context) error {
 	a.mux = chi.NewRouter()
 	a.mux.Use(
 		middleware.Logger,
@@ -105,6 +111,8 @@ func (a *API) registerRoutes() {
 
 		a.users.Router(r)
 		a.chats.Router(r)
+		a.posts.Router(r)
+		a.feed.Router(r)
 	})
 }
 

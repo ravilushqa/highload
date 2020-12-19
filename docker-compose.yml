@@ -13,10 +13,15 @@ services:
       - mysql_slave2
       - db-node-1
       - db-node-2
+      - redis
+      - kafka
     environment:
       DATABASE_URL: "user:password@(mysql_master:3306)/app"
       SLAVES_URLS: "user:password@(mysql_slave1:3306)/app,user:password@(mysql_slave2:3306)/app"
       MESSAGES_SHARDS: "messages:secret@(db-node-1:3306)/messages,messages:secret@(db-node-2:3306)/messages"
+      KAFKA_BROKERS: "kafka:9092"
+      KAFKA_TOPIC: "posts_feed"
+      REDIS_URL: "redis://redis:6379"
     networks:
       - otus
   mysql_master:
@@ -153,6 +158,39 @@ services:
       - 3361:3306
     volumes:
       - db-node-2-data:/var/lib/mysql
+  redis:
+    container_name: redis
+    healthcheck:
+      interval: 30s
+      retries: 3
+      test: [ "CMD", "redis-cli","ping" ]
+      timeout: 10s
+    image: redis:5
+    ports:
+      - 6379:6379
+    restart: unless-stopped
+    networks:
+      - otus
+  zookeeper:
+    container_name: zookeeper
+    image: zookeeper:3.6.1
+    restart: unless-stopped
+    networks:
+      - otus
+  kafka:
+    container_name: kafka
+    depends_on:
+      - zookeeper
+    environment:
+      JMX_PORT: 9999
+      KAFKA_ADVERTISED_HOST_NAME: kafka
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+    image: wurstmeister/kafka:2.11-2.0.1
+    ports:
+      - 9092:9092
+    restart: unless-stopped
+    networks:
+      - otus
 networks:
   otus:
     driver: bridge
