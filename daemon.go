@@ -91,7 +91,22 @@ func (d *daemon) handle(msg *sarama.ConsumerMessage) error {
 	}
 
 	for _, id := range subscribers {
-		err = d.redis.LPush(fmt.Sprintf(cacheKey, id), msg.Value).Err()
+		key := fmt.Sprintf(cacheKey, id)
+		llen, err := d.redis.LLen(key).Result()
+		if err != nil {
+			d.logger.Error(
+				"failed llen",
+				zap.Error(err),
+				zap.Int("user_id", id),
+				zap.Int("post_id", m.ID),
+			)
+			return nil
+		}
+
+		if llen >= 1000 {
+			d.redis.RPop(key)
+		}
+		err = d.redis.LPush(key, msg.Value).Err()
 		if err != nil {
 			d.logger.Error(
 				"failed set message to user's cache",

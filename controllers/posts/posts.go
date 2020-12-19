@@ -45,14 +45,13 @@ func (c *Controller) Store(w http.ResponseWriter, r *http.Request) {
 		UserID: uid,
 		Text:   text,
 	}
-	id, err := c.pm.Insert(r.Context(), p)
+	p, err := c.pm.Insert(r.Context(), p)
 	if err != nil {
 		c.l.Error("failed to insert post", zap.Error(err))
 		w.WriteHeader(http.StatusInternalServerError)
 		_, _ = w.Write([]byte("something was wrong"))
 		return
 	}
-	p.ID = int(id)
 
 	message, err := json.Marshal(p)
 	if err != nil {
@@ -66,7 +65,7 @@ func (c *Controller) Store(w http.ResponseWriter, r *http.Request) {
 
 func (c *Controller) index(w http.ResponseWriter, r *http.Request) {
 	uid, _ := lib.GetAuthUserID(r.Context())
-	posts, err := c.pm.GetAll(r.Context())
+	posts, err := c.pm.GetOwnPosts(r.Context(), uid)
 	if err != nil {
 		c.l.Error("failed get users", zap.Error(err))
 		w.WriteHeader(http.StatusInternalServerError)

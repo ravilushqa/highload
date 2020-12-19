@@ -1,15 +1,17 @@
 package feed
 
 import (
+	"encoding/json"
 	"fmt"
+	"html/template"
 	"net/http"
-	"strings"
 
 	"github.com/go-chi/chi"
 	"github.com/go-redis/redis"
 	"go.uber.org/zap"
 
 	"github.com/ravilushqa/highload/lib"
+	"github.com/ravilushqa/highload/lib/post"
 )
 
 var cacheKey = "feed:user_id:%d"
@@ -39,11 +41,30 @@ func (c *Controller) feed(w http.ResponseWriter, r *http.Request) {
 		_, _ = w.Write([]byte("something was wrong"))
 		return
 	}
-
-	if len(list) == 0 {
-		w.WriteHeader(http.StatusOK)
-		_, _ = w.Write([]byte("feed is empty"))
+	posts := make([]post.Post, 0, len(list))
+	for _, jsonPost := range list {
+		var p post.Post
+		err = json.Unmarshal([]byte(jsonPost), &p)
+		if err != nil {
+			c.l.Error("failed unmarshal post", zap.Error(err), zap.Int("user_id", uid))
+			continue
+		}
+		posts = append(posts, p)
 	}
 
-	_, _ = w.Write([]byte(strings.Join(list, "\n")))
+	tmpl, err := template.ParseFiles(
+		"resources/views/base.html",
+		"resources/views/feed/nav.html",
+		"resources/views/feed/index.html",
+	)
+	if err != nil {
+		c.l.Error("failed parse templates", zap.NamedError("error", err))
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	_ = tmpl.ExecuteTemplate(w, "layout", struct {
+		AuthUserID int
+		Posts      []post.Post
+	}{uid, posts})
 }
