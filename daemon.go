@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"time"
 
 	"github.com/Shopify/sarama"
 	cluster "github.com/bsm/sarama-cluster"
@@ -16,9 +17,10 @@ import (
 var cacheKey = "feed:user_id:%d"
 
 type postMessage struct {
-	ID     int    `json:"id"`
-	UserID int    `json:"user_id"`
-	Text   string `json:"text"`
+	ID        int       `json:"id"`
+	UserID    int       `json:"user_id"`
+	Text      string    `json:"text"`
+	CreatedAt time.Time `json:"created_at"`
 }
 
 type daemon struct {
