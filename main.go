@@ -64,7 +64,8 @@ func buildContainer() (*dig.Container, error) {
 
 					database.SetConnMaxLifetime(5 * time.Minute)
 					database.SetConnMaxIdleTime(5 * time.Minute)
-					database.SetMaxOpenConns(10)
+					database.SetMaxOpenConns(25)
+					database.SetMaxIdleConns(25)
 					dbs = append(dbs, database)
 					return nil
 				})
