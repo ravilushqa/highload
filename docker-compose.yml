@@ -22,8 +22,6 @@ services:
       KAFKA_BROKERS: "kafka:9092"
       KAFKA_TOPIC: "posts_feed"
       REDIS_URL: "redis://redis:6379"
-    networks:
-      - otus
   mysql_master:
     image: mysql:5.7
     container_name: "mysql_master"
@@ -38,8 +36,6 @@ services:
       MYSQL_USER: "user"
       MYSQL_PASSWORD: "password"
       MYSQL_ROOT_PASSWORD: "secret"
-    networks:
-      - otus
   mysql_slave1:
     image: mysql:5.7
     container_name: "mysql_slave1"
@@ -56,8 +52,6 @@ services:
       MYSQL_USER: "user"
       MYSQL_PASSWORD: "password"
       MYSQL_ROOT_PASSWORD: "secret"
-    networks:
-      - otus
   mysql_slave2:
     image: mysql:5.7
     container_name: "mysql_slave2"
@@ -74,16 +68,12 @@ services:
       MYSQL_USER: "user"
       MYSQL_PASSWORD: "password"
       MYSQL_ROOT_PASSWORD: "secret"
-    networks:
-      - otus
   prometheus:
     build:
       context: .
       dockerfile: docker/prometheus/Dockerfile
     ports:
       - 9090:9090
-    networks:
-      - otus
   cadvisor:
     image: gcr.io/google-containers/cadvisor:latest
     container_name: cadvisor
@@ -95,8 +85,6 @@ services:
       - /sys:/sys:ro
       - /var/lib/docker/:/var/lib/docker:ro
       - /var/run/docker.sock:/var/run/docker.sock:rw
-    networks:
-      - otus
   grafana:
     image: grafana/grafana
     container_name: grafana
@@ -112,8 +100,6 @@ services:
       - 3000
     ports:
       - 3000:3000
-    networks:
-      - otus
     labels:
       org.label-schema.group: "monitoring"
   db-node-1:
@@ -131,8 +117,6 @@ services:
       --sql-mode='STRICT_TRANS_TABLES,ERROR_FOR_DIVISION_BY_ZERO,NO_AUTO_CREATE_USER,NO_ENGINE_SUBSTITUTION'
       --general-log=ON
       --log-queries-not-using-indexes=ON
-    networks:
-      - otus
     ports:
       - 3360:3306
     volumes:
@@ -152,8 +136,6 @@ services:
       --sql-mode='STRICT_TRANS_TABLES,ERROR_FOR_DIVISION_BY_ZERO,NO_AUTO_CREATE_USER,NO_ENGINE_SUBSTITUTION'
       --general-log=ON
       --log-queries-not-using-indexes=ON
-    networks:
-      - otus
     ports:
       - 3361:3306
     volumes:
@@ -169,14 +151,10 @@ services:
     ports:
       - 6379:6379
     restart: unless-stopped
-    networks:
-      - otus
   zookeeper:
     container_name: zookeeper
     image: zookeeper:3.6.1
     restart: unless-stopped
-    networks:
-      - otus
   kafka:
     container_name: kafka
     depends_on:
@@ -189,11 +167,6 @@ services:
     ports:
       - 9092:9092
     restart: unless-stopped
-    networks:
-      - otus
-networks:
-  otus:
-    driver: bridge
 volumes:
   mysql_master_data:
   mysql_slave1_data:
