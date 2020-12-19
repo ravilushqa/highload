@@ -25,6 +25,7 @@ func New(masterURL string, slaveURLs []string) (*mssqlx.DBs, error) {
 	db.SetConnMaxLifetime(5 * time.Minute)
 	db.SetMaxOpenConns(25)
 	db.SetMaxIdleConns(25)
+	db.SetHealthCheckPeriod(1000)
 	errs = db.Ping()
 	for _, err := range errs {
 		if err != nil {
