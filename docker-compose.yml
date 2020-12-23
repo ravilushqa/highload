@@ -4,7 +4,6 @@ services:
   app:
     build:
       context: .
-    container_name: "app"
     ports:
       - 80:8080
     depends_on:
@@ -27,7 +26,6 @@ services:
       - otus
   mysql_master:
     image: mysql:5.7
-    container_name: "mysql_master"
     ports:
       - 3306:3306
     restart: always
@@ -43,7 +41,6 @@ services:
       - otus
   mysql_slave1:
     image: mysql:5.7
-    container_name: "mysql_slave1"
     ports:
       - 33061:3306
     restart: always
@@ -61,7 +58,6 @@ services:
       - otus
   mysql_slave2:
     image: mysql:5.7
-    container_name: "mysql_slave2"
     ports:
       - 33062:3306
     restart: always
@@ -87,7 +83,6 @@ services:
       - otus
   cadvisor:
     image: gcr.io/google-containers/cadvisor:latest
-    container_name: cadvisor
     ports:
       - 8080:8080
     volumes:
@@ -100,7 +95,6 @@ services:
       - otus
   grafana:
     image: grafana/grafana
-    container_name: grafana
     volumes:
       - grafana_data:/var/lib/grafana
       - grafana_data_provisioning:/etc/grafana/provisioning
@@ -121,7 +115,6 @@ services:
     build:
       context: docker/mysql
       dockerfile: Dockerfile
-    container_name: db-node-1
     restart: unless-stopped
     environment:
       MYSQL_DATABASE: messages
@@ -142,7 +135,6 @@ services:
     build:
       context: docker/mysql
       dockerfile: Dockerfile
-    container_name: db-node-2
     restart: unless-stopped
     environment:
       MYSQL_DATABASE: messages
@@ -160,7 +152,6 @@ services:
     networks:
       - otus
   redis:
-    container_name: redis
     healthcheck:
       interval: 30s
       retries: 3
@@ -173,13 +164,11 @@ services:
     networks:
       - otus
   zookeeper:
-    container_name: zookeeper
     image: zookeeper:3.6.1
     restart: unless-stopped
     networks:
       - otus
   kafka:
-    container_name: kafka
     depends_on:
       - zookeeper
     environment:
@@ -193,7 +182,6 @@ services:
     networks:
       - otus
   tarantool:
-    container_name: tarantool
     image: tarantool/tarantool:1.10.8
     volumes:
       - tarantool_data:/var/lib/tarantool

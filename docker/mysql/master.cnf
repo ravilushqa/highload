@@ -6,7 +6,6 @@ interactive_timeout = 3600
 wait_timeout = 3600
 max_allowed_packet = 32M
 socket = /var/lib/mysql/mysql.sock
-bind-address = 127.0.0.1
 
 [client]
 socket = /var/lib/mysql/mysql.sock
