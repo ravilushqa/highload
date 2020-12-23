@@ -21,6 +21,7 @@ require (
 	github.com/neonxp/rutina v1.0.0
 	github.com/prometheus/client_golang v1.8.0
 	github.com/satori/go.uuid v1.2.0
+	github.com/tarantool/go-tarantool v0.0.0-20201220111423-77ce7d9a407a
 	github.com/vmihailenco/msgpack/v5 v5.1.0 // indirect
 	go.uber.org/dig v1.10.0
 	go.uber.org/zap v1.16.0

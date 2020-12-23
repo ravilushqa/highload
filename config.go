@@ -18,6 +18,9 @@ type config struct {
 	KafkaTopic     string        `env:"KAFKA_TOPIC"`
 	KafkaGroupID   string        `env:"KAFKA_GROUP_ID" envDefault:"app"`
 	RedisURL       string        `env:"REDIS_URL"`
+	TarantoolURL   string        `env:"TARANTOOL_URL"`
+	TarantoolUser  string        `env:"TARANTOOL_USER" envDefault:"guest"`
+	TarantoolPass  string        `env:"TARANTOOL_PASS"`
 }
 
 func newConfig() (*config, error) {

@@ -1,4 +1,12 @@
 [mysqld]
-server-id=1
-binlog_format=ROW
-log-bin
+binlog_format = ROW
+server_id = 1
+log-bin = mysql-bin
+interactive_timeout = 3600
+wait_timeout = 3600
+max_allowed_packet = 32M
+socket = /var/lib/mysql/mysql.sock
+bind-address = 127.0.0.1
+
+[client]
+socket = /var/lib/mysql/mysql.sock

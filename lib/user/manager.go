@@ -3,17 +3,20 @@ package user
 import (
 	"context"
 	"fmt"
+	"time"
 
 	"github.com/jmoiron/sqlx"
 	"github.com/linxGnu/mssqlx"
+	"github.com/tarantool/go-tarantool"
 )
 
 type Manager struct {
-	DB *mssqlx.DBs
+	DB        *mssqlx.DBs
+	tarantool *tarantool.Connection
 }
 
-func New(DB *mssqlx.DBs) *Manager {
-	return &Manager{DB: DB}
+func New(DB *mssqlx.DBs, tarantool *tarantool.Connection) *Manager {
+	return &Manager{DB: DB, tarantool: tarantool}
 }
 
 func (m *Manager) Store(ctx context.Context, user *User) (int, error) {
@@ -44,15 +47,29 @@ func (m *Manager) Store(ctx context.Context, user *User) (int, error) {
 }
 
 func (m *Manager) GetByID(ctx context.Context, id int) (*User, error) {
-	query := `
-		select id, email, password, firstname, lastname, birthday, sex, interests, city
-		from users
-		where id = ? and deleted_at is null
-	`
+	//query := `
+	//	select id, email, password, firstname, lastname, birthday, sex, interests, city
+	//	from users
+	//	where id = ? and deleted_at is null
+	//`
+	//res := &User{}
+	//err := m.DB.GetContext(ctx, res, query, id)
+	resp, err := m.tarantool.Select("users", "primary", 0, 1, tarantool.IterEq, []interface{}{uint(id)})
+	if err != nil {
+		return nil, err
+	}
 
-	res := &User{}
-
-	err := m.DB.GetContext(ctx, res, query, id)
+	res := &User{
+		ID:        resp.Data[0].(int),
+		Email:     resp.Data[1].(string),
+		Password:  resp.Data[2].(string),
+		FirstName: resp.Data[3].(string),
+		LastName:  resp.Data[4].(string),
+		Birthday:  resp.Data[5].(time.Time),
+		Interests: resp.Data[6].(string),
+		Sex:       resp.Data[7].(Sex),
+		City:      resp.Data[8].(string),
+	}
 
 	return res, err
 }

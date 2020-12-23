@@ -15,6 +15,7 @@ services:
       - db-node-2
       - redis
       - kafka
+      - tarantool
     environment:
       DATABASE_URL: "user:password@(mysql_master:3306)/app"
       SLAVES_URLS: "user:password@(mysql_slave1:3306)/app,user:password@(mysql_slave2:3306)/app"
@@ -22,6 +23,8 @@ services:
       KAFKA_BROKERS: "kafka:9092"
       KAFKA_TOPIC: "posts_feed"
       REDIS_URL: "redis://redis:6379"
+    networks:
+      - otus
   mysql_master:
     image: mysql:5.7
     container_name: "mysql_master"
@@ -36,6 +39,8 @@ services:
       MYSQL_USER: "user"
       MYSQL_PASSWORD: "password"
       MYSQL_ROOT_PASSWORD: "secret"
+    networks:
+      - otus
   mysql_slave1:
     image: mysql:5.7
     container_name: "mysql_slave1"
@@ -52,6 +57,8 @@ services:
       MYSQL_USER: "user"
       MYSQL_PASSWORD: "password"
       MYSQL_ROOT_PASSWORD: "secret"
+    networks:
+      - otus
   mysql_slave2:
     image: mysql:5.7
     container_name: "mysql_slave2"
@@ -68,12 +75,16 @@ services:
       MYSQL_USER: "user"
       MYSQL_PASSWORD: "password"
       MYSQL_ROOT_PASSWORD: "secret"
+    networks:
+      - otus
   prometheus:
     build:
       context: .
       dockerfile: docker/prometheus/Dockerfile
     ports:
       - 9090:9090
+    networks:
+      - otus
   cadvisor:
     image: gcr.io/google-containers/cadvisor:latest
     container_name: cadvisor
@@ -85,6 +96,8 @@ services:
       - /sys:/sys:ro
       - /var/lib/docker/:/var/lib/docker:ro
       - /var/run/docker.sock:/var/run/docker.sock:rw
+    networks:
+      - otus
   grafana:
     image: grafana/grafana
     container_name: grafana
@@ -102,6 +115,8 @@ services:
       - 3000:3000
     labels:
       org.label-schema.group: "monitoring"
+    networks:
+      - otus
   db-node-1:
     build:
       context: docker/mysql
@@ -121,6 +136,8 @@ services:
       - 3360:3306
     volumes:
       - db-node-1-data:/var/lib/mysql
+    networks:
+      - otus
   db-node-2:
     build:
       context: docker/mysql
@@ -140,6 +157,8 @@ services:
       - 3361:3306
     volumes:
       - db-node-2-data:/var/lib/mysql
+    networks:
+      - otus
   redis:
     container_name: redis
     healthcheck:
@@ -151,10 +170,14 @@ services:
     ports:
       - 6379:6379
     restart: unless-stopped
+    networks:
+      - otus
   zookeeper:
     container_name: zookeeper
     image: zookeeper:3.6.1
     restart: unless-stopped
+    networks:
+      - otus
   kafka:
     container_name: kafka
     depends_on:
@@ -167,6 +190,33 @@ services:
     ports:
       - 9092:9092
     restart: unless-stopped
+    networks:
+      - otus
+  tarantool:
+    container_name: tarantool
+    image: tarantool/tarantool:1.10.8
+    volumes:
+      - tarantool_data:/var/lib/tarantool
+      - ./docker/tarantool/example.lua:/opt/tarantool/myapp.lua
+    ports:
+      - 3301:3301
+    command: tarantool /opt/tarantool/myapp.lua
+    networks:
+      - otus
+  mysql_tarantool_replication:
+    build:
+      context: .
+      dockerfile: docker/mysql_tarantool_replication/Dockerfile
+    volumes:
+      - ./docker/mysql_tarantool_replication/replicator.yml:/usr/local/etc/replicator.yml
+    depends_on:
+      - tarantool
+    privileged: true
+    networks:
+      - otus
+networks:
+  otus:
+    driver: bridge
 volumes:
   mysql_master_data:
   mysql_slave1_data:
@@ -175,3 +225,4 @@ volumes:
   db-node-2-data:
   grafana_data:
   grafana_data_provisioning:
+  tarantool_data:

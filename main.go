@@ -11,6 +11,7 @@ import (
 	"github.com/jmoiron/sqlx"
 	"github.com/linxGnu/mssqlx"
 	"github.com/neonxp/rutina"
+	"github.com/tarantool/go-tarantool"
 	"go.uber.org/dig"
 	"go.uber.org/zap"
 
@@ -30,13 +31,14 @@ import (
 	kafkaconsumerprovider "github.com/ravilushqa/highload/providers/kafka-consumer"
 	kafkaproducerprovider "github.com/ravilushqa/highload/providers/kafka-producer"
 	redisprovider "github.com/ravilushqa/highload/providers/redis"
+	tarantoolprovider "github.com/ravilushqa/highload/providers/tarantool"
 )
 
 func buildContainer() (*dig.Container, error) {
 	container := dig.New()
 	constructors := []interface{}{
 		newConfig,
-		zap.NewProduction,
+		zap.NewDevelopment,
 		func(c *config) (*lib.Auth, error) {
 			return lib.NewAuth(c.JwtSecret), nil
 		},
@@ -51,6 +53,9 @@ func buildContainer() (*dig.Container, error) {
 		},
 		func(c *config) (*cluster.Consumer, error) {
 			return kafkaconsumerprovider.New(c.KafkaBrokers, c.KafkaGroupID, []string{c.KafkaTopic}, nil)
+		},
+		func(c *config) (*tarantool.Connection, error) {
+			return tarantoolprovider.New(c.TarantoolURL, c.TarantoolUser, c.TarantoolPass)
 		},
 		func(c *config) (*message.Manager, error) {
 			dbs := make([]*sqlx.DB, 0)
