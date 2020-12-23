@@ -49,6 +49,7 @@ services:
     volumes:
       - mysql_slave1_data:/var/lib/mysql
       - ./docker/mysql/slave1.cnf:/etc/mysql/my.cnf
+      - ./docker/mysql/slave.sql:/data/start.sql
     environment:
       MYSQL_DATABASE: "app"
       MYSQL_USER: "user"
@@ -56,6 +57,7 @@ services:
       MYSQL_ROOT_PASSWORD: "secret"
     networks:
       - otus
+    command: --init-file /data/start.sql
   mysql_slave2:
     image: mysql:5.7
     ports:
@@ -65,7 +67,8 @@ services:
       - mysql_master
     volumes:
       - mysql_slave2_data:/var/lib/mysql
-      - ./docker/mysql/slave1.cnf:/etc/mysql/my.cnf
+      - ./docker/mysql/slave2.cnf:/etc/mysql/my.cnf
+      - ./docker/mysql/slave.sql:/data/start.sql
     environment:
       MYSQL_DATABASE: "app"
       MYSQL_USER: "user"
@@ -73,6 +76,7 @@ services:
       MYSQL_ROOT_PASSWORD: "secret"
     networks:
       - otus
+    command: --init-file /data/start.sql
   prometheus:
     build:
       context: .
