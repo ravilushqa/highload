@@ -54,21 +54,27 @@ func (m *Manager) GetByID(ctx context.Context, id int) (*User, error) {
 	//`
 	//res := &User{}
 	//err := m.DB.GetContext(ctx, res, query, id)
-	resp, err := m.tarantool.Select("users", "primary", 0, 1, tarantool.IterEq, []interface{}{uint(id)})
+	resp, err := m.tarantool.Select("mysqldata", "primary", 0, 1, tarantool.IterEq, []interface{}{uint(id)})
 	if err != nil {
 		return nil, err
 	}
+	data := resp.Data[0].([]interface{})
+	bd := data[5].(string)
+	bdTime, err := time.Parse("2006-01-02", bd)
+	if err != nil {
+		return nil, fmt.Errorf("bd parse err %w", err)
+	}
 
 	res := &User{
-		ID:        resp.Data[0].(int),
-		Email:     resp.Data[1].(string),
-		Password:  resp.Data[2].(string),
-		FirstName: resp.Data[3].(string),
-		LastName:  resp.Data[4].(string),
-		Birthday:  resp.Data[5].(time.Time),
-		Interests: resp.Data[6].(string),
-		Sex:       resp.Data[7].(Sex),
-		City:      resp.Data[8].(string),
+		ID:        int(data[0].(uint64)),
+		Email:     data[1].(string),
+		Password:  data[2].(string),
+		FirstName: data[3].(string),
+		LastName:  data[4].(string),
+		Birthday:  bdTime,
+		Interests: data[6].(string),
+		Sex:       Sex(data[7].(string)),
+		City:      data[8].(string),
 	}
 
 	return res, err

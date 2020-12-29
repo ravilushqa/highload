@@ -10,7 +10,7 @@ box.cfg {
     log_level = 2;
 }
 
-box.schema.user.grant('guest', 'read,write,execute', 'universe')
+box.schema.user.grant('guest', 'read,write,execute', 'universe', nil,  {if_not_exists=true})
 
 local function bootstrap()
 

@@ -16,12 +16,13 @@ services:
       - kafka
       - tarantool
     environment:
-      DATABASE_URL: "user:password@(mysql_master:3306)/app"
+      DATABASE_URL: "root:secret@(mysql_master:3306)/app"
       SLAVES_URLS: "user:password@(mysql_slave1:3306)/app,user:password@(mysql_slave2:3306)/app"
       MESSAGES_SHARDS: "messages:secret@(db-node-1:3306)/messages,messages:secret@(db-node-2:3306)/messages"
       KAFKA_BROKERS: "kafka:9092"
       KAFKA_TOPIC: "posts_feed"
       REDIS_URL: "redis://redis:6379"
+      TARANTOOL_URL: "tarantool:3302"
     networks:
       - otus
   mysql_master:
@@ -194,9 +195,8 @@ services:
       dockerfile: docker/tarantool/Dockerfile
     volumes:
       - tarantool_data:/var/lib/tarantool
-      - ./docker/tarantool/example.lua:/opt/tarantool/myapp.lua
-      - ./docker/tarantool/example.lua:/usr/local/etc/tarantool/instances.enabled/myapp.lua
-      - ./docker/tarantool/example.lua:/usr/local/etc/tarantool/available.enabled/myapp.lua
+      - ./docker/tarantool/app.lua:/usr/local/etc/tarantool/instances.enabled/app.lua
+      - ./docker/tarantool/app.lua:/usr/local/etc/tarantool/available.enabled/app.lua
     ports:
       - 3301:3301
       - 3302:3302
@@ -210,9 +210,13 @@ services:
       - ./docker/mysql_tarantool_replication/replicator.yml:/usr/local/etc/replicator.yml
     depends_on:
       - tarantool
+      - mysql_master
     privileged: true
     networks:
       - otus
+    command: >
+      bash -c "cd /usr/local/sbin
+      && ./replicatord -c /usr/local/etc/replicator.yml"
 networks:
   otus:
     driver: bridge

@@ -10,3 +10,9 @@ exec_slave2:
 	docker exec -it highload_mysql_slave2_1 mysql -uroot -psecret
 exec_node1:
 	docker exec -it highload_db-node-1 mysql -uroot -p1
+exec_tarantool:
+	docker exec -it highload_tarantool_1 sh
+exec_tarantool_console:
+	docker exec -it highload_tarantool_1 tarantoolctl enter app.lua
+tarantool_bootstrap:
+	docker exec -it highload_tarantool_1 tarantoolctl start app.lua

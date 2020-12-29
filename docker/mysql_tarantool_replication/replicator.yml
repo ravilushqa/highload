@@ -14,7 +14,7 @@ tarantool:
 mappings:
   - database: app
     table: users
-    columns: [ id, email, password, firstname, lastname, birthday, sex, interests, city, created_at, updated_at ]
+    columns: [ id, email, password, firstname, lastname, birthday, sex, interests, city, created_at, deleted_at ]
     space: 513
     key_fields:  [ 0 ]
     # insert_call: function_name
