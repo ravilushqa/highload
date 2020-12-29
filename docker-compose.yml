@@ -25,6 +25,7 @@ services:
     networks:
       - otus
   mysql_master:
+    container_name: mysql_master
     image: mysql:5.7
     ports:
       - 3306:3306
@@ -32,6 +33,7 @@ services:
     volumes:
       - mysql_master_data:/var/lib/mysql
       - ./docker/mysql/master.cnf:/etc/mysql/my.cnf
+      - ./docker/mysql/master.sql:/data/start.sql
     environment:
       MYSQL_DATABASE: "app"
       MYSQL_USER: "user"
@@ -39,8 +41,9 @@ services:
       MYSQL_ROOT_PASSWORD: "secret"
     networks:
       - otus
+    command: --init-file /data/start.sql
   mysql_slave1:
-    image: mysql:5.7
+    image: mysql:5.7.30
     ports:
       - 33061:3306
     restart: always
@@ -59,7 +62,7 @@ services:
       - otus
     command: --init-file /data/start.sql
   mysql_slave2:
-    image: mysql:5.7
+    image: mysql:5.7.30
     ports:
       - 33062:3306
     restart: always
@@ -186,13 +189,17 @@ services:
     networks:
       - otus
   tarantool:
-    image: tarantool/tarantool:1.10.8
+    build:
+      context: .
+      dockerfile: docker/tarantool/Dockerfile
     volumes:
       - tarantool_data:/var/lib/tarantool
       - ./docker/tarantool/example.lua:/opt/tarantool/myapp.lua
+      - ./docker/tarantool/example.lua:/usr/local/etc/tarantool/instances.enabled/myapp.lua
+      - ./docker/tarantool/example.lua:/usr/local/etc/tarantool/available.enabled/myapp.lua
     ports:
       - 3301:3301
-    command: tarantool /opt/tarantool/myapp.lua
+      - 3302:3302
     networks:
       - otus
   mysql_tarantool_replication:

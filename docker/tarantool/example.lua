@@ -1,5 +1,5 @@
 box.cfg {
-    listen = 3301;
+    listen = 3302;
     -- 1 – SYSERROR
     -- 2 – ERROR
     -- 3 – CRITICAL
@@ -10,7 +10,7 @@ box.cfg {
     log_level = 2;
 }
 
---box.schema.user.grant('guest', 'read,write,execute', 'universe')
+box.schema.user.grant('guest', 'read,write,execute', 'universe')
 
 local function bootstrap()
 

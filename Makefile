@@ -3,7 +3,7 @@ up:
 down:
 	docker-compose down
 exec_master:
-	docker exec -it highload_mysql_master_1 mysql -uroot -psecret
+	docker exec -it mysql_master mysql -uroot -psecret
 exec_slave1:
 	docker exec -it highload_mysql_slave1_1 mysql -uroot -psecret
 exec_slave2:

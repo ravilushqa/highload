@@ -1,7 +1,7 @@
 create database if not exists app;
 use app;
 
-create table users
+create table if not exists users
 (
     id         int auto_increment
         primary key,
