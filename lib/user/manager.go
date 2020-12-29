@@ -2,6 +2,7 @@ package user
 
 import (
 	"context"
+	"database/sql"
 	"fmt"
 	"time"
 
@@ -65,6 +66,30 @@ func (m *Manager) GetByID(ctx context.Context, id int) (*User, error) {
 		return nil, fmt.Errorf("bd parse err %w", err)
 	}
 
+	createdAt := data[9].(string)
+	createdAtTime, err := time.Parse("2006-01-02 15:04:05", createdAt)
+	if err != nil {
+		return nil, fmt.Errorf("createdAt parse err %w", err)
+	}
+
+	var DeletedAt sql.NullTime
+
+	switch v := data[10].(type) {
+	case nil:
+		DeletedAt.Valid = false
+	case string:
+		deletedAtTime, err := time.Parse("2006-01-02 15:04:05", v)
+		if err != nil {
+			return nil, fmt.Errorf("deletedAt parse err %w", err)
+		}
+		DeletedAt.Valid = true
+		DeletedAt.Time = deletedAtTime
+	}
+
+	if DeletedAt.Valid {
+		return nil, sql.ErrNoRows
+	}
+
 	res := &User{
 		ID:        int(data[0].(uint64)),
 		Email:     data[1].(string),
@@ -75,6 +100,8 @@ func (m *Manager) GetByID(ctx context.Context, id int) (*User, error) {
 		Interests: data[6].(string),
 		Sex:       Sex(data[7].(string)),
 		City:      data[8].(string),
+		CreatedAt: createdAtTime,
+		DeletedAt: DeletedAt,
 	}
 
 	return res, err
