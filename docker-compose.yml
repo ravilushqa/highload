@@ -22,7 +22,7 @@ services:
       KAFKA_BROKERS: "kafka:9092"
       KAFKA_TOPIC: "posts_feed"
       REDIS_URL: "redis://redis:6379"
-      TARANTOOL_URL: "tarantool:3302"
+#      TARANTOOL_URL: "tarantool:3302"
     networks:
       - otus
   mysql_master:

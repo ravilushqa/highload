@@ -9,17 +9,18 @@ import (
 	"github.com/jmoiron/sqlx"
 	"github.com/linxGnu/mssqlx"
 	"github.com/tarantool/go-tarantool"
+	"go.uber.org/zap"
 )
 
 type Manager struct {
+	l         *zap.Logger
 	DB        *mssqlx.DBs
 	tarantool *tarantool.Connection
 }
 
-func New(DB *mssqlx.DBs, tarantool *tarantool.Connection) *Manager {
-	return &Manager{DB: DB, tarantool: tarantool}
+func New(DB *mssqlx.DBs, tarantool *tarantool.Connection, l *zap.Logger) *Manager {
+	return &Manager{DB: DB, tarantool: tarantool, l: l}
 }
-
 func (m *Manager) Store(ctx context.Context, user *User) (int, error) {
 	query := `
 		insert into users
@@ -48,13 +49,9 @@ func (m *Manager) Store(ctx context.Context, user *User) (int, error) {
 }
 
 func (m *Manager) GetByID(ctx context.Context, id int) (*User, error) {
-	//query := `
-	//	select id, email, password, firstname, lastname, birthday, sex, interests, city
-	//	from users
-	//	where id = ? and deleted_at is null
-	//`
-	//res := &User{}
-	//err := m.DB.GetContext(ctx, res, query, id)
+	if m.tarantool == nil {
+		return m.getByIDMysql(ctx, id)
+	}
 	resp, err := m.tarantool.Select("mysqldata", "primary", 0, 1, tarantool.IterEq, []interface{}{uint(id)})
 	if err != nil {
 		return nil, err
@@ -166,5 +163,16 @@ func (m *Manager) GetAll(ctx context.Context, filter string) ([]User, error) {
 	`
 
 	err := m.DB.SelectContext(ctx, &res, query)
+	return res, err
+}
+
+func (m *Manager) getByIDMysql(ctx context.Context, id int) (*User, error) {
+	query := `
+		select id, email, password, firstname, lastname, birthday, sex, interests, city
+		from users
+		where id = ? and deleted_at is null
+	`
+	res := &User{}
+	err := m.DB.GetContext(ctx, res, query, id)
 	return res, err
 }
