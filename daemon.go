@@ -8,6 +8,7 @@ import (
 
 	"github.com/Shopify/sarama"
 	cluster "github.com/bsm/sarama-cluster"
+	"github.com/centrifugal/gocent"
 	"github.com/go-redis/redis"
 	"go.uber.org/zap"
 
@@ -15,6 +16,7 @@ import (
 )
 
 var cacheKey = "feed:user_id:%d"
+var centrifugoKey = "feed_user_id_%d"
 
 type postMessage struct {
 	ID        int       `json:"id"`
@@ -24,14 +26,15 @@ type postMessage struct {
 }
 
 type daemon struct {
-	logger   *zap.Logger
-	redis    *redis.Client
-	consumer *cluster.Consumer
-	fm       *friend.Manager
+	logger     *zap.Logger
+	redis      *redis.Client
+	consumer   *cluster.Consumer
+	fm         *friend.Manager
+	centrifugo *gocent.Client
 }
 
-func newDaemon(logger *zap.Logger, redis *redis.Client, consumer *cluster.Consumer, fm *friend.Manager) *daemon {
-	return &daemon{logger: logger, redis: redis, consumer: consumer, fm: fm}
+func newDaemon(logger *zap.Logger, redis *redis.Client, consumer *cluster.Consumer, fm *friend.Manager, centrifugo *gocent.Client) *daemon {
+	return &daemon{logger: logger, redis: redis, consumer: consumer, fm: fm, centrifugo: centrifugo}
 }
 
 func (d *daemon) run(ctx context.Context) error {
@@ -117,6 +120,36 @@ func (d *daemon) handle(msg *sarama.ConsumerMessage) error {
 				zap.Int("post_id", m.ID),
 			)
 			return nil
+		}
+
+		res, err := d.centrifugo.PresenceStats(context.Background(), fmt.Sprintf(centrifugoKey, id))
+		if err != nil {
+			d.logger.Error(
+				"failed check presence centrifugo",
+				zap.Error(err),
+				zap.Int("user_id", id),
+				zap.Int("post_id", m.ID),
+				zap.String("channel", fmt.Sprintf(centrifugoKey, id)),
+				zap.String("msg", string(msg.Value)),
+			)
+			return nil
+		}
+
+		if res.NumClients == 0 {
+			d.logger.Info("empty centrifugo clients")
+			return nil
+		}
+
+		err = d.centrifugo.Publish(context.Background(), fmt.Sprintf(centrifugoKey, id), msg.Value)
+		if err != nil {
+			d.logger.Error(
+				"failed set message to centrifugo",
+				zap.Error(err),
+				zap.Int("user_id", id),
+				zap.Int("post_id", m.ID),
+				zap.String("channel", fmt.Sprintf(centrifugoKey, id)),
+				zap.String("msg", string(msg.Value)),
+			)
 		}
 	}
 

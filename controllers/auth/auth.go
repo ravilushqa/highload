@@ -61,10 +61,10 @@ func (c *Controller) login(w http.ResponseWriter, r *http.Request) {
 			_, _ = w.Write([]byte("Error generating JWT token: " + err.Error()))
 		} else {
 			http.SetCookie(w, &http.Cookie{
-				Name:     "jwt",
-				Value:    token,
-				Expires:  time.Now().AddDate(0, 0, 14),
-				HttpOnly: true,
+				Name:    "jwt",
+				Value:   token,
+				Expires: time.Now().AddDate(0, 0, 14),
+				//HttpOnly: true,
 			})
 
 			http.Redirect(w, r, fmt.Sprintf("/users/%d", u.ID), http.StatusTemporaryRedirect)
@@ -134,10 +134,10 @@ func (c *Controller) register(w http.ResponseWriter, r *http.Request) {
 		_, _ = w.Write([]byte("Error generating JWT token: " + err.Error()))
 	} else {
 		http.SetCookie(w, &http.Cookie{
-			Name:     "jwt",
-			Value:    token,
-			Expires:  time.Now().AddDate(0, 0, 14),
-			HttpOnly: true,
+			Name:    "jwt",
+			Value:   token,
+			Expires: time.Now().AddDate(0, 0, 14),
+			//HttpOnly: true,
 		})
 
 		http.Redirect(w, r, fmt.Sprintf("/users/%d", u.ID), http.StatusTemporaryRedirect)
@@ -150,9 +150,8 @@ func (c *Controller) logout(w http.ResponseWriter, r *http.Request) {
 		Name:    "jwt",
 		Value:   "",
 		Path:    "/",
-		Expires: time.Unix(0, 0),
-
-		HttpOnly: true,
+		Expires: time.Time{},
+		//HttpOnly: true,
 	}
 
 	http.SetCookie(w, cookie)
