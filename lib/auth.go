@@ -3,6 +3,8 @@ package lib
 import (
 	"context"
 	"net/http"
+	"strconv"
+	"time"
 
 	"github.com/go-chi/jwtauth"
 
@@ -11,7 +13,6 @@ import (
 
 type UserClaims struct {
 	jwt.StandardClaims
-	UID int `json:"uid"`
 }
 
 type Auth struct {
@@ -28,15 +29,16 @@ func (a *Auth) GetToken() *jwtauth.JWTAuth {
 }
 
 func (a *Auth) EncodeToken(uid int) (string, error) {
-	_, tokenString, err := a.token.Encode(UserClaims{
-		UID: uid,
+	_, tokenString, err := a.token.Encode(jwt.StandardClaims{
+		Subject:   strconv.Itoa(uid),
+		ExpiresAt: time.Now().AddDate(0, 0, 14).Unix(),
 	})
 	return tokenString, err
 }
 
 func IsAuth(r *http.Request) bool {
 	t, claims, err := jwtauth.FromContext(r.Context())
-	_, ok := claims["uid"]
+	_, ok := claims["sub"]
 	return err == nil && t != nil && ok
 }
 
@@ -45,5 +47,5 @@ func GetAuthUserID(ctx context.Context) (int, error) {
 	if err != nil {
 		return 0, err
 	}
-	return int(claims["uid"].(float64)), nil
+	return strconv.Atoi(claims["sub"].(string))
 }
