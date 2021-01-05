@@ -7,7 +7,7 @@ exec_master:
 exec_slave1:
 	docker exec -it highload_mysql_slave1_1 mysql -uroot
 exec_slave2:
-	docker exec -it highload_mysql_slave2_1 mysql -uroot -psecret
+	docker exec -it highload_mysql_slave2_1 mysql -uroot
 exec_node1:
 	docker exec -it highload_db-node-1 mysql -uroot -p1
 exec_tarantool:
