@@ -6,6 +6,7 @@ import (
 	"time"
 
 	cluster "github.com/bsm/sarama-cluster"
+	"github.com/centrifugal/gocent"
 	"github.com/go-redis/redis"
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/jmoiron/sqlx"
@@ -27,6 +28,7 @@ import (
 	"github.com/ravilushqa/highload/lib/message"
 	"github.com/ravilushqa/highload/lib/post"
 	"github.com/ravilushqa/highload/lib/user"
+	centrifugoclient "github.com/ravilushqa/highload/providers/centrifugo-client"
 	"github.com/ravilushqa/highload/providers/db"
 	kafkaconsumerprovider "github.com/ravilushqa/highload/providers/kafka-consumer"
 	kafkaproducerprovider "github.com/ravilushqa/highload/providers/kafka-producer"
@@ -81,6 +83,9 @@ func buildContainer() (*dig.Container, error) {
 				return nil, err
 			}
 			return message.NewManager(dbs), nil
+		},
+		func(c *config) *gocent.Client {
+			return centrifugoclient.New(c.CentrifugoURL, c.CentrifugoApiKey)
 		},
 		NewAPI,
 		newDaemon,

@@ -17,7 +17,7 @@ services:
       - tarantool
     environment:
       DATABASE_URL: "root:secret@(mysql_master:3306)/app"
-      SLAVES_URLS: "user:password@(mysql_slave1:3306)/app,user:password@(mysql_slave2:3306)/app"
+#      SLAVES_URLS: "user:password@(mysql_slave1:3306)/app,user:password@(mysql_slave2:3306)/app"
       MESSAGES_SHARDS: "messages:secret@(db-node-1:3306)/messages,messages:secret@(db-node-2:3306)/messages"
       KAFKA_BROKERS: "kafka:9092"
       KAFKA_TOPIC: "posts_feed"
@@ -217,6 +217,20 @@ services:
     command: >
       bash -c "cd /usr/local/sbin
       && ./replicatord -c /usr/local/etc/replicator.yml"
+  centrifugo:
+    container_name: centrifugo
+    image: centrifugo/centrifugo:latest
+    volumes:
+      - ./docker/centrifugo/config.json:/centrifugo/config.json
+    command: centrifugo -c config.json
+    ports:
+      - 8000:8000
+    ulimits:
+      nofile:
+        soft: 65535
+        hard: 65535
+    networks:
+      - otus
 networks:
   otus:
     driver: bridge
