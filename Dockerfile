@@ -1,22 +1,18 @@
 FROM golang:1.15 as build-env
-ENV NAME "app"
-WORKDIR /opt/${NAME}
+WORKDIR /opt/app
 COPY go.mod .
 COPY go.sum .
 RUN go mod download
 
 FROM build-env AS build
-ENV NAME "app"
-WORKDIR /opt/${NAME}
+WORKDIR /opt/app
 COPY . .
-RUN CGO_ENABLED=0 go build -o bin/${NAME}
+RUN CGO_ENABLED=0 go build -o bin/app ./${SERVICE_PATH}
 
 FROM alpine
-ENV NAME "app"
-WORKDIR /opt/${NAME}
-COPY --from=build /opt/${NAME}/bin/${NAME} ./${NAME}
-COPY --from=build /opt/${NAME}/resources ./resources
-COPY --from=build /opt/${NAME}/public ./public
+WORKDIR /opt/app
+COPY --from=build /opt/app/bin/app ./app
+COPY --from=build /opt/app/resources ./resources
+COPY --from=build /opt/app/public ./public
 RUN apk add --no-cache tzdata
-EXPOSE 8080
-CMD ./${NAME}
+CMD ./app

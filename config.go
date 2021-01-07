@@ -7,11 +7,9 @@ import (
 )
 
 type config struct {
-	LogLevel         string        `env:"LOG_LEVEL" envDefault:"debug"`
 	Addr             string        `env:"ADDR" envDefault:":8080"`
 	DatabaseURL      string        `env:"DATABASE_URL"`
 	SlavesUrls       []string      `env:"SLAVES_URLS" envSeparator:","`
-	MessagesShards   []string      `env:"MESSAGES_SHARDS" envSeparator:","`
 	JwtSecret        string        `env:"JWT_SECRET" envDefault:"secret"`
 	APITimeout       time.Duration `env:"API_TIMEOUT" envDefault:"60s"`
 	KafkaBrokers     []string      `env:"KAFKA_BROKERS" envSeparator:","`
@@ -23,6 +21,7 @@ type config struct {
 	TarantoolPass    string        `env:"TARANTOOL_PASS"`
 	CentrifugoURL    string        `env:"CENTRIFUGO_URL" envDefault:"http://centrifugo:8000"`
 	CentrifugoApiKey string        `env:"CENTRIFUGO_API_KEY" envDefault:"my_api_key"`
+	ChatsURL         string        `env:"CHATS_URL" envDefault:"chats:50051"`
 }
 
 func newConfig() (*config, error) {

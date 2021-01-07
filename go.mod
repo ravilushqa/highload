@@ -14,7 +14,9 @@ require (
 	github.com/go-chi/render v1.0.1
 	github.com/go-redis/redis v6.15.9+incompatible
 	github.com/go-sql-driver/mysql v1.5.1-0.20200818111213-46351a889297
+	github.com/golang/protobuf v1.4.3
 	github.com/google/go-cmp v0.5.4 // indirect
+	github.com/grpc-ecosystem/go-grpc-prometheus v1.2.0
 	github.com/jmoiron/sqlx v1.2.1-0.20200615141059-0794cb1f47ee
 	github.com/linxGnu/mssqlx v1.1.1
 	github.com/neonxp/rutina v1.0.0
@@ -30,5 +32,6 @@ require (
 	golang.org/x/net v0.0.0-20201216054612-986b41b23924 // indirect
 	golang.org/x/tools v0.0.0-20200207183749-b753a1ba74fa // indirect
 	google.golang.org/appengine v1.6.7 // indirect
-	google.golang.org/protobuf v1.25.0 // indirect
+	google.golang.org/grpc v1.27.0
+	google.golang.org/protobuf v1.25.0
 )

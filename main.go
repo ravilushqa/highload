@@ -1,20 +1,16 @@
 package main
 
 import (
-	"context"
-	"fmt"
-	"time"
-
 	cluster "github.com/bsm/sarama-cluster"
 	"github.com/centrifugal/gocent"
 	"github.com/go-redis/redis"
 	_ "github.com/go-sql-driver/mysql"
-	"github.com/jmoiron/sqlx"
 	"github.com/linxGnu/mssqlx"
 	"github.com/neonxp/rutina"
 	"github.com/tarantool/go-tarantool"
 	"go.uber.org/dig"
 	"go.uber.org/zap"
+	"google.golang.org/grpc"
 
 	"github.com/ravilushqa/highload/controllers/auth"
 	"github.com/ravilushqa/highload/controllers/chats"
@@ -22,10 +18,7 @@ import (
 	"github.com/ravilushqa/highload/controllers/posts"
 	"github.com/ravilushqa/highload/controllers/users"
 	"github.com/ravilushqa/highload/lib"
-	"github.com/ravilushqa/highload/lib/chat"
-	chatuser "github.com/ravilushqa/highload/lib/chat_user"
 	"github.com/ravilushqa/highload/lib/friend"
-	"github.com/ravilushqa/highload/lib/message"
 	"github.com/ravilushqa/highload/lib/post"
 	"github.com/ravilushqa/highload/lib/user"
 	centrifugoclient "github.com/ravilushqa/highload/providers/centrifugo-client"
@@ -34,6 +27,7 @@ import (
 	kafkaproducerprovider "github.com/ravilushqa/highload/providers/kafka-producer"
 	redisprovider "github.com/ravilushqa/highload/providers/redis"
 	tarantoolprovider "github.com/ravilushqa/highload/providers/tarantool"
+	chatsGrpc "github.com/ravilushqa/highload/services/chats/grpc"
 )
 
 func buildContainer() (*dig.Container, error) {
@@ -59,33 +53,15 @@ func buildContainer() (*dig.Container, error) {
 		func(c *config) (*tarantool.Connection, error) {
 			return tarantoolprovider.New(c.TarantoolURL, c.TarantoolUser, c.TarantoolPass)
 		},
-		func(c *config) (*message.Manager, error) {
-			dbs := make([]*sqlx.DB, 0)
-			r := rutina.New()
-			for _, shardURL := range c.MessagesShards {
-				r.Go(func(ctx context.Context) error {
-					database, err := sqlx.Connect("mysql", fmt.Sprint(shardURL, "?parseTime=true"))
-					if err != nil {
-						return err
-					}
-
-					database.SetConnMaxLifetime(5 * time.Minute)
-					database.SetConnMaxIdleTime(5 * time.Minute)
-					database.SetMaxOpenConns(25)
-					database.SetMaxIdleConns(25)
-					dbs = append(dbs, database)
-					return nil
-				})
-			}
-
-			err := r.Wait()
+		func(c *config) *gocent.Client {
+			return centrifugoclient.New(c.CentrifugoURL, c.CentrifugoApiKey)
+		},
+		func(c *config) (chatsGrpc.ChatsClient, error) {
+			conn, err := grpc.Dial(c.ChatsURL, grpc.WithInsecure())
 			if err != nil {
 				return nil, err
 			}
-			return message.NewManager(dbs), nil
-		},
-		func(c *config) *gocent.Client {
-			return centrifugoclient.New(c.CentrifugoURL, c.CentrifugoApiKey)
+			return chatsGrpc.NewChatsClient(conn), nil
 		},
 		NewAPI,
 		newDaemon,
@@ -93,8 +69,6 @@ func buildContainer() (*dig.Container, error) {
 		friend.New,
 		auth.NewController,
 		users.NewController,
-		chat.NewManager,
-		chatuser.NewManager,
 		post.NewManager,
 		chats.NewController,
 		posts.NewController,

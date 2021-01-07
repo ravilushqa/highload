@@ -16,3 +16,5 @@ exec_tarantool_console:
 	docker exec -it highload_tarantool_1 tarantoolctl enter app.lua
 tarantool_bootstrap:
 	docker exec -it highload_tarantool_1 tarantoolctl start app.lua
+gen-proto-chats:
+	 protoc -I. services/chats/grpc/api.proto --go_out=plugins=grpc:.

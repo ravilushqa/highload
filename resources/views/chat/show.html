@@ -17,7 +17,7 @@
                             <div class="container">
                                 <h3 class=" text-center">Chat</h3>
                                 {{range .Messages}}
-                                    <p>User #{{.UserID}}: {{.Text}}</p>
+                                    <p>User #{{.UserId}}: {{.Text}}</p>
                                 {{end}}
                                 <form action="/chats/{{.ChatID}}/message" method="post">
                                     <input type="text" name="text">
