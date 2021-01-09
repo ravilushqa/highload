@@ -21,7 +21,8 @@ type config struct {
 	TarantoolPass    string        `env:"TARANTOOL_PASS"`
 	CentrifugoURL    string        `env:"CENTRIFUGO_URL" envDefault:"http://centrifugo:8000"`
 	CentrifugoApiKey string        `env:"CENTRIFUGO_API_KEY" envDefault:"my_api_key"`
-	ChatsURL         string        `env:"CHATS_URL" envDefault:"chats:50051"`
+	ChatsURL         string        `env:"CHATS_URL" envDefault:"chats-api:50051"`
+	PostsURL         string        `env:"POSTS_URL" envDefault:"posts-api:50051"`
 }
 
 func newConfig() (*config, error) {

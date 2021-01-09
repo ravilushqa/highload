@@ -1,28 +1,23 @@
 package feed
 
 import (
-	"encoding/json"
-	"fmt"
 	"html/template"
 	"net/http"
 
 	"github.com/go-chi/chi"
-	"github.com/go-redis/redis"
 	"go.uber.org/zap"
 
 	"github.com/ravilushqa/highload/lib"
-	"github.com/ravilushqa/highload/lib/post"
+	"github.com/ravilushqa/highload/services/posts/api/grpc"
 )
 
-var cacheKey = "feed:user_id:%d"
-
 type Controller struct {
-	l     *zap.Logger
-	redis *redis.Client
+	l           *zap.Logger
+	postsClient grpc.PostsClient
 }
 
-func NewController(l *zap.Logger, redis *redis.Client) *Controller {
-	return &Controller{l: l, redis: redis}
+func NewController(l *zap.Logger, postsClient grpc.PostsClient) *Controller {
+	return &Controller{l: l, postsClient: postsClient}
 }
 
 func (c *Controller) Router(r chi.Router) chi.Router {
@@ -34,22 +29,12 @@ func (c *Controller) Router(r chi.Router) chi.Router {
 func (c *Controller) feed(w http.ResponseWriter, r *http.Request) {
 	uid, _ := lib.GetAuthUserID(r.Context())
 
-	list, err := c.redis.LRange(fmt.Sprintf(cacheKey, uid), 0, 1000).Result()
+	res, err := c.postsClient.GetFeed(r.Context(), &grpc.GetFeedRequest{UserId: int64(uid)})
 	if err != nil {
-		c.l.Error("failed to get feed from cache", zap.Error(err), zap.Int("user_id", uid))
+		c.l.Error("failed get feed", zap.NamedError("error", err))
 		w.WriteHeader(http.StatusInternalServerError)
 		_, _ = w.Write([]byte("something was wrong"))
 		return
-	}
-	posts := make([]post.Post, 0, len(list))
-	for _, jsonPost := range list {
-		var p post.Post
-		err = json.Unmarshal([]byte(jsonPost), &p)
-		if err != nil {
-			c.l.Error("failed unmarshal post", zap.Error(err), zap.Int("user_id", uid))
-			continue
-		}
-		posts = append(posts, p)
 	}
 
 	tmpl, err := template.ParseFiles(
@@ -65,6 +50,6 @@ func (c *Controller) feed(w http.ResponseWriter, r *http.Request) {
 
 	_ = tmpl.ExecuteTemplate(w, "layout", struct {
 		AuthUserID int
-		Posts      []post.Post
-	}{uid, posts})
+		Posts      []*grpc.Post
+	}{uid, res.Posts})
 }

@@ -1,11 +1,9 @@
-FROM golang:1.15 as build-env
+FROM golang:1.15 as build
+ARG SERVICE_PATH
 WORKDIR /opt/app
 COPY go.mod .
 COPY go.sum .
 RUN go mod download
-
-FROM build-env AS build
-WORKDIR /opt/app
 COPY . .
 RUN CGO_ENABLED=0 go build -o bin/app ./${SERVICE_PATH}
 

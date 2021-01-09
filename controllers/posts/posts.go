@@ -1,7 +1,6 @@
 package posts
 
 import (
-	"encoding/json"
 	"html/template"
 	"net/http"
 
@@ -9,18 +8,16 @@ import (
 	"go.uber.org/zap"
 
 	"github.com/ravilushqa/highload/lib"
-	"github.com/ravilushqa/highload/lib/post"
-	kafkaproducerprovider "github.com/ravilushqa/highload/providers/kafka-producer"
+	"github.com/ravilushqa/highload/services/posts/api/grpc"
 )
 
 type Controller struct {
-	l  *zap.Logger
-	pm *post.Manager
-	kp *kafkaproducerprovider.KafkaProducer
+	l           *zap.Logger
+	postsClient grpc.PostsClient
 }
 
-func NewController(l *zap.Logger, pm *post.Manager, kp *kafkaproducerprovider.KafkaProducer) *Controller {
-	return &Controller{l: l, pm: pm, kp: kp}
+func NewController(l *zap.Logger, postsClient grpc.PostsClient) *Controller {
+	return &Controller{l: l, postsClient: postsClient}
 }
 
 func (c *Controller) Router(r chi.Router) chi.Router {
@@ -41,23 +38,15 @@ func (c *Controller) Store(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	p := &post.Post{
-		UserID: uid,
+	_, err := c.postsClient.Store(r.Context(), &grpc.StoreRequest{
+		UserId: int64(uid),
 		Text:   text,
-	}
-	p, err := c.pm.Insert(r.Context(), p)
+	})
 	if err != nil {
-		c.l.Error("failed to insert post", zap.Error(err))
+		c.l.Error("failed to store post", zap.Error(err))
 		w.WriteHeader(http.StatusInternalServerError)
 		_, _ = w.Write([]byte("something was wrong"))
 		return
-	}
-
-	message, err := json.Marshal(p)
-	if err != nil {
-		c.l.Error("failed to marshal post", zap.Error(err))
-	} else if err = c.kp.SendMessage(message, nil); err != nil {
-		c.l.Error("failed to send message to kafka", zap.Error(err))
 	}
 
 	http.Redirect(w, r, r.Header.Get("Referer"), http.StatusFound)
@@ -65,7 +54,7 @@ func (c *Controller) Store(w http.ResponseWriter, r *http.Request) {
 
 func (c *Controller) index(w http.ResponseWriter, r *http.Request) {
 	uid, _ := lib.GetAuthUserID(r.Context())
-	posts, err := c.pm.GetOwnPosts(r.Context(), uid)
+	resp, err := c.postsClient.GetByUserID(r.Context(), &grpc.GetByUserIDRequest{UserId: int64(uid)})
 	if err != nil {
 		c.l.Error("failed get users", zap.Error(err))
 		w.WriteHeader(http.StatusInternalServerError)
@@ -86,6 +75,6 @@ func (c *Controller) index(w http.ResponseWriter, r *http.Request) {
 
 	_ = tmpl.ExecuteTemplate(w, "layout", struct {
 		AuthUserID int
-		Posts      []post.Post
-	}{uid, posts})
+		Posts      []*grpc.Post
+	}{uid, resp.Posts})
 }

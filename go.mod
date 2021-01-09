@@ -16,6 +16,7 @@ require (
 	github.com/go-sql-driver/mysql v1.5.1-0.20200818111213-46351a889297
 	github.com/golang/protobuf v1.4.3
 	github.com/google/go-cmp v0.5.4 // indirect
+	github.com/grpc-ecosystem/go-grpc-middleware v1.0.1-0.20190118093823-f849b5445de4
 	github.com/grpc-ecosystem/go-grpc-prometheus v1.2.0
 	github.com/jmoiron/sqlx v1.2.1-0.20200615141059-0794cb1f47ee
 	github.com/linxGnu/mssqlx v1.1.1

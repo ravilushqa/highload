@@ -9,7 +9,7 @@ import (
 	"go.uber.org/zap"
 
 	"github.com/ravilushqa/highload/lib"
-	"github.com/ravilushqa/highload/services/chats/grpc"
+	"github.com/ravilushqa/highload/services/chats/api/grpc"
 )
 
 type Controller struct {

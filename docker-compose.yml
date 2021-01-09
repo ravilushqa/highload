@@ -19,20 +19,21 @@ services:
       - redis
       - kafka
       - tarantool
+      - chats-api
+      - posts-api
     environment:
       DATABASE_URL: "root:secret@(mysql_master:3306)/app"
 #      SLAVES_URLS: "user:password@(mysql_slave1:3306)/app,user:password@(mysql_slave2:3306)/app"
-      MESSAGES_SHARDS: "messages:secret@(db-node-1:3306)/messages,messages:secret@(db-node-2:3306)/messages"
       KAFKA_BROKERS: "kafka:9092"
       KAFKA_TOPIC: "posts_feed"
       REDIS_URL: "redis://redis:6379"
 #      TARANTOOL_URL: "tarantool:3302"
     networks:
       - otus
-  chats:
+  chats-api:
     build:
       args:
-        SERVICE_PATH: services/chats
+        SERVICE_PATH: services/chats/api
       context: .
     ports:
       - 50051
@@ -46,6 +47,22 @@ services:
       DATABASE_URL: "root:secret@(mysql_master:3306)/app"
 #      SLAVES_URLS: "user:password@(mysql_slave1:3306)/app,user:password@(mysql_slave2:3306)/app"
       MESSAGES_SHARDS: "messages:secret@(db-node-1:3306)/messages,messages:secret@(db-node-2:3306)/messages"
+    networks:
+      - otus
+  posts-api:
+    build:
+      args:
+        SERVICE_PATH: services/posts/api
+      context: .
+    ports:
+      - 50051
+    depends_on:
+      - redis
+    environment:
+      DATABASE_URL: "root:secret@(mysql_master:3306)/app"
+#      SLAVES_URLS: "user:password@(mysql_slave1:3306)/app,user:password@(mysql_slave2:3306)/app"
+      REDIS_URL: "redis://redis:6379"
+      KAFKA_BROKERS: "kafka:9092"
     networks:
       - otus
   mysql_master:

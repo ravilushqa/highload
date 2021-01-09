@@ -19,7 +19,6 @@ import (
 	"github.com/ravilushqa/highload/controllers/users"
 	"github.com/ravilushqa/highload/lib"
 	"github.com/ravilushqa/highload/lib/friend"
-	"github.com/ravilushqa/highload/lib/post"
 	"github.com/ravilushqa/highload/lib/user"
 	centrifugoclient "github.com/ravilushqa/highload/providers/centrifugo-client"
 	"github.com/ravilushqa/highload/providers/db"
@@ -27,7 +26,8 @@ import (
 	kafkaproducerprovider "github.com/ravilushqa/highload/providers/kafka-producer"
 	redisprovider "github.com/ravilushqa/highload/providers/redis"
 	tarantoolprovider "github.com/ravilushqa/highload/providers/tarantool"
-	chatsGrpc "github.com/ravilushqa/highload/services/chats/grpc"
+	chatsGrpc "github.com/ravilushqa/highload/services/chats/api/grpc"
+	postsGrpc "github.com/ravilushqa/highload/services/posts/api/grpc"
 )
 
 func buildContainer() (*dig.Container, error) {
@@ -63,13 +63,19 @@ func buildContainer() (*dig.Container, error) {
 			}
 			return chatsGrpc.NewChatsClient(conn), nil
 		},
+		func(c *config) (postsGrpc.PostsClient, error) {
+			conn, err := grpc.Dial(c.PostsURL, grpc.WithInsecure())
+			if err != nil {
+				return nil, err
+			}
+			return postsGrpc.NewPostsClient(conn), nil
+		},
 		NewAPI,
 		newDaemon,
 		user.New,
 		friend.New,
 		auth.NewController,
 		users.NewController,
-		post.NewManager,
 		chats.NewController,
 		posts.NewController,
 		feed.NewController,

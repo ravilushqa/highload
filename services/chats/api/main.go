@@ -12,11 +12,11 @@ import (
 	"go.uber.org/dig"
 	"go.uber.org/zap"
 
+	"github.com/ravilushqa/highload/services/chats/lib/chat"
+	"github.com/ravilushqa/highload/services/chats/lib/chat_user"
+	"github.com/ravilushqa/highload/services/chats/lib/message"
+
 	"github.com/ravilushqa/highload/providers/db"
-	chatsGrpc "github.com/ravilushqa/highload/services/chats/grpc"
-	"github.com/ravilushqa/highload/services/chats/repository/chat"
-	chatuser "github.com/ravilushqa/highload/services/chats/repository/chat_user"
-	"github.com/ravilushqa/highload/services/chats/repository/message"
 )
 
 func buildContainer() (*dig.Container, error) {
@@ -52,7 +52,7 @@ func buildContainer() (*dig.Container, error) {
 			}
 			return message.NewManager(dbs), nil
 		},
-		chatsGrpc.NewApi,
+		NewApi,
 		chat.NewManager,
 		chatuser.NewManager,
 	}
@@ -63,7 +63,7 @@ func buildContainer() (*dig.Container, error) {
 		}
 	}
 
-	return container, container.Invoke(func(a *chatsGrpc.Api) {})
+	return container, container.Invoke(func(a *Api) {})
 }
 
 func main() {
@@ -80,7 +80,7 @@ func main() {
 		}
 	}()
 
-	err = container.Invoke(func(api *chatsGrpc.Api) {
+	err = container.Invoke(func(api *Api) {
 		r.Go(api.Run)
 		r.ListenOsSignals()
 	})
