@@ -21,6 +21,7 @@ services:
       - tarantool
       - chats-api
       - posts-api
+      - users-api
     environment:
       DATABASE_URL: "root:secret@(mysql_master:3306)/app"
 #      SLAVES_URLS: "user:password@(mysql_slave1:3306)/app,user:password@(mysql_slave2:3306)/app"
@@ -63,6 +64,22 @@ services:
 #      SLAVES_URLS: "user:password@(mysql_slave1:3306)/app,user:password@(mysql_slave2:3306)/app"
       REDIS_URL: "redis://redis:6379"
       KAFKA_BROKERS: "kafka:9092"
+    networks:
+      - otus
+  users-api:
+    build:
+      args:
+        SERVICE_PATH: services/users/api
+      context: .
+    ports:
+      - 50051
+    depends_on:
+      - mysql_master
+      - tarantool
+    environment:
+      DATABASE_URL: "root:secret@(mysql_master:3306)/app"
+#      SLAVES_URLS: "user:password@(mysql_slave1:3306)/app,user:password@(mysql_slave2:3306)/app"
+#      TARANTOOL_URL: "tarantool:3302"
     networks:
       - otus
   mysql_master:

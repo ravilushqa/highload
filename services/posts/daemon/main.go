@@ -1,6 +1,9 @@
 package main
 
 import (
+	cluster "github.com/bsm/sarama-cluster"
+	"github.com/centrifugal/gocent"
+	"github.com/go-redis/redis"
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/linxGnu/mssqlx"
 	"github.com/neonxp/rutina"
@@ -8,14 +11,9 @@ import (
 	"go.uber.org/zap"
 	"google.golang.org/grpc"
 
-	"github.com/ravilushqa/highload/controllers/auth"
-	"github.com/ravilushqa/highload/controllers/chats"
-	"github.com/ravilushqa/highload/controllers/feed"
-	"github.com/ravilushqa/highload/controllers/posts"
-	"github.com/ravilushqa/highload/controllers/users"
-	"github.com/ravilushqa/highload/lib"
-	chatsGrpc "github.com/ravilushqa/highload/services/chats/api/grpc"
-	postsGrpc "github.com/ravilushqa/highload/services/posts/api/grpc"
+	centrifugoclient "github.com/ravilushqa/highload/providers/centrifugo-client"
+	kafkaconsumerprovider "github.com/ravilushqa/highload/providers/kafka-consumer"
+	redisprovider "github.com/ravilushqa/highload/providers/redis"
 	usersGrpc "github.com/ravilushqa/highload/services/users/api/grpc"
 )
 
@@ -24,23 +22,16 @@ func buildContainer() (*dig.Container, error) {
 	constructors := []interface{}{
 		newConfig,
 		zap.NewDevelopment,
-		func(c *config) (*lib.Auth, error) {
-			return lib.NewAuth(c.JwtSecret), nil
+		func(c *config) (*redis.Client, error) {
+			return redisprovider.New(c.RedisURL)
 		},
-		func(c *config) (chatsGrpc.ChatsClient, error) {
-			conn, err := grpc.Dial(c.ChatsURL, grpc.WithInsecure())
-			if err != nil {
-				return nil, err
-			}
-			return chatsGrpc.NewChatsClient(conn), nil
+		func(c *config) (*cluster.Consumer, error) {
+			return kafkaconsumerprovider.New(c.KafkaBrokers, c.KafkaGroupID, []string{c.KafkaTopic}, nil)
 		},
-		func(c *config) (postsGrpc.PostsClient, error) {
-			conn, err := grpc.Dial(c.PostsURL, grpc.WithInsecure())
-			if err != nil {
-				return nil, err
-			}
-			return postsGrpc.NewPostsClient(conn), nil
+		func(c *config) *gocent.Client {
+			return centrifugoclient.New(c.CentrifugoURL, c.CentrifugoApiKey)
 		},
+		newDaemon,
 		func(c *config) (usersGrpc.UsersClient, error) {
 			conn, err := grpc.Dial(c.UsersURL, grpc.WithInsecure())
 			if err != nil {
@@ -48,12 +39,6 @@ func buildContainer() (*dig.Container, error) {
 			}
 			return usersGrpc.NewUsersClient(conn), nil
 		},
-		NewAPI,
-		auth.NewController,
-		users.NewController,
-		chats.NewController,
-		posts.NewController,
-		feed.NewController,
 	}
 
 	for _, c := range constructors {
@@ -62,7 +47,7 @@ func buildContainer() (*dig.Container, error) {
 		}
 	}
 
-	return container, container.Invoke(func(a *API) {})
+	return container, container.Invoke(func(d *daemon) {})
 }
 
 func main() {
@@ -79,8 +64,8 @@ func main() {
 		}
 	}()
 
-	err = container.Invoke(func(api *API) {
-		r.Go(api.run)
+	err = container.Invoke(func(d *daemon) {
+		r.Go(d.run)
 		r.ListenOsSignals()
 	})
 	if err != nil {

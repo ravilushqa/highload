@@ -27,31 +27,31 @@
                             <div class="heading-block border-0">
                                 <h3>{{ .FirstName}} {{ .LastName}}</h3>
                                 <span>{{.City}}</span>
-                                {{ if ne .ID .AuthUserID}}
-                                    {{if eq .Status ""}}
-                                        <form action="/users/{{.ID}}/add" method="post">
+                                {{ if ne .Id .AuthUserID}}
+                                    {{if eq .Status 0}}
+                                        <form action="/users/{{.Id}}/add" method="post">
                                             <button class="button">Add to friends</button>
                                         </form>
                                     {{end}}
-                                    {{if eq .Status "requested"}}
-                                        <form action="/users/{{.ID}}/approve" method="post">
+                                    {{if eq .Status 2}}
+                                        <form action="/users/{{.Id}}/approve" method="post">
                                             <button class="button">Approve request</button>
                                         </form>
                                     {{end}}
-                                    {{if eq .Status "added"}}
-                                        <form action="/users/{{.ID}}/approve" method="post">
+                                    {{if eq .Status 1}}
+                                        <form action="/users/{{.Id}}/approve" method="post">
                                             <button class="button button-dark" style="pointer-events: none"
                                                     disabled="disabled">Wait for approve
                                             </button>
                                         </form>
                                     {{end}}
-                                    {{if eq .Status "friends"}}
-                                        <form action="/users/{{.ID}}/approve" method="post">
+                                    {{if eq .Status 3}}
+                                        <form action="/users/{{.Id}}/approve" method="post">
                                             <button class="button button-dark" style="pointer-events: none"
                                                     disabled="disabled">You are friends
                                             </button>
                                         </form>
-                                        <form action="/users/{{.ID}}/chat" method="post">
+                                        <form action="/users/{{.Id}}/chat" method="post">
                                             <button class="button">Send message</button>
                                         </form>
                                     {{end}}
@@ -77,7 +77,7 @@
                                                                 </div>
                                                                 <div class="team-desc">
                                                                     <div class="team-title">
-                                                                        <a href="/users/{{ .ID}}">
+                                                                        <a href="/users/{{ .Id}}">
                                                                             <h4>{{ .FirstName}} {{ .LastName}}</h4></a>
                                                                         <span>{{ .City}}</span></div>
                                                                 </div>

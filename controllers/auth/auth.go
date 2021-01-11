@@ -4,24 +4,26 @@ import (
 	"fmt"
 	"html/template"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/go-chi/chi"
+	"github.com/golang/protobuf/ptypes"
 	"go.uber.org/zap"
 	"golang.org/x/crypto/bcrypt"
 
 	"github.com/ravilushqa/highload/lib"
-	"github.com/ravilushqa/highload/lib/user"
+	usersGrpc "github.com/ravilushqa/highload/services/users/api/grpc"
 )
 
 type Controller struct {
 	logger      *zap.Logger
 	auth        *lib.Auth
-	userManager *user.Manager
+	usersClient usersGrpc.UsersClient
 }
 
-func NewController(logger *zap.Logger, auth *lib.Auth, userManager *user.Manager) *Controller {
-	return &Controller{logger: logger, auth: auth, userManager: userManager}
+func NewController(logger *zap.Logger, auth *lib.Auth, usersClient usersGrpc.UsersClient) *Controller {
+	return &Controller{logger: logger, auth: auth, usersClient: usersClient}
 }
 
 func (c *Controller) Router(r chi.Router) chi.Router {
@@ -44,7 +46,7 @@ func (c *Controller) login(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	u, err := c.userManager.GetByEmail(r.Context(), email)
+	userResponse, err := c.usersClient.GetByEmail(r.Context(), &usersGrpc.GetByEmailRequest{Email: email})
 	if err != nil {
 		c.logger.Error("failed get email", zap.Error(err))
 		w.WriteHeader(http.StatusUnauthorized)
@@ -52,10 +54,10 @@ func (c *Controller) login(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = bcrypt.CompareHashAndPassword([]byte(u.Password), []byte(password))
+	err = bcrypt.CompareHashAndPassword([]byte(userResponse.User.Password), []byte(password))
 
 	if err == nil {
-		token, err := c.auth.EncodeToken(u.ID)
+		token, err := c.auth.EncodeToken(int(userResponse.User.Id))
 		if err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
 			_, _ = w.Write([]byte("Error generating JWT token: " + err.Error()))
@@ -67,7 +69,7 @@ func (c *Controller) login(w http.ResponseWriter, r *http.Request) {
 				//HttpOnly: true,
 			})
 
-			http.Redirect(w, r, fmt.Sprintf("/users/%d", u.ID), http.StatusTemporaryRedirect)
+			http.Redirect(w, r, fmt.Sprintf("/users/%d", userResponse.User.Id), http.StatusTemporaryRedirect)
 		}
 	} else {
 		w.WriteHeader(http.StatusUnauthorized)
@@ -103,6 +105,11 @@ func (c *Controller) register(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusUnprocessableEntity)
 		return
 	}
+	bdProto, err := ptypes.TimestampProto(bd)
+	if err != nil {
+		w.WriteHeader(http.StatusUnprocessableEntity)
+		return
+	}
 
 	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(r.FormValue("register-form-password")), bcrypt.DefaultCost)
 	if err != nil {
@@ -110,25 +117,23 @@ func (c *Controller) register(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	u := &user.User{
+	storeResponse, err := c.usersClient.Store(r.Context(), &usersGrpc.StoreRequest{
 		Email:     r.FormValue("register-form-email"),
 		Password:  string(hashedPassword),
 		FirstName: r.FormValue("register-form-first-name"),
 		LastName:  r.FormValue("register-form-last-name"),
-		Birthday:  bd,
-		Sex:       user.Sex(r.FormValue("register-form-sex")),
+		Birthday:  bdProto,
 		Interests: r.FormValue("register-form-interests"),
+		Sex:       usersGrpc.Sex(usersGrpc.Sex_value[strings.Title(r.FormValue("register-form-sex"))]),
 		City:      r.FormValue("register-form-city"),
-	}
-
-	u.ID, err = c.userManager.Store(r.Context(), u)
+	})
 
 	if err != nil {
 		http.Redirect(w, r, r.Header.Get("Referer"), 302)
 		return
 	}
 
-	token, err := c.auth.EncodeToken(u.ID)
+	token, err := c.auth.EncodeToken(int(storeResponse.Id))
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		_, _ = w.Write([]byte("Error generating JWT token: " + err.Error()))
@@ -140,7 +145,7 @@ func (c *Controller) register(w http.ResponseWriter, r *http.Request) {
 			//HttpOnly: true,
 		})
 
-		http.Redirect(w, r, fmt.Sprintf("/users/%d", u.ID), http.StatusTemporaryRedirect)
+		http.Redirect(w, r, fmt.Sprintf("/users/%d", storeResponse.Id), http.StatusTemporaryRedirect)
 	}
 
 }

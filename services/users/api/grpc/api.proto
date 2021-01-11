@@ -1,0 +1,121 @@
+syntax = "proto3";
+
+package users;
+
+option go_package = "services/users/api/grpc";
+
+import "google/protobuf/timestamp.proto";
+import "google/protobuf/empty.proto";
+//todo simplify method. aggregate getall getbyid GetListByIds GetByEmail
+service Users {
+    rpc GetAll (GetUsersRequest) returns (GetUsersResponse);
+    rpc GetById (GetByIdRequest) returns (GetByIdResponse);
+    rpc GetByEmail (GetByEmailRequest) returns (GetByEmailResponse);
+    rpc GetFriendsIds (GetFriendsIdsRequest) returns (GetFriendsIdsResponse);
+    rpc GetListByIds (GetListByIdsRequest) returns (GetListByIdsResponse);
+    rpc GetRelation (GetRelationRequest) returns (GetRelationResponse);
+    rpc FriendRequest (FriendRequestRequest) returns (google.protobuf.Empty);
+    rpc ApproveFriendRequest (ApproveFriendRequestRequest) returns (google.protobuf.Empty);
+    rpc Store (StoreRequest) returns (StoreResponse);
+}
+
+message GetUsersRequest {
+    string filter = 1;
+}
+
+message GetUsersResponse {
+    repeated User users = 1;
+}
+
+message GetByIdRequest {
+    int64 user_id = 1;
+}
+
+message GetByIdResponse {
+    User user = 1;
+}
+
+message GetByEmailRequest {
+    string email = 1;
+}
+
+message GetByEmailResponse {
+    User user = 1;
+}
+
+message GetFriendsIdsRequest {
+    int64 user_id = 1;
+}
+
+message GetFriendsIdsResponse {
+    repeated int64 user_ids = 1;
+}
+
+message GetListByIdsRequest {
+    repeated int64 user_ids = 1;
+}
+
+message GetListByIdsResponse {
+    repeated User users = 1;
+}
+
+message GetRelationRequest {
+    int64 from_user_id = 1;
+    int64 to_user_id = 2;
+}
+
+message GetRelationResponse {
+    UserRelation relation = 1;
+}
+
+message FriendRequestRequest {
+    int64 requester_user_id = 1;
+    int64 added_user_id = 2;
+}
+
+message ApproveFriendRequestRequest {
+    int64 approver_user_id = 2;
+    int64 requester_user_id = 1;
+}
+
+message StoreRequest {
+    string email = 1;
+    string password = 2;
+    string firstName = 3;
+    string lastName = 4;
+    google.protobuf.Timestamp birthday = 5;
+    string interests = 6;
+    Sex sex = 7;
+    string city = 8;
+}
+
+message StoreResponse {
+    int64 id = 1;
+}
+
+message User {
+    int64 id = 1;
+    string email = 2;
+    string password = 3;
+    string firstName = 4;
+    string lastName = 5;
+    google.protobuf.Timestamp birthday = 6;
+    string interests = 7;
+    Sex sex = 8;
+    string city = 9;
+    google.protobuf.Timestamp created_at = 10;
+    google.protobuf.Timestamp deleted_at = 11;
+}
+
+enum Sex {
+    Other = 0;
+    Male = 1;
+    Female = 2;
+}
+
+enum UserRelation {
+    None = 0;
+    Added = 1;
+    Requested = 2;
+    Friends = 3;
+}
