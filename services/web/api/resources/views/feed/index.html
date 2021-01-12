@@ -1,0 +1,74 @@
+{{define "content"}}
+<!-- Document Wrapper
+    ============================================= -->
+<div id="wrapper" class="clearfix">
+
+    <!-- Content
+    ============================================= -->
+    <section id="content">
+        <div class="content-wrap">
+            <div class="container clearfix">
+                <div class="row clearfix">
+                    <div class="col-md-3">
+                        {{template "nav" .}}
+                    </div>
+                    <div class="w-100 line d-block d-md-none"></div>
+                    <div class="col-md-9">
+                        <div class="container">
+                            <h3 class=" text-center">Feed</h3>
+                            <div id="feed">
+                                {{range .Posts}}
+                                <p>User #{{.UserId}}: {{.Text}}</p>
+                                {{end}}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section><!-- #content end -->
+
+
+</div><!-- #wrapper end -->
+
+<!-- Go To Top
+============================================= -->
+<div id="gotoTop" class="icon-angle-up"></div>
+
+<script type="text/javascript">
+    var centrifuge = new Centrifuge('ws://localhost:8000/connection/websocket');
+    jwt = readCookie("jwt")
+    centrifuge.setToken(jwt)
+    centrifuge.subscribe("feed_user_id_" + parseJwt(jwt).sub, function (message) {
+        console.log(message);
+        var tag = document.createElement("p");
+        var text = document.createTextNode("User #" + message.data.user_id + ": " + message.data.text);
+        tag.appendChild(text);
+        var element = document.getElementById("feed");
+        element.prepend(tag);
+    });
+
+    centrifuge.connect();
+
+    function readCookie(name) {
+        var nameEQ = name + "=";
+        var ca = document.cookie.split(';');
+        for (var i = 0; i < ca.length; i++) {
+            var c = ca[i];
+            while (c.charAt(0) == ' ') c = c.substring(1, c.length);
+            if (c.indexOf(nameEQ) == 0) return c.substring(nameEQ.length, c.length);
+        }
+        return null;
+    }
+
+    function parseJwt(token) {
+        var base64Url = token.split('.')[1];
+        var base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+        var jsonPayload = decodeURIComponent(atob(base64).split('').map(function (c) {
+            return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
+        }).join(''));
+
+        return JSON.parse(jsonPayload);
+    }
+</script>
+{{end}}

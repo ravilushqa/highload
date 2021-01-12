@@ -6,7 +6,7 @@ create table if not exists users
     id         int auto_increment
         primary key,
     email      varchar(255)                        not null,
-    password   char(60)                            not null,
+    password   varchar(60)                            not null,
     firstname  varchar(255)                        not null,
     lastname   varchar(255)                        not null,
     birthday   date                                null,

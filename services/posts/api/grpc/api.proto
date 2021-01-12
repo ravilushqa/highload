@@ -1,0 +1,46 @@
+syntax = "proto3";
+
+package posts;
+
+option go_package = "services/posts/api/grpc";
+
+import "google/protobuf/timestamp.proto";
+
+service Posts {
+    rpc GetFeed (GetFeedRequest) returns (GetFeedResponse);
+    rpc GetByUserID (GetByUserIDRequest) returns (GetByUserIDResponse);
+    rpc Store (StoreRequest) returns (StoreResponse);
+}
+
+message GetFeedRequest {
+    int64 user_id = 1;
+}
+
+message GetFeedResponse {
+    repeated Post posts = 1;
+}
+
+message GetByUserIDRequest {
+    int64 user_id = 1;
+}
+
+message GetByUserIDResponse {
+    repeated Post posts = 1;
+}
+
+message StoreRequest {
+    int64 user_id = 1;
+    string text = 2;
+}
+
+message StoreResponse {
+    Post post = 1;
+}
+
+message Post {
+    int64 id = 1;
+    int64 user_id = 2;
+    string text = 3;
+    google.protobuf.Timestamp created_at = 4;
+    google.protobuf.Timestamp deleted_at = 5;
+}

@@ -1,9 +1,10 @@
 up:
-	docker-compose up -d
+	docker-compose up -d app app-2
 down:
 	docker-compose down
+restart: down up
 exec_master:
-	docker exec -it mysql_master mysql -uroot -psecret
+	docker exec -it mysql_master mysql -uroot
 exec_slave1:
 	docker exec -it highload_mysql_slave1_1 mysql -uroot
 exec_slave2:
@@ -16,3 +17,9 @@ exec_tarantool_console:
 	docker exec -it highload_tarantool_1 tarantoolctl enter app.lua
 tarantool_bootstrap:
 	docker exec -it highload_tarantool_1 tarantoolctl start app.lua
+gen-proto-chats:
+	 protoc -I. services/chats/api/grpc/api.proto --go_out=plugins=grpc:.
+gen-proto-posts:
+	 protoc -I. services/posts/api/grpc/api.proto --go_out=plugins=grpc:.
+gen-proto-users:
+	 protoc -I. services/users/api/grpc/api.proto --go_out=plugins=grpc:.
