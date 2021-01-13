@@ -170,6 +170,50 @@ services:
     networks:
       - otus
     command: --init-file /data/start.sql
+  db-node-1:
+    build:
+      context: docker/mysql
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    environment:
+      MYSQL_DATABASE: messages
+      MYSQL_USER: messages
+      MYSQL_PASSWORD: secret
+      MYSQL_ROOT_PASSWORD: '1'
+    command: >
+      --init-file /data/start.sql
+      --sql-mode='STRICT_TRANS_TABLES,ERROR_FOR_DIVISION_BY_ZERO,NO_AUTO_CREATE_USER,NO_ENGINE_SUBSTITUTION'
+      --general-log=ON
+      --log-queries-not-using-indexes=ON
+    ports:
+      - 3360:3306
+    volumes:
+      - db-node-1-data:/var/lib/mysql
+      - ./docker/mysql/messages.sql:/data/start.sql
+    networks:
+      - otus
+  db-node-2:
+    build:
+      context: docker/mysql
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    environment:
+      MYSQL_DATABASE: messages
+      MYSQL_USER: messages
+      MYSQL_PASSWORD: secret
+      MYSQL_ROOT_PASSWORD: '1'
+    command: >
+      --init-file /data/start.sql
+      --sql-mode='STRICT_TRANS_TABLES,ERROR_FOR_DIVISION_BY_ZERO,NO_AUTO_CREATE_USER,NO_ENGINE_SUBSTITUTION'
+      --general-log=ON
+      --log-queries-not-using-indexes=ON
+    ports:
+      - 3361:3306
+    volumes:
+      - db-node-2-data:/var/lib/mysql
+      - ./docker/mysql/messages.sql:/data/start.sql
+    networks:
+      - otus
   prometheus:
     build:
       context: .
@@ -206,46 +250,6 @@ services:
       - 3000:3000
     labels:
       org.label-schema.group: "monitoring"
-    networks:
-      - otus
-  db-node-1:
-    build:
-      context: docker/mysql
-      dockerfile: Dockerfile
-    restart: unless-stopped
-    environment:
-      MYSQL_DATABASE: messages
-      MYSQL_USER: messages
-      MYSQL_PASSWORD: secret
-      MYSQL_ROOT_PASSWORD: '1'
-    command: >
-      --sql-mode='STRICT_TRANS_TABLES,ERROR_FOR_DIVISION_BY_ZERO,NO_AUTO_CREATE_USER,NO_ENGINE_SUBSTITUTION'
-      --general-log=ON
-      --log-queries-not-using-indexes=ON
-    ports:
-      - 3360:3306
-    volumes:
-      - db-node-1-data:/var/lib/mysql
-    networks:
-      - otus
-  db-node-2:
-    build:
-      context: docker/mysql
-      dockerfile: Dockerfile
-    restart: unless-stopped
-    environment:
-      MYSQL_DATABASE: messages
-      MYSQL_USER: messages
-      MYSQL_PASSWORD: secret
-      MYSQL_ROOT_PASSWORD: '1'
-    command: >
-      --sql-mode='STRICT_TRANS_TABLES,ERROR_FOR_DIVISION_BY_ZERO,NO_AUTO_CREATE_USER,NO_ENGINE_SUBSTITUTION'
-      --general-log=ON
-      --log-queries-not-using-indexes=ON
-    ports:
-      - 3361:3306
-    volumes:
-      - db-node-2-data:/var/lib/mysql
     networks:
       - otus
   redis:
