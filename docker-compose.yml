@@ -150,7 +150,7 @@ services:
       MYSQL_ALLOW_EMPTY_PASSWORD: 1
     networks:
       - otus
-    command: --init-file /data/start.sql
+#    command: --init-file /data/start.sql
   mysql_slave2:
     image: mysql:5.7.30
     ports:
@@ -169,7 +169,7 @@ services:
       MYSQL_ALLOW_EMPTY_PASSWORD: 1
     networks:
       - otus
-    command: --init-file /data/start.sql
+#    command: --init-file /data/start.sql
   db-node-1:
     build:
       context: docker/mysql
