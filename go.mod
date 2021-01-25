@@ -27,6 +27,7 @@ require (
 	github.com/satori/go.uuid v1.2.0
 	github.com/tarantool/go-tarantool v0.0.0-20201220111423-77ce7d9a407a
 	go.uber.org/dig v1.10.0
+	go.uber.org/fx v1.13.1 // indirect
 	go.uber.org/zap v1.16.0
 	golang.org/x/crypto v0.0.0-20200622213623-75b288015ac9
 	golang.org/x/mod v0.3.1-0.20200828183125-ce943fd02449 // indirect

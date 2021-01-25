@@ -1,0 +1,17 @@
+syntax = "proto3";
+
+package counters;
+
+option go_package = "services/counters/api/grpc";
+
+service Counters {
+    rpc UnreadMessages (UnreadMessagesRequest) returns (UnreadMessagesResponse);
+}
+
+message UnreadMessagesRequest {
+    int64 user_id = 1;
+}
+
+message UnreadMessagesResponse {
+    int64 count = 1;
+}
