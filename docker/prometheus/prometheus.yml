@@ -12,13 +12,17 @@ alerting:
 scrape_configs:
   - job_name: prometheus
     honor_timestamps: true
-    scrape_interval: 1s
-#    scrape_timeout: 10s
+    scrape_timeout: 10s
     metrics_path: /metrics
     scheme: http
     static_configs:
       - targets:
           - app:8080
+          - app-2:8080
+          - chats_api:50051
+          - counters_api:50051
+          - posts_api:50051
+          - users_api:50051
   - job_name: cadvisor
     scrape_interval: 5s
     static_configs:

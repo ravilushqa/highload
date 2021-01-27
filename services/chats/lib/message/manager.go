@@ -17,20 +17,31 @@ func NewManager(shards []*sqlx.DB) *Manager {
 	return &Manager{Shards: shards}
 }
 
-func (m *Manager) Insert(ctx context.Context, message *Message) error {
+func (m *Manager) Insert(ctx context.Context, message *Message) (string, error) {
 	shard := m.getShardByChatID(message.ChatID)
 	query := `insert into messages 
 		(uuid, user_id, chat_id, text)
 		values (:uuid, :user_id, :chat_id, :text)
 	`
 
+	id := uuid.NewV4().String()
+
 	_, err := shard.NamedExecContext(ctx, query, map[string]interface{}{
-		"uuid":    uuid.NewV4().String(),
+		"uuid":    id,
 		"user_id": message.UserID,
 		"chat_id": message.ChatID,
 		"text":    message.Text,
 	})
+	return id, err
+}
 
+func (m *Manager) HardDelete(ctx context.Context, chatID int, uuid string) error {
+	shard := m.getShardByChatID(chatID)
+	query := `delete from messages where uuid = ?`
+
+	_, err := shard.NamedExecContext(ctx, query, map[string]interface{}{
+		"uuid": uuid,
+	})
 	return err
 }
 

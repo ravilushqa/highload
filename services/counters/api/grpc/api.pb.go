@@ -9,6 +9,7 @@ package grpc
 import (
 	context "context"
 	proto "github.com/golang/protobuf/proto"
+	empty "github.com/golang/protobuf/ptypes/empty"
 	grpc "google.golang.org/grpc"
 	codes "google.golang.org/grpc/codes"
 	status "google.golang.org/grpc/status"
@@ -29,16 +30,17 @@ const (
 // of the legacy proto package is being used.
 const _ = proto.ProtoPackageIsVersion4
 
-type UnreadMessagesRequest struct {
+type IncrementUnreadMessageCounterRequest struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	UserId int64 `protobuf:"varint,1,opt,name=user_id,json=userId,proto3" json:"user_id,omitempty"`
+	UserIds []int64 `protobuf:"varint,1,rep,packed,name=user_ids,json=userIds,proto3" json:"user_ids,omitempty"`
+	ChatId  int64   `protobuf:"varint,2,opt,name=chat_id,json=chatId,proto3" json:"chat_id,omitempty"`
 }
 
-func (x *UnreadMessagesRequest) Reset() {
-	*x = UnreadMessagesRequest{}
+func (x *IncrementUnreadMessageCounterRequest) Reset() {
+	*x = IncrementUnreadMessageCounterRequest{}
 	if protoimpl.UnsafeEnabled {
 		mi := &file_services_counters_api_grpc_api_proto_msgTypes[0]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -46,13 +48,13 @@ func (x *UnreadMessagesRequest) Reset() {
 	}
 }
 
-func (x *UnreadMessagesRequest) String() string {
+func (x *IncrementUnreadMessageCounterRequest) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*UnreadMessagesRequest) ProtoMessage() {}
+func (*IncrementUnreadMessageCounterRequest) ProtoMessage() {}
 
-func (x *UnreadMessagesRequest) ProtoReflect() protoreflect.Message {
+func (x *IncrementUnreadMessageCounterRequest) ProtoReflect() protoreflect.Message {
 	mi := &file_services_counters_api_grpc_api_proto_msgTypes[0]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -64,28 +66,36 @@ func (x *UnreadMessagesRequest) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use UnreadMessagesRequest.ProtoReflect.Descriptor instead.
-func (*UnreadMessagesRequest) Descriptor() ([]byte, []int) {
+// Deprecated: Use IncrementUnreadMessageCounterRequest.ProtoReflect.Descriptor instead.
+func (*IncrementUnreadMessageCounterRequest) Descriptor() ([]byte, []int) {
 	return file_services_counters_api_grpc_api_proto_rawDescGZIP(), []int{0}
 }
 
-func (x *UnreadMessagesRequest) GetUserId() int64 {
+func (x *IncrementUnreadMessageCounterRequest) GetUserIds() []int64 {
 	if x != nil {
-		return x.UserId
+		return x.UserIds
+	}
+	return nil
+}
+
+func (x *IncrementUnreadMessageCounterRequest) GetChatId() int64 {
+	if x != nil {
+		return x.ChatId
 	}
 	return 0
 }
 
-type UnreadMessagesResponse struct {
+type DecrementUnreadMessageCounterRequest struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	Count int64 `protobuf:"varint,1,opt,name=count,proto3" json:"count,omitempty"`
+	UserIds []int64 `protobuf:"varint,1,rep,packed,name=user_ids,json=userIds,proto3" json:"user_ids,omitempty"`
+	ChatId  int64   `protobuf:"varint,2,opt,name=chat_id,json=chatId,proto3" json:"chat_id,omitempty"`
 }
 
-func (x *UnreadMessagesResponse) Reset() {
-	*x = UnreadMessagesResponse{}
+func (x *DecrementUnreadMessageCounterRequest) Reset() {
+	*x = DecrementUnreadMessageCounterRequest{}
 	if protoimpl.UnsafeEnabled {
 		mi := &file_services_counters_api_grpc_api_proto_msgTypes[1]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -93,13 +103,13 @@ func (x *UnreadMessagesResponse) Reset() {
 	}
 }
 
-func (x *UnreadMessagesResponse) String() string {
+func (x *DecrementUnreadMessageCounterRequest) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*UnreadMessagesResponse) ProtoMessage() {}
+func (*DecrementUnreadMessageCounterRequest) ProtoMessage() {}
 
-func (x *UnreadMessagesResponse) ProtoReflect() protoreflect.Message {
+func (x *DecrementUnreadMessageCounterRequest) ProtoReflect() protoreflect.Message {
 	mi := &file_services_counters_api_grpc_api_proto_msgTypes[1]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -111,16 +121,125 @@ func (x *UnreadMessagesResponse) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use UnreadMessagesResponse.ProtoReflect.Descriptor instead.
-func (*UnreadMessagesResponse) Descriptor() ([]byte, []int) {
+// Deprecated: Use DecrementUnreadMessageCounterRequest.ProtoReflect.Descriptor instead.
+func (*DecrementUnreadMessageCounterRequest) Descriptor() ([]byte, []int) {
 	return file_services_counters_api_grpc_api_proto_rawDescGZIP(), []int{1}
 }
 
-func (x *UnreadMessagesResponse) GetCount() int64 {
+func (x *DecrementUnreadMessageCounterRequest) GetUserIds() []int64 {
 	if x != nil {
-		return x.Count
+		return x.UserIds
+	}
+	return nil
+}
+
+func (x *DecrementUnreadMessageCounterRequest) GetChatId() int64 {
+	if x != nil {
+		return x.ChatId
 	}
 	return 0
+}
+
+type UnreadChatsCountRequest struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	UserId  int64   `protobuf:"varint,1,opt,name=user_id,json=userId,proto3" json:"user_id,omitempty"`
+	ChatIds []int64 `protobuf:"varint,2,rep,packed,name=chat_ids,json=chatIds,proto3" json:"chat_ids,omitempty"`
+}
+
+func (x *UnreadChatsCountRequest) Reset() {
+	*x = UnreadChatsCountRequest{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_services_counters_api_grpc_api_proto_msgTypes[2]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *UnreadChatsCountRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*UnreadChatsCountRequest) ProtoMessage() {}
+
+func (x *UnreadChatsCountRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_services_counters_api_grpc_api_proto_msgTypes[2]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use UnreadChatsCountRequest.ProtoReflect.Descriptor instead.
+func (*UnreadChatsCountRequest) Descriptor() ([]byte, []int) {
+	return file_services_counters_api_grpc_api_proto_rawDescGZIP(), []int{2}
+}
+
+func (x *UnreadChatsCountRequest) GetUserId() int64 {
+	if x != nil {
+		return x.UserId
+	}
+	return 0
+}
+
+func (x *UnreadChatsCountRequest) GetChatIds() []int64 {
+	if x != nil {
+		return x.ChatIds
+	}
+	return nil
+}
+
+type UnreadChatsCountResponse struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	ChatsUnreadMessages map[int64]int64 `protobuf:"bytes,3,rep,name=chatsUnreadMessages,proto3" json:"chatsUnreadMessages,omitempty" protobuf_key:"varint,1,opt,name=key,proto3" protobuf_val:"varint,2,opt,name=value,proto3"`
+}
+
+func (x *UnreadChatsCountResponse) Reset() {
+	*x = UnreadChatsCountResponse{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_services_counters_api_grpc_api_proto_msgTypes[3]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *UnreadChatsCountResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*UnreadChatsCountResponse) ProtoMessage() {}
+
+func (x *UnreadChatsCountResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_services_counters_api_grpc_api_proto_msgTypes[3]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use UnreadChatsCountResponse.ProtoReflect.Descriptor instead.
+func (*UnreadChatsCountResponse) Descriptor() ([]byte, []int) {
+	return file_services_counters_api_grpc_api_proto_rawDescGZIP(), []int{3}
+}
+
+func (x *UnreadChatsCountResponse) GetChatsUnreadMessages() map[int64]int64 {
+	if x != nil {
+		return x.ChatsUnreadMessages
+	}
+	return nil
 }
 
 var File_services_counters_api_grpc_api_proto protoreflect.FileDescriptor
@@ -129,21 +248,60 @@ var file_services_counters_api_grpc_api_proto_rawDesc = []byte{
 	0x0a, 0x24, 0x73, 0x65, 0x72, 0x76, 0x69, 0x63, 0x65, 0x73, 0x2f, 0x63, 0x6f, 0x75, 0x6e, 0x74,
 	0x65, 0x72, 0x73, 0x2f, 0x61, 0x70, 0x69, 0x2f, 0x67, 0x72, 0x70, 0x63, 0x2f, 0x61, 0x70, 0x69,
 	0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x12, 0x08, 0x63, 0x6f, 0x75, 0x6e, 0x74, 0x65, 0x72, 0x73,
-	0x22, 0x30, 0x0a, 0x15, 0x55, 0x6e, 0x72, 0x65, 0x61, 0x64, 0x4d, 0x65, 0x73, 0x73, 0x61, 0x67,
-	0x65, 0x73, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x12, 0x17, 0x0a, 0x07, 0x75, 0x73, 0x65,
-	0x72, 0x5f, 0x69, 0x64, 0x18, 0x01, 0x20, 0x01, 0x28, 0x03, 0x52, 0x06, 0x75, 0x73, 0x65, 0x72,
-	0x49, 0x64, 0x22, 0x2e, 0x0a, 0x16, 0x55, 0x6e, 0x72, 0x65, 0x61, 0x64, 0x4d, 0x65, 0x73, 0x73,
-	0x61, 0x67, 0x65, 0x73, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x12, 0x14, 0x0a, 0x05,
-	0x63, 0x6f, 0x75, 0x6e, 0x74, 0x18, 0x01, 0x20, 0x01, 0x28, 0x03, 0x52, 0x05, 0x63, 0x6f, 0x75,
-	0x6e, 0x74, 0x32, 0x5f, 0x0a, 0x08, 0x43, 0x6f, 0x75, 0x6e, 0x74, 0x65, 0x72, 0x73, 0x12, 0x53,
-	0x0a, 0x0e, 0x55, 0x6e, 0x72, 0x65, 0x61, 0x64, 0x4d, 0x65, 0x73, 0x73, 0x61, 0x67, 0x65, 0x73,
-	0x12, 0x1f, 0x2e, 0x63, 0x6f, 0x75, 0x6e, 0x74, 0x65, 0x72, 0x73, 0x2e, 0x55, 0x6e, 0x72, 0x65,
-	0x61, 0x64, 0x4d, 0x65, 0x73, 0x73, 0x61, 0x67, 0x65, 0x73, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73,
-	0x74, 0x1a, 0x20, 0x2e, 0x63, 0x6f, 0x75, 0x6e, 0x74, 0x65, 0x72, 0x73, 0x2e, 0x55, 0x6e, 0x72,
-	0x65, 0x61, 0x64, 0x4d, 0x65, 0x73, 0x73, 0x61, 0x67, 0x65, 0x73, 0x52, 0x65, 0x73, 0x70, 0x6f,
-	0x6e, 0x73, 0x65, 0x42, 0x1c, 0x5a, 0x1a, 0x73, 0x65, 0x72, 0x76, 0x69, 0x63, 0x65, 0x73, 0x2f,
-	0x63, 0x6f, 0x75, 0x6e, 0x74, 0x65, 0x72, 0x73, 0x2f, 0x61, 0x70, 0x69, 0x2f, 0x67, 0x72, 0x70,
-	0x63, 0x62, 0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
+	0x1a, 0x1b, 0x67, 0x6f, 0x6f, 0x67, 0x6c, 0x65, 0x2f, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x62, 0x75,
+	0x66, 0x2f, 0x65, 0x6d, 0x70, 0x74, 0x79, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x22, 0x5a, 0x0a,
+	0x24, 0x49, 0x6e, 0x63, 0x72, 0x65, 0x6d, 0x65, 0x6e, 0x74, 0x55, 0x6e, 0x72, 0x65, 0x61, 0x64,
+	0x4d, 0x65, 0x73, 0x73, 0x61, 0x67, 0x65, 0x43, 0x6f, 0x75, 0x6e, 0x74, 0x65, 0x72, 0x52, 0x65,
+	0x71, 0x75, 0x65, 0x73, 0x74, 0x12, 0x19, 0x0a, 0x08, 0x75, 0x73, 0x65, 0x72, 0x5f, 0x69, 0x64,
+	0x73, 0x18, 0x01, 0x20, 0x03, 0x28, 0x03, 0x52, 0x07, 0x75, 0x73, 0x65, 0x72, 0x49, 0x64, 0x73,
+	0x12, 0x17, 0x0a, 0x07, 0x63, 0x68, 0x61, 0x74, 0x5f, 0x69, 0x64, 0x18, 0x02, 0x20, 0x01, 0x28,
+	0x03, 0x52, 0x06, 0x63, 0x68, 0x61, 0x74, 0x49, 0x64, 0x22, 0x5a, 0x0a, 0x24, 0x44, 0x65, 0x63,
+	0x72, 0x65, 0x6d, 0x65, 0x6e, 0x74, 0x55, 0x6e, 0x72, 0x65, 0x61, 0x64, 0x4d, 0x65, 0x73, 0x73,
+	0x61, 0x67, 0x65, 0x43, 0x6f, 0x75, 0x6e, 0x74, 0x65, 0x72, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73,
+	0x74, 0x12, 0x19, 0x0a, 0x08, 0x75, 0x73, 0x65, 0x72, 0x5f, 0x69, 0x64, 0x73, 0x18, 0x01, 0x20,
+	0x03, 0x28, 0x03, 0x52, 0x07, 0x75, 0x73, 0x65, 0x72, 0x49, 0x64, 0x73, 0x12, 0x17, 0x0a, 0x07,
+	0x63, 0x68, 0x61, 0x74, 0x5f, 0x69, 0x64, 0x18, 0x02, 0x20, 0x01, 0x28, 0x03, 0x52, 0x06, 0x63,
+	0x68, 0x61, 0x74, 0x49, 0x64, 0x22, 0x4d, 0x0a, 0x17, 0x55, 0x6e, 0x72, 0x65, 0x61, 0x64, 0x43,
+	0x68, 0x61, 0x74, 0x73, 0x43, 0x6f, 0x75, 0x6e, 0x74, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74,
+	0x12, 0x17, 0x0a, 0x07, 0x75, 0x73, 0x65, 0x72, 0x5f, 0x69, 0x64, 0x18, 0x01, 0x20, 0x01, 0x28,
+	0x03, 0x52, 0x06, 0x75, 0x73, 0x65, 0x72, 0x49, 0x64, 0x12, 0x19, 0x0a, 0x08, 0x63, 0x68, 0x61,
+	0x74, 0x5f, 0x69, 0x64, 0x73, 0x18, 0x02, 0x20, 0x03, 0x28, 0x03, 0x52, 0x07, 0x63, 0x68, 0x61,
+	0x74, 0x49, 0x64, 0x73, 0x22, 0xd1, 0x01, 0x0a, 0x18, 0x55, 0x6e, 0x72, 0x65, 0x61, 0x64, 0x43,
+	0x68, 0x61, 0x74, 0x73, 0x43, 0x6f, 0x75, 0x6e, 0x74, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73,
+	0x65, 0x12, 0x6d, 0x0a, 0x13, 0x63, 0x68, 0x61, 0x74, 0x73, 0x55, 0x6e, 0x72, 0x65, 0x61, 0x64,
+	0x4d, 0x65, 0x73, 0x73, 0x61, 0x67, 0x65, 0x73, 0x18, 0x03, 0x20, 0x03, 0x28, 0x0b, 0x32, 0x3b,
+	0x2e, 0x63, 0x6f, 0x75, 0x6e, 0x74, 0x65, 0x72, 0x73, 0x2e, 0x55, 0x6e, 0x72, 0x65, 0x61, 0x64,
+	0x43, 0x68, 0x61, 0x74, 0x73, 0x43, 0x6f, 0x75, 0x6e, 0x74, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e,
+	0x73, 0x65, 0x2e, 0x43, 0x68, 0x61, 0x74, 0x73, 0x55, 0x6e, 0x72, 0x65, 0x61, 0x64, 0x4d, 0x65,
+	0x73, 0x73, 0x61, 0x67, 0x65, 0x73, 0x45, 0x6e, 0x74, 0x72, 0x79, 0x52, 0x13, 0x63, 0x68, 0x61,
+	0x74, 0x73, 0x55, 0x6e, 0x72, 0x65, 0x61, 0x64, 0x4d, 0x65, 0x73, 0x73, 0x61, 0x67, 0x65, 0x73,
+	0x1a, 0x46, 0x0a, 0x18, 0x43, 0x68, 0x61, 0x74, 0x73, 0x55, 0x6e, 0x72, 0x65, 0x61, 0x64, 0x4d,
+	0x65, 0x73, 0x73, 0x61, 0x67, 0x65, 0x73, 0x45, 0x6e, 0x74, 0x72, 0x79, 0x12, 0x10, 0x0a, 0x03,
+	0x6b, 0x65, 0x79, 0x18, 0x01, 0x20, 0x01, 0x28, 0x03, 0x52, 0x03, 0x6b, 0x65, 0x79, 0x12, 0x14,
+	0x0a, 0x05, 0x76, 0x61, 0x6c, 0x75, 0x65, 0x18, 0x02, 0x20, 0x01, 0x28, 0x03, 0x52, 0x05, 0x76,
+	0x61, 0x6c, 0x75, 0x65, 0x3a, 0x02, 0x38, 0x01, 0x32, 0xb7, 0x02, 0x0a, 0x08, 0x43, 0x6f, 0x75,
+	0x6e, 0x74, 0x65, 0x72, 0x73, 0x12, 0x67, 0x0a, 0x1d, 0x49, 0x6e, 0x63, 0x72, 0x65, 0x6d, 0x65,
+	0x6e, 0x74, 0x55, 0x6e, 0x72, 0x65, 0x61, 0x64, 0x4d, 0x65, 0x73, 0x73, 0x61, 0x67, 0x65, 0x43,
+	0x6f, 0x75, 0x6e, 0x74, 0x65, 0x72, 0x12, 0x2e, 0x2e, 0x63, 0x6f, 0x75, 0x6e, 0x74, 0x65, 0x72,
+	0x73, 0x2e, 0x49, 0x6e, 0x63, 0x72, 0x65, 0x6d, 0x65, 0x6e, 0x74, 0x55, 0x6e, 0x72, 0x65, 0x61,
+	0x64, 0x4d, 0x65, 0x73, 0x73, 0x61, 0x67, 0x65, 0x43, 0x6f, 0x75, 0x6e, 0x74, 0x65, 0x72, 0x52,
+	0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x16, 0x2e, 0x67, 0x6f, 0x6f, 0x67, 0x6c, 0x65, 0x2e,
+	0x70, 0x72, 0x6f, 0x74, 0x6f, 0x62, 0x75, 0x66, 0x2e, 0x45, 0x6d, 0x70, 0x74, 0x79, 0x12, 0x67,
+	0x0a, 0x1d, 0x44, 0x65, 0x63, 0x72, 0x65, 0x6d, 0x65, 0x6e, 0x74, 0x55, 0x6e, 0x72, 0x65, 0x61,
+	0x64, 0x4d, 0x65, 0x73, 0x73, 0x61, 0x67, 0x65, 0x43, 0x6f, 0x75, 0x6e, 0x74, 0x65, 0x72, 0x12,
+	0x2e, 0x2e, 0x63, 0x6f, 0x75, 0x6e, 0x74, 0x65, 0x72, 0x73, 0x2e, 0x44, 0x65, 0x63, 0x72, 0x65,
+	0x6d, 0x65, 0x6e, 0x74, 0x55, 0x6e, 0x72, 0x65, 0x61, 0x64, 0x4d, 0x65, 0x73, 0x73, 0x61, 0x67,
+	0x65, 0x43, 0x6f, 0x75, 0x6e, 0x74, 0x65, 0x72, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a,
+	0x16, 0x2e, 0x67, 0x6f, 0x6f, 0x67, 0x6c, 0x65, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x62, 0x75,
+	0x66, 0x2e, 0x45, 0x6d, 0x70, 0x74, 0x79, 0x12, 0x59, 0x0a, 0x10, 0x55, 0x6e, 0x72, 0x65, 0x61,
+	0x64, 0x43, 0x68, 0x61, 0x74, 0x73, 0x43, 0x6f, 0x75, 0x6e, 0x74, 0x12, 0x21, 0x2e, 0x63, 0x6f,
+	0x75, 0x6e, 0x74, 0x65, 0x72, 0x73, 0x2e, 0x55, 0x6e, 0x72, 0x65, 0x61, 0x64, 0x43, 0x68, 0x61,
+	0x74, 0x73, 0x43, 0x6f, 0x75, 0x6e, 0x74, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x22,
+	0x2e, 0x63, 0x6f, 0x75, 0x6e, 0x74, 0x65, 0x72, 0x73, 0x2e, 0x55, 0x6e, 0x72, 0x65, 0x61, 0x64,
+	0x43, 0x68, 0x61, 0x74, 0x73, 0x43, 0x6f, 0x75, 0x6e, 0x74, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e,
+	0x73, 0x65, 0x42, 0x1c, 0x5a, 0x1a, 0x73, 0x65, 0x72, 0x76, 0x69, 0x63, 0x65, 0x73, 0x2f, 0x63,
+	0x6f, 0x75, 0x6e, 0x74, 0x65, 0x72, 0x73, 0x2f, 0x61, 0x70, 0x69, 0x2f, 0x67, 0x72, 0x70, 0x63,
+	0x62, 0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
 }
 
 var (
@@ -158,19 +316,28 @@ func file_services_counters_api_grpc_api_proto_rawDescGZIP() []byte {
 	return file_services_counters_api_grpc_api_proto_rawDescData
 }
 
-var file_services_counters_api_grpc_api_proto_msgTypes = make([]protoimpl.MessageInfo, 2)
+var file_services_counters_api_grpc_api_proto_msgTypes = make([]protoimpl.MessageInfo, 5)
 var file_services_counters_api_grpc_api_proto_goTypes = []interface{}{
-	(*UnreadMessagesRequest)(nil),  // 0: counters.UnreadMessagesRequest
-	(*UnreadMessagesResponse)(nil), // 1: counters.UnreadMessagesResponse
+	(*IncrementUnreadMessageCounterRequest)(nil), // 0: counters.IncrementUnreadMessageCounterRequest
+	(*DecrementUnreadMessageCounterRequest)(nil), // 1: counters.DecrementUnreadMessageCounterRequest
+	(*UnreadChatsCountRequest)(nil),              // 2: counters.UnreadChatsCountRequest
+	(*UnreadChatsCountResponse)(nil),             // 3: counters.UnreadChatsCountResponse
+	nil,                                          // 4: counters.UnreadChatsCountResponse.ChatsUnreadMessagesEntry
+	(*empty.Empty)(nil),                          // 5: google.protobuf.Empty
 }
 var file_services_counters_api_grpc_api_proto_depIdxs = []int32{
-	0, // 0: counters.Counters.UnreadMessages:input_type -> counters.UnreadMessagesRequest
-	1, // 1: counters.Counters.UnreadMessages:output_type -> counters.UnreadMessagesResponse
-	1, // [1:2] is the sub-list for method output_type
-	0, // [0:1] is the sub-list for method input_type
-	0, // [0:0] is the sub-list for extension type_name
-	0, // [0:0] is the sub-list for extension extendee
-	0, // [0:0] is the sub-list for field type_name
+	4, // 0: counters.UnreadChatsCountResponse.chatsUnreadMessages:type_name -> counters.UnreadChatsCountResponse.ChatsUnreadMessagesEntry
+	0, // 1: counters.Counters.IncrementUnreadMessageCounter:input_type -> counters.IncrementUnreadMessageCounterRequest
+	1, // 2: counters.Counters.DecrementUnreadMessageCounter:input_type -> counters.DecrementUnreadMessageCounterRequest
+	2, // 3: counters.Counters.UnreadChatsCount:input_type -> counters.UnreadChatsCountRequest
+	5, // 4: counters.Counters.IncrementUnreadMessageCounter:output_type -> google.protobuf.Empty
+	5, // 5: counters.Counters.DecrementUnreadMessageCounter:output_type -> google.protobuf.Empty
+	3, // 6: counters.Counters.UnreadChatsCount:output_type -> counters.UnreadChatsCountResponse
+	4, // [4:7] is the sub-list for method output_type
+	1, // [1:4] is the sub-list for method input_type
+	1, // [1:1] is the sub-list for extension type_name
+	1, // [1:1] is the sub-list for extension extendee
+	0, // [0:1] is the sub-list for field type_name
 }
 
 func init() { file_services_counters_api_grpc_api_proto_init() }
@@ -180,7 +347,7 @@ func file_services_counters_api_grpc_api_proto_init() {
 	}
 	if !protoimpl.UnsafeEnabled {
 		file_services_counters_api_grpc_api_proto_msgTypes[0].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*UnreadMessagesRequest); i {
+			switch v := v.(*IncrementUnreadMessageCounterRequest); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -192,7 +359,31 @@ func file_services_counters_api_grpc_api_proto_init() {
 			}
 		}
 		file_services_counters_api_grpc_api_proto_msgTypes[1].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*UnreadMessagesResponse); i {
+			switch v := v.(*DecrementUnreadMessageCounterRequest); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_services_counters_api_grpc_api_proto_msgTypes[2].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*UnreadChatsCountRequest); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_services_counters_api_grpc_api_proto_msgTypes[3].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*UnreadChatsCountResponse); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -210,7 +401,7 @@ func file_services_counters_api_grpc_api_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: file_services_counters_api_grpc_api_proto_rawDesc,
 			NumEnums:      0,
-			NumMessages:   2,
+			NumMessages:   5,
 			NumExtensions: 0,
 			NumServices:   1,
 		},
@@ -236,7 +427,9 @@ const _ = grpc.SupportPackageIsVersion6
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://godoc.org/google.golang.org/grpc#ClientConn.NewStream.
 type CountersClient interface {
-	UnreadMessages(ctx context.Context, in *UnreadMessagesRequest, opts ...grpc.CallOption) (*UnreadMessagesResponse, error)
+	IncrementUnreadMessageCounter(ctx context.Context, in *IncrementUnreadMessageCounterRequest, opts ...grpc.CallOption) (*empty.Empty, error)
+	DecrementUnreadMessageCounter(ctx context.Context, in *DecrementUnreadMessageCounterRequest, opts ...grpc.CallOption) (*empty.Empty, error)
+	UnreadChatsCount(ctx context.Context, in *UnreadChatsCountRequest, opts ...grpc.CallOption) (*UnreadChatsCountResponse, error)
 }
 
 type countersClient struct {
@@ -247,9 +440,27 @@ func NewCountersClient(cc grpc.ClientConnInterface) CountersClient {
 	return &countersClient{cc}
 }
 
-func (c *countersClient) UnreadMessages(ctx context.Context, in *UnreadMessagesRequest, opts ...grpc.CallOption) (*UnreadMessagesResponse, error) {
-	out := new(UnreadMessagesResponse)
-	err := c.cc.Invoke(ctx, "/counters.Counters/UnreadMessages", in, out, opts...)
+func (c *countersClient) IncrementUnreadMessageCounter(ctx context.Context, in *IncrementUnreadMessageCounterRequest, opts ...grpc.CallOption) (*empty.Empty, error) {
+	out := new(empty.Empty)
+	err := c.cc.Invoke(ctx, "/counters.Counters/IncrementUnreadMessageCounter", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *countersClient) DecrementUnreadMessageCounter(ctx context.Context, in *DecrementUnreadMessageCounterRequest, opts ...grpc.CallOption) (*empty.Empty, error) {
+	out := new(empty.Empty)
+	err := c.cc.Invoke(ctx, "/counters.Counters/DecrementUnreadMessageCounter", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *countersClient) UnreadChatsCount(ctx context.Context, in *UnreadChatsCountRequest, opts ...grpc.CallOption) (*UnreadChatsCountResponse, error) {
+	out := new(UnreadChatsCountResponse)
+	err := c.cc.Invoke(ctx, "/counters.Counters/UnreadChatsCount", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -258,35 +469,79 @@ func (c *countersClient) UnreadMessages(ctx context.Context, in *UnreadMessagesR
 
 // CountersServer is the server API for Counters service.
 type CountersServer interface {
-	UnreadMessages(context.Context, *UnreadMessagesRequest) (*UnreadMessagesResponse, error)
+	IncrementUnreadMessageCounter(context.Context, *IncrementUnreadMessageCounterRequest) (*empty.Empty, error)
+	DecrementUnreadMessageCounter(context.Context, *DecrementUnreadMessageCounterRequest) (*empty.Empty, error)
+	UnreadChatsCount(context.Context, *UnreadChatsCountRequest) (*UnreadChatsCountResponse, error)
 }
 
 // UnimplementedCountersServer can be embedded to have forward compatible implementations.
 type UnimplementedCountersServer struct {
 }
 
-func (*UnimplementedCountersServer) UnreadMessages(context.Context, *UnreadMessagesRequest) (*UnreadMessagesResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method UnreadMessages not implemented")
+func (*UnimplementedCountersServer) IncrementUnreadMessageCounter(context.Context, *IncrementUnreadMessageCounterRequest) (*empty.Empty, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method IncrementUnreadMessageCounter not implemented")
+}
+func (*UnimplementedCountersServer) DecrementUnreadMessageCounter(context.Context, *DecrementUnreadMessageCounterRequest) (*empty.Empty, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method DecrementUnreadMessageCounter not implemented")
+}
+func (*UnimplementedCountersServer) UnreadChatsCount(context.Context, *UnreadChatsCountRequest) (*UnreadChatsCountResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method UnreadChatsCount not implemented")
 }
 
 func RegisterCountersServer(s *grpc.Server, srv CountersServer) {
 	s.RegisterService(&_Counters_serviceDesc, srv)
 }
 
-func _Counters_UnreadMessages_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(UnreadMessagesRequest)
+func _Counters_IncrementUnreadMessageCounter_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(IncrementUnreadMessageCounterRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(CountersServer).UnreadMessages(ctx, in)
+		return srv.(CountersServer).IncrementUnreadMessageCounter(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/counters.Counters/UnreadMessages",
+		FullMethod: "/counters.Counters/IncrementUnreadMessageCounter",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(CountersServer).UnreadMessages(ctx, req.(*UnreadMessagesRequest))
+		return srv.(CountersServer).IncrementUnreadMessageCounter(ctx, req.(*IncrementUnreadMessageCounterRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Counters_DecrementUnreadMessageCounter_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(DecrementUnreadMessageCounterRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(CountersServer).DecrementUnreadMessageCounter(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/counters.Counters/DecrementUnreadMessageCounter",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(CountersServer).DecrementUnreadMessageCounter(ctx, req.(*DecrementUnreadMessageCounterRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Counters_UnreadChatsCount_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(UnreadChatsCountRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(CountersServer).UnreadChatsCount(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/counters.Counters/UnreadChatsCount",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(CountersServer).UnreadChatsCount(ctx, req.(*UnreadChatsCountRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -296,8 +551,16 @@ var _Counters_serviceDesc = grpc.ServiceDesc{
 	HandlerType: (*CountersServer)(nil),
 	Methods: []grpc.MethodDesc{
 		{
-			MethodName: "UnreadMessages",
-			Handler:    _Counters_UnreadMessages_Handler,
+			MethodName: "IncrementUnreadMessageCounter",
+			Handler:    _Counters_IncrementUnreadMessageCounter_Handler,
+		},
+		{
+			MethodName: "DecrementUnreadMessageCounter",
+			Handler:    _Counters_DecrementUnreadMessageCounter_Handler,
+		},
+		{
+			MethodName: "UnreadChatsCount",
+			Handler:    _Counters_UnreadChatsCount_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

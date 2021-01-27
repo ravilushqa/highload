@@ -14,6 +14,7 @@ services:
       - posts-api
       - posts-daemon
       - users-api
+      - counters-api
       - nginx
     networks:
       - otus
@@ -30,6 +31,7 @@ services:
       - posts-api
       - posts-daemon
       - users-api
+      - counters-api
       - nginx
     networks:
       - otus
@@ -39,6 +41,7 @@ services:
         SERVICE_PATH: services/chats/api
       context: .
     ports:
+      - 2345:40000
       - 50051
     restart: on-failure
     depends_on:
@@ -52,8 +55,14 @@ services:
       DATABASE_URL: "root:@(haproxy:3306)/app"
       SLAVES_URLS: "root:@(haproxy:3307)/app"
       MESSAGES_SHARDS: "messages:secret@(db-node-1:3306)/messages,messages:secret@(db-node-2:3306)/messages"
+      KAFKA_BROKERS: "kafka:9092"
+      ZOOKEEPER_URLS: "zookeeper:2181"
     networks:
       - otus
+    security_opt:
+      - "apparmor=unconfined"
+    cap_add:
+      - SYS_PTRACE
   posts-api:
     build:
       args:
@@ -111,7 +120,21 @@ services:
     environment:
       DATABASE_URL: "root:@(haproxy:3306)/app"
       SLAVES_URLS: "root:@(haproxy:3307)/app"
-#      TARANTOOL_URL: "tarantool:3302"
+    #      TARANTOOL_URL: "tarantool:3302"
+    networks:
+      - otus
+  counters-api:
+    build:
+      args:
+        SERVICE_PATH: services/counters/api
+      context: .
+    ports:
+      - 50051
+    restart: on-failure
+    depends_on:
+      - redis
+    environment:
+      REDIS_URL: "redis://redis:6379"
     networks:
       - otus
   mysql_master:
@@ -131,7 +154,7 @@ services:
       MYSQL_ALLOW_EMPTY_PASSWORD: 1
     networks:
       - otus
-#    command: --init-file /data/start.sql
+  #    command: --init-file /data/start.sql
   mysql_slave1:
     image: mysql:5.7.30
     ports:
@@ -150,7 +173,7 @@ services:
       MYSQL_ALLOW_EMPTY_PASSWORD: 1
     networks:
       - otus
-#    command: --init-file /data/start.sql
+  #    command: --init-file /data/start.sql
   mysql_slave2:
     image: mysql:5.7.30
     ports:
@@ -169,7 +192,7 @@ services:
       MYSQL_ALLOW_EMPTY_PASSWORD: 1
     networks:
       - otus
-#    command: --init-file /data/start.sql
+  #    command: --init-file /data/start.sql
   db-node-1:
     build:
       context: docker/mysql

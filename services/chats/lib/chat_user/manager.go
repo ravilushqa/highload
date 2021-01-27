@@ -34,6 +34,12 @@ func (m *Manager) GetUserChats(ctx context.Context, userID int) ([]int, error) {
 	return chatIDs, err
 }
 
+func (m *Manager) GetChatMembers(ctx context.Context, chatID int) ([]int64, error) {
+	var userIDs []int64
+	err := m.DB.SelectContext(ctx, &userIDs, "select user_id from chat_users where chat_id = ?", chatID)
+	return userIDs, err
+}
+
 func (m Manager) GetUsersDialogChat(ctx context.Context, uID1, uID2 int) (int, error) {
 	q := `select cu1.chat_id from chat_users cu1
 		join chat_users as cu2 on  cu1.chat_id = cu2.chat_id and cu1.id != cu2.id

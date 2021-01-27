@@ -4,14 +4,29 @@ package counters;
 
 option go_package = "services/counters/api/grpc";
 
+import "google/protobuf/empty.proto";
+
 service Counters {
-    rpc UnreadMessages (UnreadMessagesRequest) returns (UnreadMessagesResponse);
+    rpc IncrementUnreadMessageCounter (IncrementUnreadMessageCounterRequest) returns (google.protobuf.Empty);
+    rpc DecrementUnreadMessageCounter (DecrementUnreadMessageCounterRequest) returns (google.protobuf.Empty);
+    rpc UnreadChatsCount (UnreadChatsCountRequest) returns (UnreadChatsCountResponse);
 }
 
-message UnreadMessagesRequest {
+message IncrementUnreadMessageCounterRequest {
+    repeated int64 user_ids = 1;
+    int64 chat_id = 2;
+}
+
+message DecrementUnreadMessageCounterRequest {
+    repeated int64 user_ids = 1;
+    int64 chat_id = 2;
+}
+
+message UnreadChatsCountRequest {
     int64 user_id = 1;
+    repeated int64 chat_ids = 2;
 }
 
-message UnreadMessagesResponse {
-    int64 count = 1;
+message UnreadChatsCountResponse {
+    map<int64, int64> chatsUnreadMessages = 3;
 }
