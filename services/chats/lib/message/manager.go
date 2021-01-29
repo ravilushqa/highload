@@ -35,12 +35,18 @@ func (m *Manager) Insert(ctx context.Context, message *Message) (string, error) 
 	return id, err
 }
 
-func (m *Manager) HardDelete(ctx context.Context, chatID int, uuid string) error {
+func (m *Manager) HardDeleteLastMessage(ctx context.Context, chatID int, userID int, text string) error {
 	shard := m.getShardByChatID(chatID)
-	query := `delete from messages where uuid = ?`
+	query := `
+		delete from messages
+		where chat_id = :chat_id and user_id = :user_id and text = :text
+		order by created_at desc limit 1
+	`
 
 	_, err := shard.NamedExecContext(ctx, query, map[string]interface{}{
-		"uuid": uuid,
+		"chat_id": chatID,
+		"user_id": userID,
+		"text":    text,
 	})
 	return err
 }

@@ -5,10 +5,10 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/axengine/go-saga"
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/jmoiron/sqlx"
 	"github.com/linxGnu/mssqlx"
-	"github.com/lysu/go-saga"
 	"github.com/neonxp/rutina"
 	"go.uber.org/dig"
 	"go.uber.org/zap"
@@ -65,8 +65,8 @@ func buildContainer() (*dig.Container, error) {
 			}
 			return countersGrpc.NewCountersClient(conn), nil
 		},
-		func(c *config) *saga.ExecutionCoordinator {
-			return sagaProvider.New(c.ZookeeperUrls, c.KafkaBrokers)
+		func(c *config) (*saga.ExecutionCoordinator, error) {
+			return sagaProvider.New(c.RedisURL)
 		},
 	}
 

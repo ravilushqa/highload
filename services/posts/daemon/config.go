@@ -6,7 +6,7 @@ import (
 
 type config struct {
 	KafkaBrokers     []string `env:"KAFKA_BROKERS" envSeparator:","`
-	KafkaTopic       string   `env:"KAFKA_TOPIC"`
+	KafkaTopic       string   `env:"KAFKA_TOPIC" envDefault:"posts_feed"`
 	KafkaGroupID     string   `env:"KAFKA_GROUP_ID" envDefault:"app"`
 	RedisURL         string   `env:"REDIS_URL"`
 	CentrifugoURL    string   `env:"CENTRIFUGO_URL" envDefault:"http://centrifugo:8000"`

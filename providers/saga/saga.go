@@ -1,18 +1,25 @@
 package saga
 
 import (
-	"time"
-
-	"github.com/lysu/go-saga"
+	"github.com/axengine/go-saga"
+	"github.com/axengine/go-saga/storage/redis"
 )
 
-func New(zkAddrs, brokerAddrs []string) *saga.ExecutionCoordinator {
-	saga.StorageConfig.Kafka.ZkAddrs = zkAddrs
-	saga.StorageConfig.Kafka.BrokerAddrs = brokerAddrs
-	saga.StorageConfig.Kafka.Partitions = 1
-	saga.StorageConfig.Kafka.Replicas = 1
-	saga.StorageConfig.Kafka.ReturnDuration = 50 * time.Millisecond
-	ec := saga.NewSEC()
+const prefix = "saga"
 
-	return &ec
+func New(redisURL string) (*saga.ExecutionCoordinator, error) {
+	store, err := redis.NewRedisStore(
+		redisURL,
+		"",
+		1,
+		2,
+		5,
+		prefix,
+	)
+	if err != nil {
+		return nil, err
+	}
+	sec := saga.NewSEC(store, prefix)
+
+	return &sec, nil
 }

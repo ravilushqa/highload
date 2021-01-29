@@ -3,7 +3,8 @@ module github.com/ravilushqa/highload
 go 1.15
 
 require (
-	github.com/Shopify/sarama v1.19.0
+	github.com/Shopify/sarama v1.26.4
+	github.com/axengine/go-saga v0.0.0-20200706064458-ee38d3fbab15
 	github.com/bsm/sarama-cluster v2.1.15+incompatible
 	github.com/bxcodec/faker/v3 v3.5.0
 	github.com/caarlos0/env v3.5.0+incompatible
@@ -21,8 +22,6 @@ require (
 	github.com/jmoiron/sqlx v1.2.1-0.20200615141059-0794cb1f47ee
 	github.com/juju/testing v0.0.0-20201216035041-2be42bba85f3 // indirect
 	github.com/linxGnu/mssqlx v1.1.1
-	github.com/lysu/go-saga v0.0.0-20160426172250-a5372c967a5b
-	github.com/lysu/kazoo-go v0.0.0-20160229162054-26744d16cdcf // indirect
 	github.com/neonxp/rutina v1.0.0
 	github.com/onsi/ginkgo v1.14.2 // indirect
 	github.com/onsi/gomega v1.10.4 // indirect

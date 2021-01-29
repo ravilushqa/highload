@@ -8,7 +8,7 @@ type config struct {
 	DatabaseURL  string   `env:"DATABASE_URL"`
 	SlavesUrls   []string `env:"SLAVES_URLS" envSeparator:","`
 	KafkaBrokers []string `env:"KAFKA_BROKERS" envSeparator:","`
-	KafkaTopic   string   `env:"KAFKA_TOPIC"`
+	KafkaTopic   string   `env:"KAFKA_TOPIC" envDefault:"posts_feed"`
 	RedisURL     string   `env:"REDIS_URL"`
 }
 

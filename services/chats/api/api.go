@@ -3,8 +3,10 @@ package main
 import (
 	"context"
 	"net"
+	"strconv"
 	"time"
 
+	"github.com/axengine/go-saga"
 	"github.com/golang/protobuf/ptypes"
 	"github.com/golang/protobuf/ptypes/empty"
 	"github.com/golang/protobuf/ptypes/timestamp"
@@ -12,7 +14,6 @@ import (
 	grpczap "github.com/grpc-ecosystem/go-grpc-middleware/logging/zap"
 	grpc_recovery "github.com/grpc-ecosystem/go-grpc-middleware/recovery"
 	grpcprometheus "github.com/grpc-ecosystem/go-grpc-prometheus"
-	"github.com/lysu/go-saga"
 	"go.uber.org/zap"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
@@ -115,7 +116,7 @@ func (a *Api) StoreMessage(ctx context.Context, req *chatsGrpc.StoreMessageReque
 	userIDs, err := a.chatUserManager.GetChatMembers(ctx, int(req.ChatId))
 	if err != nil {
 		a.logger.Error("failed get chat members", zap.Error(err))
-		return nil, status.New(codes.Internal, err.Error()).Err()
+		return &empty.Empty{}, status.New(codes.Internal, err.Error()).Err()
 	}
 
 	receivers := make([]int64, 0, len(userIDs)-1)
@@ -127,10 +128,14 @@ func (a *Api) StoreMessage(ctx context.Context, req *chatsGrpc.StoreMessageReque
 		}
 	}
 
-	a.saga.StartSaga(ctx, uint64(time.Now().Nanosecond())).
+	err = a.saga.StartSaga(ctx, strconv.Itoa(time.Now().Nanosecond())).
 		ExecSub("store_message", int(req.UserId), int(req.ChatId), req.Text).
 		ExecSub("update_counter", int(req.ChatId), receivers).
 		EndSaga()
+
+	if err != nil {
+		return &empty.Empty{}, status.New(codes.Internal, err.Error()).Err()
+	}
 
 	return &empty.Empty{}, nil
 }
@@ -212,20 +217,16 @@ func (a *Api) initSagas() {
 	a.saga.AddSubTxDef(
 		"store_message",
 		func(ctx context.Context, userID, chatID int, text string) error {
-			id, err := a.messageManager.Insert(ctx, &message.Message{
+			_, err := a.messageManager.Insert(ctx, &message.Message{
 				UserID: userID,
 				ChatID: chatID,
 				Text:   text,
 			})
 
-			ctx = context.WithValue(ctx, "store_message_uuid", id)
-
 			return err
 		},
 		func(ctx context.Context, userID, chatID int, text string) error {
-			id := ctx.Value("store_message_uuid").(string)
-
-			return a.messageManager.HardDelete(ctx, chatID, id)
+			return a.messageManager.HardDeleteLastMessage(ctx, chatID, userID, text)
 		})
 
 	a.saga.AddSubTxDef(
