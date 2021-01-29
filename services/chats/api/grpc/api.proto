@@ -2,7 +2,7 @@ syntax = "proto3";
 
 package chats;
 
-option go_package = "services/chats/grpc";
+option go_package = "services/chats/api/grpc";
 
 import "google/protobuf/empty.proto";
 import "google/protobuf/timestamp.proto";
@@ -24,6 +24,7 @@ message GetUserChatsResponse {
 
 message GetChatMessagesRequest {
     int64 chat_id = 1;
+    int64 user_id = 2;
 }
 
 message GetChatMessagesResponse {

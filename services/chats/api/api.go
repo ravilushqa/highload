@@ -102,6 +102,15 @@ func (a *Api) GetChatMessages(ctx context.Context, req *chatsGrpc.GetChatMessage
 		return nil, status.New(codes.Internal, err.Error()).Err()
 	}
 
+	_, err = a.countersClient.FlushChatCounter(ctx, &countersGrpc.FlushChatCounterRequest{
+		UserId: req.UserId,
+		ChatId: req.ChatId,
+	})
+
+	if err != nil {
+		a.logger.Error("failed flush chat counter", zap.Error(err))
+	}
+
 	resMessages, err := a.messagesToProto(messages)
 	if err != nil {
 		return nil, status.New(codes.Internal, err.Error()).Err()

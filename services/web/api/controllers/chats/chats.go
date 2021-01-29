@@ -74,7 +74,7 @@ func (c *Controller) show(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	res, err := c.chatsClient.GetChatMessages(r.Context(), &grpc.GetChatMessagesRequest{ChatId: int64(chatID)})
+	res, err := c.chatsClient.GetChatMessages(r.Context(), &grpc.GetChatMessagesRequest{ChatId: int64(chatID), UserId: int64(uid)})
 	if err != nil {
 		c.logger.Error("failed get messages", zap.Error(err))
 		w.WriteHeader(http.StatusInternalServerError)

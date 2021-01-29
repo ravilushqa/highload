@@ -96,3 +96,12 @@ func (a *Api) UnreadChatsCount(ctx context.Context, req *countersGrpc.UnreadChat
 		ChatsUnreadMessages: res,
 	}, err
 }
+
+func (a *Api) FlushChatCounter(ctx context.Context, req *countersGrpc.FlushChatCounterRequest) (*empty.Empty, error) {
+	err := a.redis.HDel(fmt.Sprintf(unreadmessageCacheKey, req.UserId), strconv.FormatInt(req.ChatId, 10)).Err()
+	if err != nil {
+		return new(empty.Empty), status.New(codes.Internal, err.Error()).Err()
+	}
+
+	return new(empty.Empty), nil
+}
