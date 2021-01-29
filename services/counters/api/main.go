@@ -4,22 +4,17 @@ import (
 	"context"
 	"net"
 
-	_ "github.com/go-sql-driver/mysql"
+	"github.com/go-redis/redis"
 	grpcmiddleware "github.com/grpc-ecosystem/go-grpc-middleware"
 	grpczap "github.com/grpc-ecosystem/go-grpc-middleware/logging/zap"
 	grpcprometheus "github.com/grpc-ecosystem/go-grpc-prometheus"
-	"github.com/linxGnu/mssqlx"
-	"github.com/tarantool/go-tarantool"
 	"go.uber.org/fx"
 	"go.uber.org/zap"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/reflection"
 
-	"github.com/ravilushqa/highload/providers/db"
-	tarantoolprovider "github.com/ravilushqa/highload/providers/tarantool"
-	usersGrpc "github.com/ravilushqa/highload/services/users/api/grpc"
-	"github.com/ravilushqa/highload/services/users/lib/friend"
-	"github.com/ravilushqa/highload/services/users/lib/user"
+	redisprovider "github.com/ravilushqa/highload/providers/redis"
+	countersGrpc "github.com/ravilushqa/highload/services/counters/api/grpc"
 )
 
 func main() {
@@ -27,15 +22,10 @@ func main() {
 		fx.Provide(
 			newConfig,
 			zap.NewDevelopment,
-			func(c *config) (*mssqlx.DBs, error) {
-				return db.New(c.DatabaseURL, c.SlavesUrls)
-			},
-			func(c *config) (*tarantool.Connection, error) {
-				return tarantoolprovider.New(c.TarantoolURL, c.TarantoolUser, c.TarantoolPass)
+			func(c *config) (*redis.Client, error) {
+				return redisprovider.New(c.RedisURL)
 			},
 			NewApi,
-			user.New,
-			friend.New,
 		),
 		fx.Invoke(
 			registerHooks,
@@ -43,7 +33,7 @@ func main() {
 	).Start(context.Background())
 }
 
-func registerHooks(lifecycle fx.Lifecycle, l *zap.Logger, db *mssqlx.DBs, a *Api) {
+func registerHooks(lifecycle fx.Lifecycle, l *zap.Logger, r *redis.Client, a *Api) {
 	lifecycle.Append(
 		fx.Hook{
 			OnStart: func(ctx context.Context) error {
@@ -63,7 +53,7 @@ func registerHooks(lifecycle fx.Lifecycle, l *zap.Logger, db *mssqlx.DBs, a *Api
 						grpczap.UnaryServerInterceptor(l.Named("grpc_unary")),
 					)),
 				)
-				usersGrpc.RegisterUsersServer(s, a)
+				countersGrpc.RegisterCountersServer(s, a)
 
 				reflection.Register(s)
 
@@ -79,8 +69,8 @@ func registerHooks(lifecycle fx.Lifecycle, l *zap.Logger, db *mssqlx.DBs, a *Api
 				return s.Serve(lis)
 			},
 			OnStop: func(context.Context) error {
-				if errs := db.Destroy(); len(errs) > 0 {
-					l.Error("failed to close db", zap.Errors("errors", errs))
+				if err := r.ShutdownSave().Err(); err != nil {
+					l.Error("failed to shutdown redis", zap.Error(err))
 				}
 				return l.Sync()
 			},

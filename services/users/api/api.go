@@ -2,19 +2,12 @@ package main
 
 import (
 	"context"
-	"net"
 	"strings"
 
 	"github.com/golang/protobuf/ptypes"
 	"github.com/golang/protobuf/ptypes/empty"
 	"github.com/golang/protobuf/ptypes/timestamp"
-	grpcmiddleware "github.com/grpc-ecosystem/go-grpc-middleware"
-	grpczap "github.com/grpc-ecosystem/go-grpc-middleware/logging/zap"
-	grpcprometheus "github.com/grpc-ecosystem/go-grpc-prometheus"
-	"go.uber.org/zap"
-	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/reflection"
 	"google.golang.org/grpc/status"
 
 	usersGrpc "github.com/ravilushqa/highload/services/users/api/grpc"
@@ -23,46 +16,12 @@ import (
 )
 
 type Api struct {
-	logger        *zap.Logger
 	userManager   *user.Manager
 	friendManager *friend.Manager
 }
 
-func NewApi(logger *zap.Logger, userManager *user.Manager, friendManager *friend.Manager) *Api {
-	return &Api{logger: logger, userManager: userManager, friendManager: friendManager}
-}
-
-func (a *Api) Run(ctx context.Context) error {
-	addr := ":50051"
-	lis, err := net.Listen("tcp", addr) //@todo
-	if err != nil {
-		return err
-	}
-
-	s := grpc.NewServer(
-		grpc.StreamInterceptor(grpcmiddleware.ChainStreamServer(
-			grpcprometheus.StreamServerInterceptor,
-			grpczap.StreamServerInterceptor(a.logger.Named("grpc_stream")),
-		)),
-		grpc.UnaryInterceptor(grpcmiddleware.ChainUnaryServer(
-			grpcprometheus.UnaryServerInterceptor,
-			grpczap.UnaryServerInterceptor(a.logger.Named("grpc_unary")),
-		)),
-	)
-	usersGrpc.RegisterUsersServer(s, a)
-
-	reflection.Register(s)
-
-	a.logger.Info("api started..", zap.String("addr", addr))
-
-	defer s.GracefulStop()
-
-	go func() {
-		<-ctx.Done()
-		s.Stop()
-	}()
-
-	return s.Serve(lis)
+func NewApi(userManager *user.Manager, friendManager *friend.Manager) *Api {
+	return &Api{userManager: userManager, friendManager: friendManager}
 }
 
 func (a *Api) GetAll(ctx context.Context, req *usersGrpc.GetUsersRequest) (*usersGrpc.GetUsersResponse, error) {

@@ -5,18 +5,21 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/axengine/go-saga"
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/jmoiron/sqlx"
 	"github.com/linxGnu/mssqlx"
 	"github.com/neonxp/rutina"
 	"go.uber.org/dig"
 	"go.uber.org/zap"
+	"google.golang.org/grpc"
 
+	"github.com/ravilushqa/highload/providers/db"
+	sagaProvider "github.com/ravilushqa/highload/providers/saga"
 	"github.com/ravilushqa/highload/services/chats/lib/chat"
 	"github.com/ravilushqa/highload/services/chats/lib/chat_user"
 	"github.com/ravilushqa/highload/services/chats/lib/message"
-
-	"github.com/ravilushqa/highload/providers/db"
+	countersGrpc "github.com/ravilushqa/highload/services/counters/api/grpc"
 )
 
 func buildContainer() (*dig.Container, error) {
@@ -55,6 +58,16 @@ func buildContainer() (*dig.Container, error) {
 		NewApi,
 		chat.NewManager,
 		chatuser.NewManager,
+		func(c *config) (countersGrpc.CountersClient, error) {
+			conn, err := grpc.Dial(c.CountersURL, grpc.WithInsecure())
+			if err != nil {
+				return nil, err
+			}
+			return countersGrpc.NewCountersClient(conn), nil
+		},
+		func(c *config) (*saga.ExecutionCoordinator, error) {
+			return sagaProvider.New(c.RedisURL)
+		},
 	}
 
 	for _, c := range constructors {

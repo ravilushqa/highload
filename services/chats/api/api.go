@@ -3,12 +3,16 @@ package main
 import (
 	"context"
 	"net"
+	"strconv"
+	"time"
 
+	"github.com/axengine/go-saga"
 	"github.com/golang/protobuf/ptypes"
 	"github.com/golang/protobuf/ptypes/empty"
 	"github.com/golang/protobuf/ptypes/timestamp"
 	grpcmiddleware "github.com/grpc-ecosystem/go-grpc-middleware"
 	grpczap "github.com/grpc-ecosystem/go-grpc-middleware/logging/zap"
+	grpc_recovery "github.com/grpc-ecosystem/go-grpc-middleware/recovery"
 	grpcprometheus "github.com/grpc-ecosystem/go-grpc-prometheus"
 	"go.uber.org/zap"
 	"google.golang.org/grpc"
@@ -20,6 +24,7 @@ import (
 	"github.com/ravilushqa/highload/services/chats/lib/chat"
 	chatuser "github.com/ravilushqa/highload/services/chats/lib/chat_user"
 	"github.com/ravilushqa/highload/services/chats/lib/message"
+	countersGrpc "github.com/ravilushqa/highload/services/counters/api/grpc"
 )
 
 type Api struct {
@@ -27,10 +32,15 @@ type Api struct {
 	chatManager     *chat.Manager
 	messageManager  *message.Manager
 	logger          *zap.Logger
+	saga            *saga.ExecutionCoordinator
+	countersClient  countersGrpc.CountersClient
 }
 
-func NewApi(chatUserManager *chatuser.Manager, chatManager *chat.Manager, messageManager *message.Manager, logger *zap.Logger) *Api {
-	return &Api{chatUserManager: chatUserManager, chatManager: chatManager, messageManager: messageManager, logger: logger}
+func NewApi(chatUserManager *chatuser.Manager, chatManager *chat.Manager, messageManager *message.Manager, logger *zap.Logger, saga *saga.ExecutionCoordinator, countersClient countersGrpc.CountersClient) *Api {
+	a := &Api{chatUserManager: chatUserManager, chatManager: chatManager, messageManager: messageManager, logger: logger, saga: saga, countersClient: countersClient}
+	a.initSagas()
+
+	return a
 }
 
 func (a *Api) Run(ctx context.Context) error {
@@ -44,10 +54,12 @@ func (a *Api) Run(ctx context.Context) error {
 		grpc.StreamInterceptor(grpcmiddleware.ChainStreamServer(
 			grpcprometheus.StreamServerInterceptor,
 			grpczap.StreamServerInterceptor(a.logger.Named("grpc_stream")),
+			grpc_recovery.StreamServerInterceptor(),
 		)),
 		grpc.UnaryInterceptor(grpcmiddleware.ChainUnaryServer(
 			grpcprometheus.UnaryServerInterceptor,
 			grpczap.UnaryServerInterceptor(a.logger.Named("grpc_unary")),
+			grpc_recovery.UnaryServerInterceptor(),
 		)),
 	)
 	chatsGrpc.RegisterChatsServer(s, a)
@@ -90,6 +102,15 @@ func (a *Api) GetChatMessages(ctx context.Context, req *chatsGrpc.GetChatMessage
 		return nil, status.New(codes.Internal, err.Error()).Err()
 	}
 
+	_, err = a.countersClient.FlushChatCounter(ctx, &countersGrpc.FlushChatCounterRequest{
+		UserId: req.UserId,
+		ChatId: req.ChatId,
+	})
+
+	if err != nil {
+		a.logger.Error("failed flush chat counter", zap.Error(err))
+	}
+
 	resMessages, err := a.messagesToProto(messages)
 	if err != nil {
 		return nil, status.New(codes.Internal, err.Error()).Err()
@@ -101,14 +122,30 @@ func (a *Api) GetChatMessages(ctx context.Context, req *chatsGrpc.GetChatMessage
 }
 
 func (a *Api) StoreMessage(ctx context.Context, req *chatsGrpc.StoreMessageRequest) (*empty.Empty, error) {
-	err := a.messageManager.Insert(ctx, &message.Message{
-		UserID: int(req.UserId),
-		ChatID: int(req.ChatId),
-		Text:   req.Text,
-	})
+	userIDs, err := a.chatUserManager.GetChatMembers(ctx, int(req.ChatId))
 	if err != nil {
-		return nil, status.New(codes.Internal, err.Error()).Err()
+		a.logger.Error("failed get chat members", zap.Error(err))
+		return &empty.Empty{}, status.New(codes.Internal, err.Error()).Err()
 	}
+
+	receivers := make([]int64, 0, len(userIDs)-1)
+
+	for i, userID := range userIDs {
+		if userID == req.UserId {
+			receivers = append(userIDs[:i], userIDs[i+1:]...)
+			break
+		}
+	}
+
+	err = a.saga.StartSaga(ctx, strconv.Itoa(time.Now().Nanosecond())).
+		ExecSub("store_message", int(req.UserId), int(req.ChatId), req.Text).
+		ExecSub("update_counter", int(req.ChatId), receivers).
+		EndSaga()
+
+	if err != nil {
+		return &empty.Empty{}, status.New(codes.Internal, err.Error()).Err()
+	}
+
 	return &empty.Empty{}, nil
 }
 
@@ -183,4 +220,40 @@ func (a *Api) messagesToProto(messages []message.Message) ([]*chatsGrpc.Message,
 		})
 	}
 	return resMessages, nil
+}
+
+func (a *Api) initSagas() {
+	a.saga.AddSubTxDef(
+		"store_message",
+		func(ctx context.Context, userID, chatID int, text string) error {
+			_, err := a.messageManager.Insert(ctx, &message.Message{
+				UserID: userID,
+				ChatID: chatID,
+				Text:   text,
+			})
+
+			return err
+		},
+		func(ctx context.Context, userID, chatID int, text string) error {
+			return a.messageManager.HardDeleteLastMessage(ctx, chatID, userID, text)
+		})
+
+	a.saga.AddSubTxDef(
+		"update_counter",
+		func(ctx context.Context, chatID int, receivers []int64) error {
+			_, err := a.countersClient.IncrementUnreadMessageCounter(ctx, &countersGrpc.IncrementUnreadMessageCounterRequest{
+				UserIds: receivers,
+				ChatId:  int64(chatID),
+			})
+
+			return err
+		},
+		func(ctx context.Context, chatID int, receivers []int64) error {
+			_, err := a.countersClient.DecrementUnreadMessageCounter(ctx, &countersGrpc.DecrementUnreadMessageCounterRequest{
+				UserIds: receivers,
+				ChatId:  int64(chatID),
+			})
+
+			return err
+		})
 }

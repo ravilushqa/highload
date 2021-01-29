@@ -3,7 +3,8 @@ module github.com/ravilushqa/highload
 go 1.15
 
 require (
-	github.com/Shopify/sarama v1.19.0
+	github.com/Shopify/sarama v1.26.4
+	github.com/axengine/go-saga v0.0.0-20200706064458-ee38d3fbab15
 	github.com/bsm/sarama-cluster v2.1.15+incompatible
 	github.com/bxcodec/faker/v3 v3.5.0
 	github.com/caarlos0/env v3.5.0+incompatible
@@ -19,6 +20,7 @@ require (
 	github.com/grpc-ecosystem/go-grpc-middleware v1.0.1-0.20190118093823-f849b5445de4
 	github.com/grpc-ecosystem/go-grpc-prometheus v1.2.0
 	github.com/jmoiron/sqlx v1.2.1-0.20200615141059-0794cb1f47ee
+	github.com/juju/testing v0.0.0-20201216035041-2be42bba85f3 // indirect
 	github.com/linxGnu/mssqlx v1.1.1
 	github.com/neonxp/rutina v1.0.0
 	github.com/onsi/ginkgo v1.14.2 // indirect
@@ -27,8 +29,9 @@ require (
 	github.com/satori/go.uuid v1.2.0
 	github.com/tarantool/go-tarantool v0.0.0-20201220111423-77ce7d9a407a
 	go.uber.org/dig v1.10.0
+	go.uber.org/fx v1.13.1
 	go.uber.org/zap v1.16.0
-	golang.org/x/crypto v0.0.0-20200622213623-75b288015ac9
+	golang.org/x/crypto v0.0.0-20200820211705-5c72a883971a
 	golang.org/x/mod v0.3.1-0.20200828183125-ce943fd02449 // indirect
 	golang.org/x/net v0.0.0-20201216054612-986b41b23924 // indirect
 	golang.org/x/tools v0.0.0-20200207183749-b753a1ba74fa // indirect
