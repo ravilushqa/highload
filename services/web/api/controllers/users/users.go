@@ -1,9 +1,9 @@
 package users
 
 import (
+	"fmt"
 	"html/template"
 	"net/http"
-	"strconv"
 
 	"github.com/go-chi/chi"
 	"go.uber.org/zap"
@@ -168,8 +168,8 @@ func (c *Controller) chatOpen(w http.ResponseWriter, r *http.Request) {
 	}
 
 	res, err := c.chatsClient.FindOrCreateChat(r.Context(), &chatsGrpc.FindOrCreateChatRequest{
-		UserId_1: 1,
-		UserId_2: 1, // @todo
+		UserId_1: authUserID,
+		UserId_2: userID,
 	})
 
 	if err != nil {
@@ -179,5 +179,5 @@ func (c *Controller) chatOpen(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	http.Redirect(w, r, "/chats/"+strconv.Itoa(int(res.ChatId)), http.StatusFound)
+	http.Redirect(w, r, fmt.Sprintf("/chats/%s", res.ChatId), http.StatusFound)
 }

@@ -10,14 +10,14 @@ type User struct {
 	ID        primitive.ObjectID `bson:"_id,omitempty"`
 	Email     string
 	Password  string
-	FirstName string
-	LastName  string
+	FirstName string `bson:"first_name"`
+	LastName  string `bson:"last_name"`
 	Birthday  time.Time
 	Interests string
 	Sex       Sex
 	City      string
-	CreatedAt time.Time
-	DeletedAt *time.Time
+	CreatedAt time.Time  `bson:"created_at"`
+	DeletedAt *time.Time `bson:"deleted_at,omitempty"`
 }
 
 type Sex string

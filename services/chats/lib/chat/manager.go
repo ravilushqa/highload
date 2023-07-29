@@ -3,49 +3,33 @@ package chat
 import (
 	"context"
 
-	"github.com/linxGnu/mssqlx"
+	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/bson/primitive"
+	"go.mongodb.org/mongo-driver/mongo"
 )
 
 type Manager struct {
-	DB *mssqlx.DBs
+	DB *mongo.Database
 }
 
-func NewManager(db *mssqlx.DBs) *Manager {
+func NewManager(db *mongo.Database) *Manager {
 	return &Manager{DB: db}
 }
 
-func (m *Manager) Insert(ctx context.Context, c *Chat) (int, error) {
-	query := `insert into chats 
-		(name, type)
-		values (:name, :type)
-	`
+func (m *Manager) Insert(ctx context.Context, c *Chat) (string, error) {
+	collection := m.DB.Collection("chats")
 
-	res, err := m.DB.NamedExecContext(ctx, query, map[string]interface{}{
+	res, err := collection.InsertOne(ctx, bson.M{
 		"name": c.Name,
 		"type": c.Type,
 	})
 
 	if err != nil {
-		return 0, err
+		return "", err
 	}
 
-	chatID, err := res.LastInsertId()
-	if err != nil {
-		return 0, err
-	}
-
-	return int(chatID), nil
-}
-
-func (m *Manager) GetByIDs(ctx context.Context, c *Chat) error {
-	query := `insert into chats 
-		(name, type)
-		values (:name, :type)
-	`
-	_, err := m.DB.NamedExecContext(ctx, query, map[string]interface{}{
-		"name": c.Name,
-		"type": c.Type,
-	})
-
-	return err
+	// In MongoDB, the inserted ID is typically an ObjectID and not a number.
+	// You'll need to adjust your models to work with that, or use a different strategy.
+	// This code assumes that an ObjectID is fine and that it's okay to return it as a string.
+	return res.InsertedID.(primitive.ObjectID).Hex(), nil
 }

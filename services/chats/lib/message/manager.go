@@ -2,31 +2,25 @@ package message
 
 import (
 	"context"
-	"fmt"
 
-	"github.com/jmoiron/sqlx"
-	"github.com/neonxp/rutina"
 	"github.com/satori/go.uuid"
+	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/mongo"
+	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
 type Manager struct {
-	Shards []*sqlx.DB
+	col *mongo.Collection
 }
 
-func NewManager(shards []*sqlx.DB) *Manager {
-	return &Manager{Shards: shards}
+func NewManager(db *mongo.Database) *Manager {
+	return &Manager{col: db.Collection("messages")}
 }
 
 func (m *Manager) Insert(ctx context.Context, message *Message) (string, error) {
-	shard := m.getShardByChatID(message.ChatID)
-	query := `insert into messages 
-		(uuid, user_id, chat_id, text)
-		values (:uuid, :user_id, :chat_id, :text)
-	`
-
 	id := uuid.NewV4().String()
 
-	_, err := shard.NamedExecContext(ctx, query, map[string]interface{}{
+	_, err := m.col.InsertOne(ctx, bson.M{
 		"uuid":    id,
 		"user_id": message.UserID,
 		"chat_id": message.ChatID,
@@ -35,66 +29,38 @@ func (m *Manager) Insert(ctx context.Context, message *Message) (string, error) 
 	return id, err
 }
 
-func (m *Manager) HardDeleteLastMessage(ctx context.Context, chatID int, userID int, text string) error {
-	shard := m.getShardByChatID(chatID)
-	query := `
-		delete from messages
-		where chat_id = :chat_id and user_id = :user_id and text = :text
-		order by created_at desc limit 1
-	`
-
-	_, err := shard.NamedExecContext(ctx, query, map[string]interface{}{
+func (m *Manager) HardDeleteLastMessage(ctx context.Context, chatID, userID, text string) error {
+	filter := bson.M{
 		"chat_id": chatID,
 		"user_id": userID,
 		"text":    text,
-	})
+	}
+
+	opts := options.FindOneAndDelete().SetSort(bson.M{"_id": -1}) // sorting by _id as a proxy for created_at
+	err := m.col.FindOneAndDelete(ctx, filter, opts).Err()
+
 	return err
 }
 
-func (m *Manager) GetChatMessages(ctx context.Context, chatIDs []int) ([]Message, error) {
+func (m *Manager) GetChatMessages(ctx context.Context, chatIDs []string) ([]Message, error) {
 	if len(chatIDs) == 0 {
 		return nil, nil
 	}
-	firstChatShard := m.getShardByChatID(chatIDs[0])
 
-	query := `
-		select uuid, user_id, chat_id, text, created_at, updated_at, deleted_at 
-		from messages where chat_id in (?)
-	`
+	filter := bson.M{
+		"chat_id": bson.M{"$in": chatIDs},
+	}
 
-	query, args, err := sqlx.In(query, chatIDs)
+	cursor, err := m.col.Find(ctx, filter)
 	if err != nil {
 		return nil, err
 	}
+	defer cursor.Close(ctx)
 
-	query = firstChatShard.Rebind(query)
-
-	res := make([]Message, 0, 1024)
-
-	if len(chatIDs) == 1 {
-		err = firstChatShard.SelectContext(ctx, &res, query, args...)
-		return res, err
+	var res []Message
+	if err = cursor.All(ctx, &res); err != nil {
+		return nil, err
 	}
 
-	r := rutina.New()
-
-	for _, shard := range m.Shards {
-		r.Go(func(ctx context.Context) error {
-			shardData := make([]Message, 0, 1024)
-			err := shard.SelectContext(ctx, &shardData, query, args...)
-
-			if err != nil {
-				return err
-			}
-			res = append(res, shardData...)
-			return nil
-		})
-	}
-	err = r.Wait()
-	return res, err
-}
-
-func (m *Manager) getShardByChatID(chatID int) *sqlx.DB {
-	fmt.Println(len(m.Shards))
-	return m.Shards[chatID%len(m.Shards)]
+	return res, nil
 }

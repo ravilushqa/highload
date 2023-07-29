@@ -5,11 +5,10 @@ import (
 )
 
 type config struct {
-	DatabaseURL    string   `env:"DATABASE_URL"`
-	SlavesUrls     []string `env:"SLAVES_URLS" envSeparator:","`
-	MessagesShards []string `env:"MESSAGES_SHARDS" envSeparator:","`
-	CountersURL    string   `env:"COUNTERS_URL" envDefault:"counters-api:50051"`
-	RedisURL       string   `env:"REDIS_URL"`
+	MongoURL    string `env:"MONGO_URL" envDefault:"mongodb://mongodb:27017"`
+	MongoDB     string `env:"MONGO_DB" envDefault:"users"`
+	CountersURL string `env:"COUNTERS_URL" envDefault:"counters-api:50051"`
+	RedisURL    string `env:"REDIS_URL"`
 }
 
 func newConfig() (*config, error) {

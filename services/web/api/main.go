@@ -4,7 +4,6 @@ import (
 	"fmt"
 
 	_ "github.com/go-sql-driver/mysql"
-	"github.com/linxGnu/mssqlx"
 	"github.com/neonxp/rutina"
 	"go.uber.org/dig"
 	"go.uber.org/zap"
@@ -94,10 +93,7 @@ func main() {
 		tl.Error("run failed", zap.Error(err))
 	}
 
-	err = container.Invoke(func(l *zap.Logger, db *mssqlx.DBs) error {
-		if errs := db.Destroy(); len(errs) > 0 {
-			l.Error("failed to close db", zap.Errors("errors", errs))
-		}
+	err = container.Invoke(func(l *zap.Logger) error {
 		l.Info("gracefully shutdown...")
 		return l.Sync()
 	})

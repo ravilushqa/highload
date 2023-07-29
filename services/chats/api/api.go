@@ -19,6 +19,7 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/reflection"
 	"google.golang.org/grpc/status"
+	"google.golang.org/protobuf/types/known/timestamppb"
 
 	chatsGrpc "github.com/ravilushqa/highload/services/chats/api/grpc"
 	"github.com/ravilushqa/highload/services/chats/lib/chat"
@@ -28,6 +29,7 @@ import (
 )
 
 type Api struct {
+	chatsGrpc.UnimplementedChatsServer
 	chatUserManager *chatuser.Manager
 	chatManager     *chat.Manager
 	messageManager  *message.Manager
@@ -79,15 +81,15 @@ func (a *Api) Run(ctx context.Context) error {
 }
 
 func (a *Api) GetUserChats(ctx context.Context, req *chatsGrpc.GetUserChatsRequest) (*chatsGrpc.GetUserChatsResponse, error) {
-	chatIDs, err := a.chatUserManager.GetUserChats(ctx, int(req.UserId))
+	chatIDs, err := a.chatUserManager.GetUserChats(ctx, req.UserId)
 	if err != nil {
 		a.logger.Error("failed get chats", zap.Error(err))
 		return nil, status.New(codes.Internal, err.Error()).Err()
 	}
 
-	chatIDsRes := make([]int64, 0, len(chatIDs))
+	chatIDsRes := make([]string, 0, len(chatIDs))
 	for _, v := range chatIDs {
-		chatIDsRes = append(chatIDsRes, int64(v))
+		chatIDsRes = append(chatIDsRes, v)
 	}
 
 	return &chatsGrpc.GetUserChatsResponse{
@@ -96,15 +98,15 @@ func (a *Api) GetUserChats(ctx context.Context, req *chatsGrpc.GetUserChatsReque
 }
 
 func (a *Api) GetChatMessages(ctx context.Context, req *chatsGrpc.GetChatMessagesRequest) (*chatsGrpc.GetChatMessagesResponse, error) {
-	messages, err := a.messageManager.GetChatMessages(ctx, []int{int(req.ChatId)})
+	messages, err := a.messageManager.GetChatMessages(ctx, []string{req.ChatId})
 	if err != nil {
 		a.logger.Error("failed get messages", zap.Error(err))
 		return nil, status.New(codes.Internal, err.Error()).Err()
 	}
 
 	_, err = a.countersClient.FlushChatCounter(ctx, &countersGrpc.FlushChatCounterRequest{
-		UserId: req.UserId,
-		ChatId: req.ChatId,
+		//UserId: req.UserId, @todo
+		//ChatId: req.ChatId,
 	})
 
 	if err != nil {
@@ -122,13 +124,13 @@ func (a *Api) GetChatMessages(ctx context.Context, req *chatsGrpc.GetChatMessage
 }
 
 func (a *Api) StoreMessage(ctx context.Context, req *chatsGrpc.StoreMessageRequest) (*empty.Empty, error) {
-	userIDs, err := a.chatUserManager.GetChatMembers(ctx, int(req.ChatId))
+	userIDs, err := a.chatUserManager.GetChatMembers(ctx, req.ChatId)
 	if err != nil {
 		a.logger.Error("failed get chat members", zap.Error(err))
 		return &empty.Empty{}, status.New(codes.Internal, err.Error()).Err()
 	}
 
-	receivers := make([]int64, 0, len(userIDs)-1)
+	receivers := make([]string, 0, len(userIDs)-1)
 
 	for i, userID := range userIDs {
 		if userID == req.UserId {
@@ -138,8 +140,8 @@ func (a *Api) StoreMessage(ctx context.Context, req *chatsGrpc.StoreMessageReque
 	}
 
 	err = a.saga.StartSaga(ctx, strconv.Itoa(time.Now().Nanosecond())).
-		ExecSub("store_message", int(req.UserId), int(req.ChatId), req.Text).
-		ExecSub("update_counter", int(req.ChatId), receivers).
+		ExecSub("store_message", req.UserId, req.ChatId, req.Text).
+		ExecSub("update_counter", req.ChatId, receivers).
 		EndSaga()
 
 	if err != nil {
@@ -150,12 +152,12 @@ func (a *Api) StoreMessage(ctx context.Context, req *chatsGrpc.StoreMessageReque
 }
 
 func (a *Api) FindOrCreateChat(ctx context.Context, req *chatsGrpc.FindOrCreateChatRequest) (*chatsGrpc.FindOrCreateChatResponse, error) {
-	chatID, err := a.chatUserManager.GetUsersDialogChat(ctx, int(req.UserId_1), int(req.UserId_2))
+	chatID, err := a.chatUserManager.GetUsersDialogChat(ctx, req.UserId_1, req.UserId_2)
 	if err != nil {
 		a.logger.Error("failed get users dialog chat", zap.Error(err))
 		return nil, status.New(codes.Internal, err.Error()).Err()
 	}
-	if chatID == 0 {
+	if chatID == "" { // chatID == 0 @todo
 		chatID, err = a.chatManager.Insert(ctx, &chat.Chat{
 			Type: "dialog",
 		})
@@ -164,7 +166,7 @@ func (a *Api) FindOrCreateChat(ctx context.Context, req *chatsGrpc.FindOrCreateC
 			return nil, status.New(codes.Internal, err.Error()).Err()
 		}
 		err = a.chatUserManager.Insert(ctx, &chatuser.ChatUser{
-			UserID: int(req.UserId_1),
+			UserID: req.UserId_1,
 			ChatID: chatID,
 		})
 
@@ -173,7 +175,7 @@ func (a *Api) FindOrCreateChat(ctx context.Context, req *chatsGrpc.FindOrCreateC
 			return nil, status.New(codes.Internal, err.Error()).Err()
 		}
 		err = a.chatUserManager.Insert(ctx, &chatuser.ChatUser{
-			UserID: int(req.UserId_2),
+			UserID: req.UserId_2,
 			ChatID: chatID,
 		})
 
@@ -184,7 +186,7 @@ func (a *Api) FindOrCreateChat(ctx context.Context, req *chatsGrpc.FindOrCreateC
 	}
 
 	return &chatsGrpc.FindOrCreateChatResponse{
-		ChatId: int64(chatID),
+		ChatId: chatID,
 	}, err
 }
 
@@ -196,23 +198,23 @@ func (a *Api) messagesToProto(messages []message.Message) ([]*chatsGrpc.Message,
 			return nil, err
 		}
 		var ua *timestamp.Timestamp
-		if v.UpdatedAt.Valid {
-			ua, err = ptypes.TimestampProto(v.UpdatedAt.Time)
+		if v.UpdatedAt != nil {
+			ua = timestamppb.New(*v.UpdatedAt)
 			if err != nil {
 				return nil, err
 			}
 		}
 		var da *timestamp.Timestamp
-		if v.DeletedAt.Valid {
-			da, err = ptypes.TimestampProto(v.DeletedAt.Time)
+		if v.DeletedAt != nil {
+			da = timestamppb.New(*v.DeletedAt)
 			if err != nil {
 				return nil, err
 			}
 		}
 		resMessages = append(resMessages, &chatsGrpc.Message{
 			Uuid:      v.UUID,
-			UserId:    int64(v.UserID),
-			ChatId:    int64(v.ChatID),
+			UserId:    v.UserID,
+			ChatId:    v.ChatID,
 			Text:      v.Text,
 			CreatedAt: ca,
 			UpdatedAt: ua,
@@ -225,7 +227,7 @@ func (a *Api) messagesToProto(messages []message.Message) ([]*chatsGrpc.Message,
 func (a *Api) initSagas() {
 	a.saga.AddSubTxDef(
 		"store_message",
-		func(ctx context.Context, userID, chatID int, text string) error {
+		func(ctx context.Context, userID, chatID string, text string) error {
 			_, err := a.messageManager.Insert(ctx, &message.Message{
 				UserID: userID,
 				ChatID: chatID,
@@ -234,7 +236,7 @@ func (a *Api) initSagas() {
 
 			return err
 		},
-		func(ctx context.Context, userID, chatID int, text string) error {
+		func(ctx context.Context, userID, chatID string, text string) error {
 			return a.messageManager.HardDeleteLastMessage(ctx, chatID, userID, text)
 		})
 

@@ -11,7 +11,7 @@ services:
       - 8080
     depends_on:
       - users-api
-#      - chats-api
+      - chats-api
 #      - posts-api
 #      - posts-daemon
 #      - counters-api
@@ -45,17 +45,10 @@ services:
       - 50051
     restart: on-failure
     depends_on:
-      - mysql_master
-      - mysql_slave1
-      - mysql_slave2
-      - db-node-1
-      - db-node-2
-      - haproxy
+      - mongodb
       - redis
     environment:
-      DATABASE_URL: "root:@(haproxy:3306)/app"
-      SLAVES_URLS: "root:@(haproxy:3307)/app"
-      MESSAGES_SHARDS: "messages:secret@(db-node-1:3306)/messages,messages:secret@(db-node-2:3306)/messages"
+      MONGO_URL: "mongodb://mongodb:27017"
       REDIS_URL: "redis:6379"
     networks:
       - otus

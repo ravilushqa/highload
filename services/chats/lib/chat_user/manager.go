@@ -2,25 +2,21 @@ package chatuser
 
 import (
 	"context"
-	"database/sql"
 
-	"github.com/linxGnu/mssqlx"
+	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/mongo"
 )
 
 type Manager struct {
-	DB *mssqlx.DBs
+	col *mongo.Collection
 }
 
-func NewManager(db *mssqlx.DBs) *Manager {
-	return &Manager{DB: db}
+func NewManager(db *mongo.Database) *Manager {
+	return &Manager{col: db.Collection("chat_users")}
 }
 
 func (m *Manager) Insert(ctx context.Context, cu *ChatUser) error {
-	query := `insert into chat_users 
-		(user_id, chat_id)
-		values (:user_id, :chat_id)
-	`
-	_, err := m.DB.NamedExecContext(ctx, query, map[string]interface{}{
+	_, err := m.col.InsertOne(ctx, bson.M{
 		"user_id": cu.UserID,
 		"chat_id": cu.ChatID,
 	})
@@ -28,33 +24,93 @@ func (m *Manager) Insert(ctx context.Context, cu *ChatUser) error {
 	return err
 }
 
-func (m *Manager) GetUserChats(ctx context.Context, userID int) ([]int, error) {
-	var chatIDs []int
-	err := m.DB.SelectContext(ctx, &chatIDs, "select chat_id from chat_users where user_id = ?", userID)
-	return chatIDs, err
-}
+func (m *Manager) GetUserChats(ctx context.Context, userID string) ([]string, error) {
+	cursor, err := m.col.Find(ctx, bson.M{"user_id": userID})
 
-func (m *Manager) GetChatMembers(ctx context.Context, chatID int) ([]int64, error) {
-	var userIDs []int64
-	err := m.DB.SelectContext(ctx, &userIDs, "select user_id from chat_users where chat_id = ?", chatID)
-	return userIDs, err
-}
-
-func (m Manager) GetUsersDialogChat(ctx context.Context, uID1, uID2 int) (int, error) {
-	q := `select cu1.chat_id from chat_users cu1
-		join chat_users as cu2 on  cu1.chat_id = cu2.chat_id and cu1.id != cu2.id
-		join chats c on c.id = cu1.chat_id
-		where cu1.user_id = ? and cu2.user_id = ? and c.type = 'dialog'
-	`
-
-	var dialogChat int
-
-	err := m.DB.SelectContext(ctx, &dialogChat, q, uID1, uID2)
+	var chatIDs []string
 	if err != nil {
-		if err != sql.ErrNoRows {
-			return 0, nil
-		}
-		return 0, err
+		return chatIDs, err
 	}
-	return dialogChat, nil
+
+	for cursor.Next(ctx) {
+		var elem ChatUser
+		err := cursor.Decode(&elem)
+		if err != nil {
+			return chatIDs, err
+		}
+
+		chatIDs = append(chatIDs, elem.ChatID)
+	}
+
+	if err = cursor.Err(); err != nil {
+		return chatIDs, err
+	}
+
+	cursor.Close(ctx)
+
+	return chatIDs, nil
+}
+
+func (m *Manager) GetChatMembers(ctx context.Context, chatID string) ([]string, error) {
+	cursor, err := m.col.Find(ctx, bson.M{"chat_id": chatID})
+
+	var userIDs []string
+	if err != nil {
+		return userIDs, err
+	}
+
+	for cursor.Next(ctx) {
+		var elem ChatUser
+		err := cursor.Decode(&elem)
+		if err != nil {
+			return userIDs, err
+		}
+
+		userIDs = append(userIDs, elem.UserID)
+	}
+
+	if err = cursor.Err(); err != nil {
+		return userIDs, err
+	}
+
+	cursor.Close(ctx)
+
+	return userIDs, nil
+}
+
+// @todo: optimize
+func (m *Manager) GetUsersDialogChat(ctx context.Context, uID1, uID2 string) (string, error) {
+	cursor, err := m.col.Find(ctx, bson.M{"user_id": uID1})
+
+	if err != nil {
+		return "", err
+	}
+
+	var chatID string
+	for cursor.Next(ctx) {
+		var elem ChatUser
+		err := cursor.Decode(&elem)
+		if err != nil {
+			return "", err
+		}
+
+		chatIDs, err := m.GetUserChats(ctx, uID2)
+		if err != nil {
+			return "", err
+		}
+
+		for _, chatID := range chatIDs {
+			if chatID == elem.ChatID {
+				return chatID, nil
+			}
+		}
+	}
+
+	if err = cursor.Err(); err != nil {
+		return "", err
+	}
+
+	cursor.Close(ctx)
+
+	return chatID, nil
 }

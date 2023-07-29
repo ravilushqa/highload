@@ -2,19 +2,16 @@ package main
 
 import (
 	"context"
-	"fmt"
-	"time"
 
 	"github.com/axengine/go-saga"
 	_ "github.com/go-sql-driver/mysql"
-	"github.com/jmoiron/sqlx"
-	"github.com/linxGnu/mssqlx"
 	"github.com/neonxp/rutina"
+	"go.mongodb.org/mongo-driver/mongo"
 	"go.uber.org/dig"
 	"go.uber.org/zap"
 	"google.golang.org/grpc"
 
-	"github.com/ravilushqa/highload/providers/db"
+	"github.com/ravilushqa/highload/providers/mongodb"
 	sagaProvider "github.com/ravilushqa/highload/providers/saga"
 	"github.com/ravilushqa/highload/services/chats/lib/chat"
 	"github.com/ravilushqa/highload/services/chats/lib/chat_user"
@@ -27,34 +24,10 @@ func buildContainer() (*dig.Container, error) {
 	constructors := []interface{}{
 		newConfig,
 		zap.NewDevelopment,
-		func(c *config) (*mssqlx.DBs, error) {
-			return db.New(c.DatabaseURL, c.SlavesUrls)
+		func(c *config) (*mongo.Database, error) {
+			return mongodb.New(context.Background(), c.MongoURL, c.MongoDB)
 		},
-		func(c *config) (*message.Manager, error) {
-			dbs := make([]*sqlx.DB, 0)
-			r := rutina.New()
-			for _, shardURL := range c.MessagesShards {
-				r.Go(func(ctx context.Context) error {
-					database, err := sqlx.Connect("mysql", fmt.Sprint(shardURL, "?parseTime=true"))
-					if err != nil {
-						return err
-					}
-
-					database.SetConnMaxLifetime(5 * time.Minute)
-					database.SetConnMaxIdleTime(5 * time.Minute)
-					database.SetMaxOpenConns(25)
-					database.SetMaxIdleConns(25)
-					dbs = append(dbs, database)
-					return nil
-				})
-			}
-
-			err := r.Wait()
-			if err != nil {
-				return nil, err
-			}
-			return message.NewManager(dbs), nil
-		},
+		message.NewManager,
 		NewApi,
 		chat.NewManager,
 		chatuser.NewManager,
@@ -105,9 +78,9 @@ func main() {
 		tl.Error("run failed", zap.Error(err))
 	}
 
-	err = container.Invoke(func(l *zap.Logger, db *mssqlx.DBs) error {
-		if errs := db.Destroy(); len(errs) > 0 {
-			l.Error("failed to close db", zap.Errors("errors", errs))
+	err = container.Invoke(func(l *zap.Logger, db *mongo.Database) error {
+		if err := db.Client().Disconnect(context.Background()); err != nil {
+			l.Error("failed disconnect from mongo", zap.Error(err))
 		}
 		l.Info("gracefully shutdown...")
 		return l.Sync()

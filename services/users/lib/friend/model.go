@@ -1,7 +1,7 @@
 package friend
 
 type Friend struct {
-	UserId   int
-	FriendId int
+	UserID   string `bson:"user_id"`
+	FriendID string `bson:"friend_id"`
 	Approved bool
 }

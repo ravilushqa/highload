@@ -11,6 +11,7 @@ import (
 type Status string
 
 const (
+	None      Status = ""
 	Added     Status = "added"
 	Requested Status = "requested"
 	Friends   Status = "friends"
@@ -81,8 +82,8 @@ func (m *Manager) FriendRequest(ctx context.Context, requesterUser, addedUser st
 
 func (m *Manager) ApproveFriendRequest(ctx context.Context, approverUser, requesterUser string) error {
 	filter := bson.M{
-		"user_id":   requesterUser,
-		"friend_id": approverUser,
+		"user_id":   approverUser,
+		"friend_id": requesterUser,
 		"approved":  false,
 	}
 
@@ -94,8 +95,8 @@ func (m *Manager) ApproveFriendRequest(ctx context.Context, approverUser, reques
 	}
 
 	document := bson.M{
-		"user_id":   approverUser,
-		"friend_id": requesterUser,
+		"user_id":   requesterUser,
+		"friend_id": approverUser,
 		"approved":  true,
 	}
 
@@ -103,43 +104,43 @@ func (m *Manager) ApproveFriendRequest(ctx context.Context, approverUser, reques
 	return err
 }
 
+// @todo refactor
 func (m *Manager) GetRelation(ctx context.Context, authUser, user string) (Status, error) {
-	var status Status
 	filter := bson.M{
-		"$or": []bson.M{
-			{"user_id": authUser, "friend_id": user, "approved": true},
-			{"friend_id": authUser, "user_id": user, "approved": true},
-			{"user_id": user, "friend_id": authUser, "approved": false},
-		},
+		"user_id":   authUser,
+		"friend_id": user,
 	}
 
-	projection := bson.M{"approved": 1}
-
-	cursor, err := m.col.Find(ctx, filter, options.Find().SetProjection(projection))
+	var result Friend
+	err := m.col.FindOne(ctx, filter).Decode(&result)
 	if err != nil {
-		return "", err
-	}
-	defer cursor.Close(ctx)
+		if err == mongo.ErrNoDocuments {
+			filter = bson.M{
+				"user_id":   user,
+				"friend_id": authUser,
+			}
 
-	var approved bool
-	for cursor.Next(ctx) {
-		var result bson.M
-		if err := cursor.Decode(&result); err != nil {
-			return "", err
+			var result Friend
+			err = m.col.FindOne(ctx, filter).Decode(&result)
+			if err != nil {
+				if err == mongo.ErrNoDocuments {
+					return None, nil
+				}
+				return None, err
+			}
+
+			if result.Approved {
+				return Friends, nil
+			} else {
+				return Added, nil
+			}
 		}
-		approved = result["approved"].(bool)
-		break // We only need to check one result.
+		return None, err
 	}
 
-	if approved {
-		status = Friends
+	if result.Approved {
+		return Friends, nil
 	} else {
-		status = Added
+		return Requested, nil
 	}
-
-	if status == "" {
-		status = Requested
-	}
-
-	return status, nil
 }

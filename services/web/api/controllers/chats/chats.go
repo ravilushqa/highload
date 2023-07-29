@@ -3,7 +3,6 @@ package chats
 import (
 	"html/template"
 	"net/http"
-	"strconv"
 
 	"github.com/go-chi/chi"
 	"go.uber.org/zap"
@@ -31,7 +30,7 @@ func (c *Controller) Router(r chi.Router) chi.Router {
 
 func (c *Controller) index(w http.ResponseWriter, r *http.Request) {
 	uid, _ := lib.GetAuthUserID(r.Context())
-	res, err := c.chatsClient.GetUserChats(r.Context(), &grpc.GetUserChatsRequest{UserId: 1}) //@todo
+	res, err := c.chatsClient.GetUserChats(r.Context(), &grpc.GetUserChatsRequest{UserId: uid})
 	if err != nil {
 		c.logger.Error("failed get chats", zap.Error(err))
 		w.WriteHeader(http.StatusInternalServerError)
@@ -56,7 +55,7 @@ func (c *Controller) index(w http.ResponseWriter, r *http.Request) {
 
 	err = tmpl.ExecuteTemplate(w, "layout", struct {
 		AuthUserID string
-		ChatIDs    []int64
+		ChatIDs    []string
 	}{uid, res.ChatIds})
 	if err != nil {
 		c.logger.Error("failed execute templates", zap.NamedError("error", err))
@@ -67,14 +66,9 @@ func (c *Controller) index(w http.ResponseWriter, r *http.Request) {
 
 func (c *Controller) show(w http.ResponseWriter, r *http.Request) {
 	uid, _ := lib.GetAuthUserID(r.Context())
-	chatID, err := strconv.Atoi(chi.URLParam(r, "chat_id"))
-	if err != nil {
-		w.WriteHeader(http.StatusUnprocessableEntity)
-		_, _ = w.Write([]byte("wrong chat_id"))
-		return
-	}
+	chatID := chi.URLParam(r, "chat_id")
 
-	res, err := c.chatsClient.GetChatMessages(r.Context(), &grpc.GetChatMessagesRequest{ChatId: int64(chatID), UserId: 1}) //@todo
+	res, err := c.chatsClient.GetChatMessages(r.Context(), &grpc.GetChatMessagesRequest{ChatId: chatID, UserId: uid})
 	if err != nil {
 		c.logger.Error("failed get messages", zap.Error(err))
 		w.WriteHeader(http.StatusInternalServerError)
@@ -96,24 +90,19 @@ func (c *Controller) show(w http.ResponseWriter, r *http.Request) {
 	_ = tmpl.ExecuteTemplate(w, "layout", struct {
 		AuthUserID string
 		Messages   []*grpc.Message
-		ChatID     int
+		ChatID     string
 	}{uid, res.Messages, chatID})
 }
 
 func (c *Controller) postMessage(w http.ResponseWriter, r *http.Request) {
 	uid, _ := lib.GetAuthUserID(r.Context())
-	chatID, err := strconv.Atoi(chi.URLParam(r, "chat_id"))
-	if err != nil {
-		w.WriteHeader(http.StatusUnprocessableEntity)
-		_, _ = w.Write([]byte("wrong chat_id"))
-		return
-	}
+	chatID := chi.URLParam(r, "chat_id")
+
 	_ = r.ParseForm()
 
-	_ = uid
-	_, err = c.chatsClient.StoreMessage(r.Context(), &grpc.StoreMessageRequest{
-		UserId: 1, //@todo
-		ChatId: int64(chatID),
+	_, err := c.chatsClient.StoreMessage(r.Context(), &grpc.StoreMessageRequest{
+		UserId: uid,
+		ChatId: chatID,
 		Text:   r.FormValue("text"),
 	})
 	if err != nil {
