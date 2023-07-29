@@ -14,7 +14,7 @@ services:
       - chats-api
 #      - posts-api
 #      - posts-daemon
-#      - counters-api
+      - counters-api
       - nginx
     networks:
       - otus

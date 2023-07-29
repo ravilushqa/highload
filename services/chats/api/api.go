@@ -105,8 +105,8 @@ func (a *Api) GetChatMessages(ctx context.Context, req *chatsGrpc.GetChatMessage
 	}
 
 	_, err = a.countersClient.FlushChatCounter(ctx, &countersGrpc.FlushChatCounterRequest{
-		//UserId: req.UserId, @todo
-		//ChatId: req.ChatId,
+		UserId: req.UserId,
+		ChatId: req.ChatId,
 	})
 
 	if err != nil {
@@ -242,18 +242,18 @@ func (a *Api) initSagas() {
 
 	a.saga.AddSubTxDef(
 		"update_counter",
-		func(ctx context.Context, chatID int, receivers []int64) error {
+		func(ctx context.Context, chatID string, receivers []string) error {
 			_, err := a.countersClient.IncrementUnreadMessageCounter(ctx, &countersGrpc.IncrementUnreadMessageCounterRequest{
 				UserIds: receivers,
-				ChatId:  int64(chatID),
+				ChatId:  chatID,
 			})
 
 			return err
 		},
-		func(ctx context.Context, chatID int, receivers []int64) error {
+		func(ctx context.Context, chatID string, receivers []string) error {
 			_, err := a.countersClient.DecrementUnreadMessageCounter(ctx, &countersGrpc.DecrementUnreadMessageCounterRequest{
 				UserIds: receivers,
-				ChatId:  int64(chatID),
+				ChatId:  chatID,
 			})
 
 			return err

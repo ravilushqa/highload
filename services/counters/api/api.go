@@ -14,9 +14,10 @@ import (
 	countersGrpc "github.com/ravilushqa/highload/services/counters/api/grpc"
 )
 
-const unreadmessageCacheKey = "unread_message_%d" // userID
+const unreadmessageCacheKey = "unread_message_%s" // userID
 
 type Api struct {
+	countersGrpc.UnimplementedCountersServer
 	logger *zap.Logger
 	redis  *redis.Client
 }
@@ -30,7 +31,7 @@ func (a *Api) IncrementUnreadMessageCounter(ctx context.Context, req *countersGr
 
 	for _, userID := range req.UserIds {
 		err := a.redis.HIncrBy(
-			fmt.Sprintf(unreadmessageCacheKey, userID), strconv.FormatInt(req.ChatId, 10), 1).Err()
+			fmt.Sprintf(unreadmessageCacheKey, userID), req.ChatId, 1).Err()
 
 		if err != nil {
 			return new(empty.Empty), status.New(codes.Internal, err.Error()).Err()
@@ -42,7 +43,7 @@ func (a *Api) IncrementUnreadMessageCounter(ctx context.Context, req *countersGr
 
 func (a *Api) DecrementUnreadMessageCounter(ctx context.Context, req *countersGrpc.DecrementUnreadMessageCounterRequest) (*empty.Empty, error) {
 	for _, userID := range req.UserIds {
-		res, err := a.redis.HGet(fmt.Sprintf(unreadmessageCacheKey, userID), strconv.FormatInt(req.ChatId, 10)).Result()
+		res, err := a.redis.HGet(fmt.Sprintf(unreadmessageCacheKey, userID), req.ChatId).Result()
 		if err != nil {
 			return new(empty.Empty), status.New(codes.Internal, err.Error()).Err()
 		}
@@ -56,7 +57,7 @@ func (a *Api) DecrementUnreadMessageCounter(ctx context.Context, req *countersGr
 		}
 		if v <= 0 {
 			a.logger.Info("decrement on >= 0 value")
-			err := a.redis.HDel(fmt.Sprintf(unreadmessageCacheKey, userID), strconv.FormatInt(req.ChatId, 10)).Err()
+			err := a.redis.HDel(fmt.Sprintf(unreadmessageCacheKey, userID), req.ChatId).Err()
 			if err != nil {
 				return nil, status.New(codes.Internal, err.Error()).Err()
 			}
@@ -64,7 +65,7 @@ func (a *Api) DecrementUnreadMessageCounter(ctx context.Context, req *countersGr
 			return new(empty.Empty), nil
 		}
 
-		err = a.redis.HIncrBy(fmt.Sprintf(unreadmessageCacheKey, userID), strconv.FormatInt(req.ChatId, 10), -1).Err()
+		err = a.redis.HIncrBy(fmt.Sprintf(unreadmessageCacheKey, userID), req.ChatId, -1).Err()
 
 		if err != nil {
 			return new(empty.Empty), status.New(codes.Internal, err.Error()).Err()
@@ -79,17 +80,13 @@ func (a *Api) UnreadChatsCount(ctx context.Context, req *countersGrpc.UnreadChat
 		return nil, status.New(codes.Internal, err.Error()).Err()
 	}
 
-	res := make(map[int64]int64, len(hashMap))
-	for k, v := range hashMap {
-		chatID, err := strconv.Atoi(k)
-		if err != nil {
-			return nil, status.New(codes.Internal, err.Error()).Err()
-		}
+	res := make(map[string]int64, len(hashMap))
+	for chatID, v := range hashMap {
 		count, err := strconv.Atoi(v)
 		if err != nil {
 			return nil, status.New(codes.Internal, err.Error()).Err()
 		}
-		res[int64(chatID)] = int64(count)
+		res[chatID] = int64(count)
 	}
 
 	return &countersGrpc.UnreadChatsCountResponse{
@@ -98,7 +95,7 @@ func (a *Api) UnreadChatsCount(ctx context.Context, req *countersGrpc.UnreadChat
 }
 
 func (a *Api) FlushChatCounter(ctx context.Context, req *countersGrpc.FlushChatCounterRequest) (*empty.Empty, error) {
-	err := a.redis.HDel(fmt.Sprintf(unreadmessageCacheKey, req.UserId), strconv.FormatInt(req.ChatId, 10)).Err()
+	err := a.redis.HDel(fmt.Sprintf(unreadmessageCacheKey, req.UserId), req.ChatId).Err()
 	if err != nil {
 		return new(empty.Empty), status.New(codes.Internal, err.Error()).Err()
 	}
