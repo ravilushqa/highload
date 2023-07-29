@@ -10,11 +10,11 @@ services:
     expose:
       - 8080
     depends_on:
-      - chats-api
-      - posts-api
-      - posts-daemon
       - users-api
-      - counters-api
+#      - chats-api
+#      - posts-api
+#      - posts-daemon
+#      - counters-api
       - nginx
     networks:
       - otus
@@ -118,13 +118,9 @@ services:
       - 50051
     restart: on-failure
     depends_on:
-      - mysql_master
-      - tarantool
-      - haproxy
+      - mongodb
     environment:
-      DATABASE_URL: "root:@(haproxy:3306)/app"
-      SLAVES_URLS: "root:@(haproxy:3307)/app"
-    #      TARANTOOL_URL: "tarantool:3302"
+      MONGO_URL: "mongodb://mongodb:27017"
     networks:
       - otus
   counters-api:
@@ -139,6 +135,15 @@ services:
       - redis
     environment:
       REDIS_URL: "redis://redis:6379"
+    networks:
+      - otus
+  mongodb:
+    image: mongo:6
+    restart: unless-stopped
+    ports:
+      - 27017:27017
+    volumes:
+      - mongodb_data:/data/db
     networks:
       - otus
   mysql_master:
@@ -383,6 +388,7 @@ networks:
   otus:
     driver: bridge
 volumes:
+  mongodb_data:
   mysql_master_data:
   mysql_slave1_data:
   mysql_slave2_data:

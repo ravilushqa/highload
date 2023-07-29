@@ -2,10 +2,10 @@ package friend
 
 import (
 	"context"
-	"database/sql"
-	"fmt"
 
-	"github.com/linxGnu/mssqlx"
+	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/mongo"
+	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
 type Status string
@@ -17,110 +17,129 @@ const (
 )
 
 type Manager struct {
-	DB *mssqlx.DBs
+	col *mongo.Collection
 }
 
-func New(DB *mssqlx.DBs) *Manager {
-	return &Manager{DB: DB}
+func New(db *mongo.Database) *Manager {
+	return &Manager{col: db.Collection("friends")}
 }
 
-func (m *Manager) GetFriends(ctx context.Context, id int) ([]int, error) {
-	var friendIDs []int
-	err := m.DB.SelectContext(ctx, &friendIDs, "select friend_id from friends where user_id = ? and approved = 1", id)
-	return friendIDs, err
+func (m *Manager) GetFriends(ctx context.Context, id string) ([]string, error) {
+	filter := bson.M{"user_id": id, "approved": true}
+	projection := bson.M{"friend_id": 1}
+
+	cursor, err := m.col.Find(ctx, filter, options.Find().SetProjection(projection))
+	if err != nil {
+		return nil, err
+	}
+	defer cursor.Close(ctx)
+
+	var friendIDs []string
+	for cursor.Next(ctx) {
+		var result bson.M
+		if err := cursor.Decode(&result); err != nil {
+			return nil, err
+		}
+		friendIDs = append(friendIDs, result["friend_id"].(string))
+	}
+
+	return friendIDs, nil
 }
 
-func (m *Manager) GetFriendRequests(ctx context.Context, id int) ([]int, error) {
-	var friendIDs []int
-	err := m.DB.Select(&friendIDs, "select friend_id from friends where user_id = ? and approved = 0", id)
-	return friendIDs, err
+func (m *Manager) GetFriendRequests(ctx context.Context, id string) ([]string, error) {
+	filter := bson.M{"user_id": id, "approved": false}
+	projection := bson.M{"friend_id": 1}
+
+	cursor, err := m.col.Find(ctx, filter, options.Find().SetProjection(projection))
+	if err != nil {
+		return nil, err
+	}
+	defer cursor.Close(ctx)
+
+	var friendIDs []string
+	for cursor.Next(ctx) {
+		var result bson.M
+		if err := cursor.Decode(&result); err != nil {
+			return nil, err
+		}
+		friendIDs = append(friendIDs, result["friend_id"].(string))
+	}
+
+	return friendIDs, nil
 }
 
-func (m *Manager) FriendRequest(ctx context.Context, requesterUser, addedUser int) error {
-	query := `
-		insert into friends
-		(user_id, friend_id, approved)
-		VALUES (:user_id, :friend_id, 0)
-	`
-
-	_, err := m.DB.NamedExecContext(ctx, query, map[string]interface{}{
+func (m *Manager) FriendRequest(ctx context.Context, requesterUser, addedUser string) error {
+	document := bson.M{
 		"user_id":   addedUser,
 		"friend_id": requesterUser,
-	})
+		"approved":  false,
+	}
 
+	_, err := m.col.InsertOne(ctx, document)
 	return err
 }
 
-func (m *Manager) ApproveFriendRequest(ctx context.Context, approverUser, requesterUser int) error {
-	tx, err := m.DB.BeginTxx(ctx, nil)
-	if err != nil {
-		return err
-	}
-	updateQuery := `
-		update friends
-		set approved = 1
-		where user_id = :user_id and friend_id = :friend_id
-	`
-	insertQuery := `
-		insert into friends
-		(user_id, friend_id, approved)
-		VALUES ( :user_id, :friend_id, 1)
-	`
-
-	// approve request
-	res, err := tx.NamedExecContext(ctx, updateQuery, map[string]interface{}{
-		"user_id":   approverUser,
-		"friend_id": requesterUser,
-	})
-	if err != nil {
-		_ = tx.Rollback()
-		return err
-	}
-
-	if cnt, err := res.RowsAffected(); err != nil || cnt == 0 {
-		return fmt.Errorf("failed to update: %w", err)
-	}
-	//link together
-	_, err = tx.NamedExecContext(ctx, insertQuery, map[string]interface{}{
+func (m *Manager) ApproveFriendRequest(ctx context.Context, approverUser, requesterUser string) error {
+	filter := bson.M{
 		"user_id":   requesterUser,
 		"friend_id": approverUser,
-	})
+		"approved":  false,
+	}
+
+	update := bson.M{"$set": bson.M{"approved": true}}
+
+	_, err := m.col.UpdateOne(ctx, filter, update)
 	if err != nil {
-		_ = tx.Rollback()
 		return err
 	}
 
-	return tx.Commit()
+	document := bson.M{
+		"user_id":   approverUser,
+		"friend_id": requesterUser,
+		"approved":  true,
+	}
+
+	_, err = m.col.InsertOne(ctx, document)
+	return err
 }
 
-func (m *Manager) GetRelation(ctx context.Context, authUser, user int) (Status, error) {
+func (m *Manager) GetRelation(ctx context.Context, authUser, user string) (Status, error) {
 	var status Status
-	q := `
-		select if(approved, 'friends', 'added') as status
-		from friends
-		where friend_id = :auth_user_id
-		  and user_id = :user_id
-		union
-		(
-			select 'requested'
-			from friends
-			where user_id = :auth_user_id
-			  and friend_id = :user_id
-			  and approved = 0
-		)
-	`
+	filter := bson.M{
+		"$or": []bson.M{
+			{"user_id": authUser, "friend_id": user, "approved": true},
+			{"friend_id": authUser, "user_id": user, "approved": true},
+			{"user_id": user, "friend_id": authUser, "approved": false},
+		},
+	}
 
-	q, args, err := m.DB.BindNamed(q, map[string]interface{}{
-		"auth_user_id": authUser,
-		"user_id":      user,
-	})
+	projection := bson.M{"approved": 1}
+
+	cursor, err := m.col.Find(ctx, filter, options.Find().SetProjection(projection))
 	if err != nil {
 		return "", err
 	}
+	defer cursor.Close(ctx)
 
-	if err = m.DB.GetContext(ctx, &status, q, args...); err != nil && err != sql.ErrNoRows {
-		return "", err
+	var approved bool
+	for cursor.Next(ctx) {
+		var result bson.M
+		if err := cursor.Decode(&result); err != nil {
+			return "", err
+		}
+		approved = result["approved"].(bool)
+		break // We only need to check one result.
 	}
-	return status, nil
 
+	if approved {
+		status = Friends
+	} else {
+		status = Added
+	}
+
+	if status == "" {
+		status = Requested
+	}
+
+	return status, nil
 }

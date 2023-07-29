@@ -1,4 +1,4 @@
-FROM golang:1.15 as build
+FROM golang:1.19 as build
 ARG SERVICE_PATH
 WORKDIR /opt/app
 COPY go.mod .

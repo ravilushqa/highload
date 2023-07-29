@@ -24,6 +24,8 @@ gen-proto-chats:
 gen-proto-posts:
 	 protoc -I. services/posts/api/grpc/api.proto --go_out=plugins=grpc:.
 gen-proto-users:
-	 protoc -I. services/users/api/grpc/api.proto --go_out=plugins=grpc:.
+	 protoc --go_out=. --go_opt=paths=source_relative \
+		--go-grpc_out=. --go-grpc_opt=paths=source_relative \
+		services/users/api/grpc/api.proto
 gen-proto-counters:
 	 protoc -I. services/counters/api/grpc/api.proto --go_out=plugins=grpc:.

@@ -28,7 +28,7 @@ message GetUsersResponse {
 }
 
 message GetByIdRequest {
-    int64 user_id = 1;
+    string user_id = 1;
 }
 
 message GetByIdResponse {
@@ -44,15 +44,15 @@ message GetByEmailResponse {
 }
 
 message GetFriendsIdsRequest {
-    int64 user_id = 1;
+    string user_id = 1;
 }
 
 message GetFriendsIdsResponse {
-    repeated int64 user_ids = 1;
+    repeated string user_ids = 1;
 }
 
 message GetListByIdsRequest {
-    repeated int64 user_ids = 1;
+    repeated string user_ids = 1;
 }
 
 message GetListByIdsResponse {
@@ -60,8 +60,8 @@ message GetListByIdsResponse {
 }
 
 message GetRelationRequest {
-    int64 from_user_id = 1;
-    int64 to_user_id = 2;
+    string from_user_id = 1;
+    string to_user_id = 2;
 }
 
 message GetRelationResponse {
@@ -69,13 +69,13 @@ message GetRelationResponse {
 }
 
 message FriendRequestRequest {
-    int64 requester_user_id = 1;
-    int64 added_user_id = 2;
+    string requester_user_id = 1;
+    string added_user_id = 2;
 }
 
 message ApproveFriendRequestRequest {
-    int64 approver_user_id = 2;
-    int64 requester_user_id = 1;
+    string approver_user_id = 2;
+    string requester_user_id = 1;
 }
 
 message StoreRequest {
@@ -90,11 +90,11 @@ message StoreRequest {
 }
 
 message StoreResponse {
-    int64 id = 1;
+    string id = 1;
 }
 
 message User {
-    int64 id = 1;
+    string id = 1;
     string email = 2;
     string password = 3;
     string firstName = 4;

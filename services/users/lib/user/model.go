@@ -1,12 +1,13 @@
 package user
 
 import (
-	"database/sql"
 	"time"
+
+	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
 type User struct {
-	ID        int
+	ID        primitive.ObjectID `bson:"_id,omitempty"`
 	Email     string
 	Password  string
 	FirstName string
@@ -15,8 +16,8 @@ type User struct {
 	Interests string
 	Sex       Sex
 	City      string
-	CreatedAt time.Time    `json:"created_at" db:"created_at"`
-	DeletedAt sql.NullTime `json:"deleted_at" db:"deleted_at"`
+	CreatedAt time.Time
+	DeletedAt *time.Time
 }
 
 type Sex string

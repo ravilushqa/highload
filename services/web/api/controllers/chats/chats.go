@@ -31,7 +31,7 @@ func (c *Controller) Router(r chi.Router) chi.Router {
 
 func (c *Controller) index(w http.ResponseWriter, r *http.Request) {
 	uid, _ := lib.GetAuthUserID(r.Context())
-	res, err := c.chatsClient.GetUserChats(r.Context(), &grpc.GetUserChatsRequest{UserId: int64(uid)})
+	res, err := c.chatsClient.GetUserChats(r.Context(), &grpc.GetUserChatsRequest{UserId: 1}) //@todo
 	if err != nil {
 		c.logger.Error("failed get chats", zap.Error(err))
 		w.WriteHeader(http.StatusInternalServerError)
@@ -55,7 +55,7 @@ func (c *Controller) index(w http.ResponseWriter, r *http.Request) {
 	}
 
 	err = tmpl.ExecuteTemplate(w, "layout", struct {
-		AuthUserID int
+		AuthUserID string
 		ChatIDs    []int64
 	}{uid, res.ChatIds})
 	if err != nil {
@@ -74,7 +74,7 @@ func (c *Controller) show(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	res, err := c.chatsClient.GetChatMessages(r.Context(), &grpc.GetChatMessagesRequest{ChatId: int64(chatID), UserId: int64(uid)})
+	res, err := c.chatsClient.GetChatMessages(r.Context(), &grpc.GetChatMessagesRequest{ChatId: int64(chatID), UserId: 1}) //@todo
 	if err != nil {
 		c.logger.Error("failed get messages", zap.Error(err))
 		w.WriteHeader(http.StatusInternalServerError)
@@ -94,7 +94,7 @@ func (c *Controller) show(w http.ResponseWriter, r *http.Request) {
 	}
 
 	_ = tmpl.ExecuteTemplate(w, "layout", struct {
-		AuthUserID int
+		AuthUserID string
 		Messages   []*grpc.Message
 		ChatID     int
 	}{uid, res.Messages, chatID})
@@ -110,8 +110,9 @@ func (c *Controller) postMessage(w http.ResponseWriter, r *http.Request) {
 	}
 	_ = r.ParseForm()
 
+	_ = uid
 	_, err = c.chatsClient.StoreMessage(r.Context(), &grpc.StoreMessageRequest{
-		UserId: int64(uid),
+		UserId: 1, //@todo
 		ChatId: int64(chatID),
 		Text:   r.FormValue("text"),
 	})

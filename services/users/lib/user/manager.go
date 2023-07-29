@@ -2,177 +2,141 @@ package user
 
 import (
 	"context"
-	"database/sql"
 	"fmt"
-	"time"
 
-	"github.com/jmoiron/sqlx"
-	"github.com/linxGnu/mssqlx"
-	"github.com/tarantool/go-tarantool"
+	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/bson/primitive"
+	"go.mongodb.org/mongo-driver/mongo"
+	"go.mongodb.org/mongo-driver/mongo/options"
 	"go.uber.org/zap"
 )
 
 type Manager struct {
-	l         *zap.Logger
-	DB        *mssqlx.DBs
-	tarantool *tarantool.Connection
+	l   *zap.Logger
+	col *mongo.Collection
 }
 
-func New(DB *mssqlx.DBs, tarantool *tarantool.Connection, l *zap.Logger) *Manager {
-	return &Manager{DB: DB, tarantool: tarantool, l: l}
-}
-func (m *Manager) Store(ctx context.Context, user *User) (int, error) {
-	query := `
-		insert into users
-		(email, password, firstname, lastname, birthday, sex, interests, city)
-		VALUES (:email, :password, :firstname, :lastname, :birthday, :sex, :interests, :city)
-	`
-
-	res, err := m.DB.NamedExecContext(ctx, query, map[string]interface{}{
-		"email":     user.Email,
-		"password":  user.Password,
-		"firstname": user.FirstName,
-		"lastname":  user.LastName,
-		"birthday":  user.Birthday,
-		"sex":       user.Sex,
-		"interests": user.Interests,
-		"city":      user.City,
-	})
-
-	if err != nil {
-		return 0, err
-	}
-
-	id, err := res.LastInsertId()
-
-	return int(id), err
+func New(l *zap.Logger, database *mongo.Database) *Manager {
+	return &Manager{l: l, col: database.Collection("users")}
 }
 
-func (m *Manager) GetByID(ctx context.Context, id int) (*User, error) {
-	if m.tarantool == nil {
-		return m.getByIDMysql(ctx, id)
-	}
-	resp, err := m.tarantool.Select("mysqldata", "primary", 0, 1, tarantool.IterEq, []interface{}{uint(id)})
+func (m *Manager) Store(ctx context.Context, user *User) (*primitive.ObjectID, error) {
+	res, err := m.col.InsertOne(ctx, user)
 	if err != nil {
 		return nil, err
 	}
-	data := resp.Data[0].([]interface{})
-	bd := data[5].(string)
-	bdTime, err := time.Parse("2006-01-02", bd)
-	if err != nil {
-		return nil, fmt.Errorf("bd parse err %w", err)
+
+	if oid, ok := res.InsertedID.(primitive.ObjectID); ok {
+		return &oid, nil
 	}
 
-	createdAt := data[9].(string)
-	createdAtTime, err := time.Parse("2006-01-02 15:04:05", createdAt)
+	return nil, fmt.Errorf("failed to retrieve inserted ID")
+}
+
+func (m *Manager) GetByID(ctx context.Context, id string) (*User, error) {
+	objectID, err := primitive.ObjectIDFromHex(id)
 	if err != nil {
-		return nil, fmt.Errorf("createdAt parse err %w", err)
+		return nil, err
 	}
 
-	var DeletedAt sql.NullTime
+	filter := bson.M{"_id": objectID}
+	result := m.col.FindOne(ctx, filter)
 
-	switch v := data[10].(type) {
-	case nil:
-		DeletedAt.Valid = false
-	case string:
-		deletedAtTime, err := time.Parse("2006-01-02 15:04:05", v)
+	user := &User{}
+	err = result.Decode(user)
+
+	if err == mongo.ErrNoDocuments {
+		return nil, nil // Not found, return nil
+	} else if err != nil {
+		return nil, err
+	}
+
+	return user, nil
+}
+
+func (m *Manager) GetListByIds(ctx context.Context, ids []string) ([]User, error) {
+	objectIDs := make([]primitive.ObjectID, len(ids))
+	for i, id := range ids {
+		objectID, err := primitive.ObjectIDFromHex(id)
 		if err != nil {
-			return nil, fmt.Errorf("deletedAt parse err %w", err)
+			return nil, err
 		}
-		DeletedAt.Valid = true
-		DeletedAt.Time = deletedAtTime
+		objectIDs[i] = objectID
 	}
 
-	if DeletedAt.Valid {
-		return nil, sql.ErrNoRows
-	}
-
-	res := &User{
-		ID:        int(data[0].(uint64)),
-		Email:     data[1].(string),
-		Password:  data[2].(string),
-		FirstName: data[3].(string),
-		LastName:  data[4].(string),
-		Birthday:  bdTime,
-		Interests: data[6].(string),
-		Sex:       Sex(data[7].(string)),
-		City:      data[8].(string),
-		CreatedAt: createdAtTime,
-		DeletedAt: DeletedAt,
-	}
-
-	return res, err
-}
-
-func (m *Manager) GetListByIds(ctx context.Context, ids []int) ([]User, error) {
-	if len(ids) == 0 {
-		return nil, nil
-	}
-	query := `
-		select id, email, password, firstname, lastname, birthday, sex, interests, city
-		from users
-		where id in (?) and deleted_at is null
-	`
-
-	query, args, err := sqlx.In(query, ids)
+	filter := bson.M{"_id": bson.M{"$in": objectIDs}}
+	cursor, err := m.col.Find(ctx, filter)
 	if err != nil {
 		return nil, err
 	}
+	defer cursor.Close(ctx)
 
-	query = m.DB.Rebind(query)
+	var users []User
+	for cursor.Next(ctx) {
+		user := User{}
+		if err := cursor.Decode(&user); err != nil {
+			return nil, err
+		}
+		users = append(users, user)
+	}
 
-	res := make([]User, 0, len(ids))
-	err = m.DB.SelectContext(ctx, &res, query, args...)
+	if err := cursor.Err(); err != nil {
+		return nil, err
+	}
 
-	return res, err
+	return users, cursor.Err()
 }
 
 func (m *Manager) GetByEmail(ctx context.Context, email string) (*User, error) {
-	query := `
-		select id, email, password, firstname, lastname, birthday, sex, interests, city
-		from users
-		where email = ? and deleted_at is null
-	`
+	filter := bson.M{"email": email}
+	result := m.col.FindOne(ctx, filter)
 
-	res := &User{}
+	user := &User{}
+	err := result.Decode(user)
 
-	err := m.DB.GetContext(ctx, res, query, email)
+	if err == mongo.ErrNoDocuments {
+		return nil, nil // Not found, return nil
+	} else if err != nil {
+		return nil, err
+	}
 
-	return res, err
+	return user, nil
 }
 
 func (m *Manager) GetAll(ctx context.Context, filter string) ([]User, error) {
-	var query string
-	res := make([]User, 0)
-
+	var queryFilter bson.M
 	if filter != "" {
-		query = `
-			select id, email, password, firstname, lastname, birthday, sex, interests, city
-			from users
-			where firstname like ? and lastname like ? and deleted_at is null
-			order by id
-		`
-		err := m.DB.SelectContext(ctx, &res, query, fmt.Sprintf("%s%%", filter), fmt.Sprintf("%s%%", filter))
-		return res, err
+		queryFilter = bson.M{
+			"$or": []bson.M{
+				{"firstname": primitive.Regex{Pattern: "^" + filter, Options: "i"}},
+				{"lastname": primitive.Regex{Pattern: "^" + filter, Options: "i"}},
+			},
+		}
+	} else {
+		queryFilter = bson.M{}
 	}
-	query = `
-		select id, email, password, firstname, lastname, birthday, sex, interests, city
-		from users
-		where deleted_at is null
-		limit 100 offset 0
-	`
 
-	err := m.DB.SelectContext(ctx, &res, query)
-	return res, err
-}
+	findOptions := options.Find()
+	findOptions.SetLimit(100)
 
-func (m *Manager) getByIDMysql(ctx context.Context, id int) (*User, error) {
-	query := `
-		select id, email, password, firstname, lastname, birthday, sex, interests, city
-		from users
-		where id = ? and deleted_at is null
-	`
-	res := &User{}
-	err := m.DB.GetContext(ctx, res, query, id)
-	return res, err
+	cursor, err := m.col.Find(ctx, queryFilter, findOptions)
+	if err != nil {
+		return nil, err
+	}
+	defer cursor.Close(ctx)
+
+	var users []User
+	for cursor.Next(ctx) {
+		user := User{}
+		if err := cursor.Decode(&user); err != nil {
+			return nil, err
+		}
+		users = append(users, user)
+	}
+
+	if err := cursor.Err(); err != nil {
+		return nil, err
+	}
+
+	return users, nil
 }

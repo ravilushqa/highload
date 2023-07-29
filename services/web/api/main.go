@@ -1,12 +1,15 @@
 package main
 
 import (
+	"fmt"
+
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/linxGnu/mssqlx"
 	"github.com/neonxp/rutina"
 	"go.uber.org/dig"
 	"go.uber.org/zap"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials/insecure"
 
 	chatsGrpc "github.com/ravilushqa/highload/services/chats/api/grpc"
 	postsGrpc "github.com/ravilushqa/highload/services/posts/api/grpc"
@@ -42,9 +45,9 @@ func buildContainer() (*dig.Container, error) {
 			return postsGrpc.NewPostsClient(conn), nil
 		},
 		func(c *config) (usersGrpc.UsersClient, error) {
-			conn, err := grpc.Dial(c.UsersURL, grpc.WithInsecure())
+			conn, err := grpc.Dial(c.UsersURL, grpc.WithTransportCredentials(insecure.NewCredentials()))
 			if err != nil {
-				return nil, err
+				return nil, fmt.Errorf("failed to dial users grpc: %w", err)
 			}
 			return usersGrpc.NewUsersClient(conn), nil
 		},

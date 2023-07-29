@@ -57,7 +57,7 @@ func (c *Controller) login(w http.ResponseWriter, r *http.Request) {
 	err = bcrypt.CompareHashAndPassword([]byte(userResponse.User.Password), []byte(password))
 
 	if err == nil {
-		token, err := c.auth.EncodeToken(int(userResponse.User.Id))
+		token, err := c.auth.EncodeToken(userResponse.User.Id)
 		if err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
 			_, _ = w.Write([]byte("Error generating JWT token: " + err.Error()))
@@ -69,7 +69,7 @@ func (c *Controller) login(w http.ResponseWriter, r *http.Request) {
 				//HttpOnly: true,
 			})
 
-			http.Redirect(w, r, fmt.Sprintf("/users/%d", userResponse.User.Id), http.StatusTemporaryRedirect)
+			http.Redirect(w, r, fmt.Sprintf("/users/%s", userResponse.User.Id), http.StatusTemporaryRedirect)
 		}
 	} else {
 		w.WriteHeader(http.StatusUnauthorized)
@@ -81,7 +81,7 @@ func (c *Controller) login(w http.ResponseWriter, r *http.Request) {
 func (c *Controller) signin(w http.ResponseWriter, r *http.Request) {
 	if lib.IsAuth(r) {
 		uid, _ := lib.GetAuthUserID(r.Context())
-		http.Redirect(w, r, fmt.Sprintf("/users/%d", uid), http.StatusTemporaryRedirect)
+		http.Redirect(w, r, fmt.Sprintf("/users/%s", uid), http.StatusTemporaryRedirect)
 	}
 	tmpl, err := template.ParseFiles("resources/views/base.html", "resources/views/auth/signin.html")
 	if err != nil {
@@ -133,7 +133,7 @@ func (c *Controller) register(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	token, err := c.auth.EncodeToken(int(storeResponse.Id))
+	token, err := c.auth.EncodeToken(storeResponse.Id)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		_, _ = w.Write([]byte("Error generating JWT token: " + err.Error()))
@@ -145,7 +145,7 @@ func (c *Controller) register(w http.ResponseWriter, r *http.Request) {
 			//HttpOnly: true,
 		})
 
-		http.Redirect(w, r, fmt.Sprintf("/users/%d", storeResponse.Id), http.StatusTemporaryRedirect)
+		http.Redirect(w, r, fmt.Sprintf("/users/%s", storeResponse.Id), http.StatusTemporaryRedirect)
 	}
 
 }

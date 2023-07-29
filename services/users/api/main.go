@@ -8,30 +8,25 @@ import (
 	grpcmiddleware "github.com/grpc-ecosystem/go-grpc-middleware"
 	grpczap "github.com/grpc-ecosystem/go-grpc-middleware/logging/zap"
 	grpcprometheus "github.com/grpc-ecosystem/go-grpc-prometheus"
-	"github.com/linxGnu/mssqlx"
-	"github.com/tarantool/go-tarantool"
+	"go.mongodb.org/mongo-driver/mongo"
 	"go.uber.org/fx"
 	"go.uber.org/zap"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/reflection"
 
-	"github.com/ravilushqa/highload/providers/db"
-	tarantoolprovider "github.com/ravilushqa/highload/providers/tarantool"
+	"github.com/ravilushqa/highload/providers/mongodb"
 	usersGrpc "github.com/ravilushqa/highload/services/users/api/grpc"
 	"github.com/ravilushqa/highload/services/users/lib/friend"
 	"github.com/ravilushqa/highload/services/users/lib/user"
 )
 
 func main() {
-	_ = fx.New(
+	fx.New(
 		fx.Provide(
 			newConfig,
 			zap.NewDevelopment,
-			func(c *config) (*mssqlx.DBs, error) {
-				return db.New(c.DatabaseURL, c.SlavesUrls)
-			},
-			func(c *config) (*tarantool.Connection, error) {
-				return tarantoolprovider.New(c.TarantoolURL, c.TarantoolUser, c.TarantoolPass)
+			func(c *config) (*mongo.Database, error) {
+				return mongodb.New(context.Background(), c.MongoURL, c.MongoDB)
 			},
 			NewApi,
 			user.New,
@@ -40,47 +35,49 @@ func main() {
 		fx.Invoke(
 			registerHooks,
 		),
-	).Start(context.Background())
+	).Run()
 }
 
-func registerHooks(lifecycle fx.Lifecycle, l *zap.Logger, db *mssqlx.DBs, a *Api) {
+func registerHooks(lifecycle fx.Lifecycle, l *zap.Logger, db *mongo.Database, a *Api) {
+	s := grpc.NewServer(
+		grpc.StreamInterceptor(grpcmiddleware.ChainStreamServer(
+			grpcprometheus.StreamServerInterceptor,
+			grpczap.StreamServerInterceptor(l.Named("grpc_stream")),
+		)),
+		grpc.UnaryInterceptor(grpcmiddleware.ChainUnaryServer(
+			grpcprometheus.UnaryServerInterceptor,
+			grpczap.UnaryServerInterceptor(l.Named("grpc_unary")),
+		)),
+	)
+
 	lifecycle.Append(
 		fx.Hook{
-			OnStart: func(ctx context.Context) error {
-				addr := ":50051"
+			OnStart: func(context.Context) error {
+				addr := "0.0.0.0:50051"
 				lis, err := net.Listen("tcp", addr) //@todo
 				if err != nil {
 					return err
 				}
 
-				s := grpc.NewServer(
-					grpc.StreamInterceptor(grpcmiddleware.ChainStreamServer(
-						grpcprometheus.StreamServerInterceptor,
-						grpczap.StreamServerInterceptor(l.Named("grpc_stream")),
-					)),
-					grpc.UnaryInterceptor(grpcmiddleware.ChainUnaryServer(
-						grpcprometheus.UnaryServerInterceptor,
-						grpczap.UnaryServerInterceptor(l.Named("grpc_unary")),
-					)),
-				)
 				usersGrpc.RegisterUsersServer(s, a)
 
 				reflection.Register(s)
 
 				l.Info("api started..", zap.String("addr", addr))
 
-				defer s.GracefulStop()
-
 				go func() {
-					<-ctx.Done()
-					s.Stop()
+					l.Info("starting grpc server", zap.String("addr", addr))
+					err := s.Serve(lis)
+					if err != nil {
+						l.Error("failed to serve grpc", zap.Error(err))
+					}
 				}()
-
-				return s.Serve(lis)
+				return nil
 			},
-			OnStop: func(context.Context) error {
-				if errs := db.Destroy(); len(errs) > 0 {
-					l.Error("failed to close db", zap.Errors("errors", errs))
+			OnStop: func(ctx context.Context) error {
+				s.GracefulStop()
+				if err := db.Client().Disconnect(ctx); err != nil {
+					l.Error("failed to disconnect from mongodb", zap.Error(err))
 				}
 				return l.Sync()
 			},

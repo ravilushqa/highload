@@ -5,11 +5,8 @@ import (
 )
 
 type config struct {
-	DatabaseURL   string   `env:"DATABASE_URL"`
-	SlavesUrls    []string `env:"SLAVES_URLS" envSeparator:","`
-	TarantoolURL  string   `env:"TARANTOOL_URL"`
-	TarantoolUser string   `env:"TARANTOOL_USER" envDefault:"guest"`
-	TarantoolPass string   `env:"TARANTOOL_PASS"`
+	MongoURL string `env:"MONGO_URL" envDefault:"mongodb://mongodb:27017"`
+	MongoDB  string `env:"MONGO_DB" envDefault:"users"`
 }
 
 func newConfig() (*config, error) {

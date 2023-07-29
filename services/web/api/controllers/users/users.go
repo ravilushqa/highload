@@ -57,21 +57,16 @@ func (c *Controller) index(w http.ResponseWriter, r *http.Request) {
 	}
 
 	_ = tmpl.ExecuteTemplate(w, "layout", struct {
-		AuthUserID int
+		AuthUserID string
 		Users      []*usersGrpc.User
 	}{uid, res.Users})
 }
 
 func (c *Controller) profile(w http.ResponseWriter, r *http.Request) {
 	authUserID, _ := lib.GetAuthUserID(r.Context())
-	userID, err := strconv.Atoi(chi.URLParam(r, "user_id"))
-	if err != nil {
-		w.WriteHeader(http.StatusUnprocessableEntity)
-		_, _ = w.Write([]byte("wrong user id"))
-		return
-	}
+	userID := chi.URLParam(r, "user_id")
 
-	getUserResponse, err := c.usersClient.GetById(r.Context(), &usersGrpc.GetByIdRequest{UserId: int64(userID)})
+	getUserResponse, err := c.usersClient.GetById(r.Context(), &usersGrpc.GetByIdRequest{UserId: userID})
 	// @todo check for no results
 	if err != nil {
 		c.logger.Error("failed get user", zap.Error(err))
@@ -80,7 +75,7 @@ func (c *Controller) profile(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	getFriendsIdsResponse, err := c.usersClient.GetFriendsIds(r.Context(), &usersGrpc.GetFriendsIdsRequest{UserId: int64(userID)})
+	getFriendsIdsResponse, err := c.usersClient.GetFriendsIds(r.Context(), &usersGrpc.GetFriendsIdsRequest{UserId: userID})
 	if err != nil {
 		c.logger.Error("failed get friends", zap.Error(err))
 		w.WriteHeader(http.StatusInternalServerError)
@@ -97,7 +92,7 @@ func (c *Controller) profile(w http.ResponseWriter, r *http.Request) {
 	}
 
 	status, err := c.usersClient.GetRelation(r.Context(), &usersGrpc.GetRelationRequest{
-		FromUserId: int64(authUserID),
+		FromUserId: authUserID,
 		ToUserId:   getUserResponse.User.Id,
 	})
 	if err != nil {
@@ -108,7 +103,7 @@ func (c *Controller) profile(w http.ResponseWriter, r *http.Request) {
 	}
 
 	data := struct {
-		AuthUserID int
+		AuthUserID string
 		*usersGrpc.User
 		Friends []*usersGrpc.User
 		Status  usersGrpc.UserRelation
@@ -130,16 +125,11 @@ func (c *Controller) profile(w http.ResponseWriter, r *http.Request) {
 
 func (c *Controller) add(w http.ResponseWriter, r *http.Request) {
 	authUserID, _ := lib.GetAuthUserID(r.Context())
-	userID, err := strconv.Atoi(chi.URLParam(r, "user_id"))
-	if err != nil {
-		w.WriteHeader(http.StatusUnprocessableEntity)
-		_, _ = w.Write([]byte("wrong user id"))
-		return
-	}
+	userID := chi.URLParam(r, "user_id")
 
-	_, err = c.usersClient.FriendRequest(r.Context(), &usersGrpc.FriendRequestRequest{
-		RequesterUserId: int64(authUserID),
-		AddedUserId:     int64(userID),
+	_, err := c.usersClient.FriendRequest(r.Context(), &usersGrpc.FriendRequestRequest{
+		RequesterUserId: authUserID,
+		AddedUserId:     userID,
 	})
 	if err != nil {
 		c.logger.Error("failed find friend request", zap.Error(err))
@@ -153,16 +143,10 @@ func (c *Controller) add(w http.ResponseWriter, r *http.Request) {
 
 func (c *Controller) approve(w http.ResponseWriter, r *http.Request) {
 	authUserID, _ := lib.GetAuthUserID(r.Context())
-	userID, err := strconv.Atoi(chi.URLParam(r, "user_id"))
-	if err != nil {
-		w.WriteHeader(http.StatusUnprocessableEntity)
-		_, _ = w.Write([]byte("wrong user id"))
-		return
-	}
-
-	_, err = c.usersClient.ApproveFriendRequest(r.Context(), &usersGrpc.ApproveFriendRequestRequest{
-		ApproverUserId:  int64(authUserID),
-		RequesterUserId: int64(userID),
+	userID := chi.URLParam(r, "user_id")
+	_, err := c.usersClient.ApproveFriendRequest(r.Context(), &usersGrpc.ApproveFriendRequestRequest{
+		ApproverUserId:  authUserID,
+		RequesterUserId: userID,
 	})
 	if err != nil {
 		c.logger.Error("approve friend request", zap.Error(err))
@@ -176,20 +160,16 @@ func (c *Controller) approve(w http.ResponseWriter, r *http.Request) {
 
 func (c *Controller) chatOpen(w http.ResponseWriter, r *http.Request) {
 	authUserID, _ := lib.GetAuthUserID(r.Context())
-	userID, err := strconv.Atoi(chi.URLParam(r, "user_id"))
-	if err != nil {
-		w.WriteHeader(http.StatusUnprocessableEntity)
-		_, _ = w.Write([]byte("wrong user id"))
-		return
-	}
+	userID := chi.URLParam(r, "user_id")
+
 	if userID == authUserID {
 		_, _ = w.Write([]byte("own chat does not support"))
 		return
 	}
 
 	res, err := c.chatsClient.FindOrCreateChat(r.Context(), &chatsGrpc.FindOrCreateChatRequest{
-		UserId_1: int64(authUserID),
-		UserId_2: int64(userID),
+		UserId_1: 1,
+		UserId_2: 1, // @todo
 	})
 
 	if err != nil {
