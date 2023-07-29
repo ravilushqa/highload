@@ -1,14 +1,26 @@
 version: "3.7"
 
+x-common-service: &common-service
+  build:
+    dockerfile: docker/web/Dockerfile
+    args:
+      SERVICE_PATH: services/web/api
+    context: .
+  expose:
+    - 8080
+  networks:
+    - otus
+
+x-api-service: &api-service
+  build:
+    context: .
+  restart: on-failure
+  networks:
+    - otus
+
 services:
   app:
-    build:
-      dockerfile: docker/web/Dockerfile
-      args:
-        SERVICE_PATH: services/web/api
-      context: .
-    expose:
-      - 8080
+    <<: *common-service
     depends_on:
       - users-api
       - chats-api
@@ -16,16 +28,9 @@ services:
       - posts-daemon
       - counters-api
       - nginx
-    networks:
-      - otus
+
   app-2:
-    build:
-      dockerfile: docker/web/Dockerfile
-      args:
-        SERVICE_PATH: services/web/api
-      context: .
-    expose:
-      - 8080
+    <<: *common-service
     depends_on:
       - chats-api
       - posts-api
@@ -33,34 +38,26 @@ services:
       - users-api
       - counters-api
       - nginx
-    networks:
-      - otus
+
   chats-api:
+    <<: *api-service
     build:
       args:
         SERVICE_PATH: services/chats/api
-      context: .
     ports:
       - 2345:40000
       - 50051
-    restart: on-failure
     depends_on:
       - mongodb
       - redis
     environment:
       MONGO_URL: "mongodb://mongodb:27017"
       REDIS_URL: "redis:6379"
-    networks:
-      - otus
-    security_opt:
-      - "apparmor=unconfined"
-    cap_add:
-      - SYS_PTRACE
   posts-api:
+    <<: *api-service
     build:
       args:
         SERVICE_PATH: services/posts/api
-      context: .
     ports:
       - 50051
     depends_on:
@@ -71,17 +68,14 @@ services:
       MONGO_URL: "mongodb://mongodb:27017"
       REDIS_URL: "redis://redis:6379"
       KAFKA_BROKERS: "kafka:9092"
-    restart: on-failure
-    networks:
-      - otus
+
   posts-daemon:
+    <<: *api-service
     build:
       args:
         SERVICE_PATH: services/posts/daemon
-      context: .
     ports:
       - 2346:40000
-    restart: on-failure
     depends_on:
       - redis
       - kafka
@@ -90,40 +84,31 @@ services:
       MONGO_URL: "mongodb://mongodb:27017"
       REDIS_URL: "redis://redis:6379"
       KAFKA_BROKERS: "kafka:9092"
-    networks:
-      - otus
-    security_opt:
-      - "apparmor=unconfined"
-    cap_add:
-      - SYS_PTRACE
+
   users-api:
+    <<: *api-service
     build:
       args:
         SERVICE_PATH: services/users/api
-      context: .
     ports:
       - 50051
-    restart: on-failure
     depends_on:
       - mongodb
     environment:
       MONGO_URL: "mongodb://mongodb:27017"
-    networks:
-      - otus
+
   counters-api:
+    <<: *api-service
     build:
       args:
         SERVICE_PATH: services/counters/api
-      context: .
     ports:
       - 50051
-    restart: on-failure
     depends_on:
       - redis
     environment:
       REDIS_URL: "redis://redis:6379"
-    networks:
-      - otus
+
   mongodb:
     image: mongo:6
     restart: unless-stopped
@@ -133,6 +118,7 @@ services:
       - mongodb_data:/data/db
     networks:
       - otus
+
   prometheus:
     build:
       context: .
@@ -141,6 +127,7 @@ services:
       - 9090:9090
     networks:
       - otus
+
   cadvisor:
     image: gcr.io/google-containers/cadvisor:latest
     ports:
@@ -153,6 +140,7 @@ services:
       - /var/run/docker.sock:/var/run/docker.sock:rw
     networks:
       - otus
+
   grafana:
     image: grafana/grafana
     volumes:
@@ -171,6 +159,7 @@ services:
       org.label-schema.group: "monitoring"
     networks:
       - otus
+
   redis:
     healthcheck:
       interval: 30s
@@ -183,6 +172,7 @@ services:
     restart: unless-stopped
     networks:
       - otus
+
   zookeeper:
     image: wurstmeister/zookeeper
     restart: unless-stopped
@@ -190,6 +180,7 @@ services:
       - 2181:2181
     networks:
       - otus
+
   kafka:
     image: wurstmeister/kafka
     restart: unless-stopped
@@ -203,6 +194,7 @@ services:
       - zookeeper
     networks:
       - otus
+
   centrifugo:
     container_name: centrifugo
     image: centrifugo/centrifugo:v2.8.1
@@ -217,6 +209,7 @@ services:
         hard: 65535
     networks:
       - otus
+
   nginx:
     image: nginx:1.19.0
     container_name: nginx
@@ -228,16 +221,12 @@ services:
     ports:
       - "80:80"
       - "4098:8080"
+
 networks:
   otus:
     driver: bridge
+
 volumes:
   mongodb_data:
-  mysql_master_data:
-  mysql_slave1_data:
-  mysql_slave2_data:
-  db-node-1-data:
-  db-node-2-data:
   grafana_data:
   grafana_data_provisioning:
-  tarantool_data:
