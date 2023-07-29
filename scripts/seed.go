@@ -22,12 +22,13 @@ type config struct {
 type User struct {
 	Email     string    `faker:"email"`
 	Password  string    `faker:"password"`
-	FirstName string    `faker:"first_name"`
-	LastName  string    `faker:"last_name"`
+	FirstName string    `faker:"first_name" bson:"first_name"`
+	LastName  string    `faker:"last_name" bson:"last_name"`
 	Birthday  time.Time `faker:"birthday"`
 	Interests string    `faker:"word"`
 	Sex       Sex       `faker:"oneof: male, female"`
 	City      string    `faker:"oneof: saint-petersburg, moscow, london, rome, oslo, stockholm, helsinki"`
+	CreatedAt time.Time `faker:"created_at" bson:"created_at"`
 }
 
 type Sex string
@@ -43,6 +44,12 @@ func CustomGenerator() {
 		min := 1
 		max := 365 * 100
 		t1 := time.Date(1920, 1, rand.Intn(max-min+1)+min, 0, 0, 0, 0, time.UTC)
+		return t1, nil
+	})
+	_ = faker.AddProvider("created_at", func(v reflect.Value) (interface{}, error) {
+		min := 1
+		max := 365 * 100
+		t1 := time.Date(2022, 1, rand.Intn(max-min+1)+min, 0, 0, 0, 0, time.UTC)
 		return t1, nil
 	})
 }
