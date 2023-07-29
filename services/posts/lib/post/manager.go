@@ -4,26 +4,26 @@ import (
 	"context"
 	"time"
 
-	"github.com/linxGnu/mssqlx"
+	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/bson/primitive"
+	"go.mongodb.org/mongo-driver/mongo"
+	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
 type Manager struct {
-	DB *mssqlx.DBs
+	col *mongo.Collection
 }
 
-func NewManager(DB *mssqlx.DBs) *Manager {
-	return &Manager{DB: DB}
+func NewManager(db *mongo.Database) *Manager {
+	return &Manager{col: db.Collection("posts")}
 }
 
 func (m *Manager) Insert(ctx context.Context, p *Post) (*Post, error) {
 	if p.CreatedAt.IsZero() {
 		p.CreatedAt = time.Now()
 	}
-	query := `insert into posts
-		(user_id, text, created_at)
-		values (:user_id, :text, :created_at)
-	`
-	res, err := m.DB.NamedExecContext(ctx, query, map[string]interface{}{
+
+	res, err := m.col.InsertOne(ctx, bson.M{
 		"user_id":    p.UserID,
 		"text":       p.Text,
 		"created_at": p.CreatedAt,
@@ -33,29 +33,31 @@ func (m *Manager) Insert(ctx context.Context, p *Post) (*Post, error) {
 		return nil, err
 	}
 
-	id, err := res.LastInsertId()
+	p.ID = res.InsertedID.(primitive.ObjectID)
+
+	return p, nil
+}
+
+func (m *Manager) GetOwnPosts(ctx context.Context, uid string) ([]*Post, error) {
+	opts := options.Find()
+	opts.SetLimit(100)
+	opts.SetSort(bson.M{"_id": -1})
+
+	cursor, err := m.col.Find(ctx, bson.M{
+		"user_id": uid,
+		"deleted_at": bson.M{
+			"$exists": false,
+		},
+	}, opts)
 
 	if err != nil {
 		return nil, err
 	}
 
-	p.ID = int(id)
+	var posts []*Post
+	if err = cursor.All(ctx, &posts); err != nil {
+		return nil, err
+	}
 
-	return p, nil
-}
-
-func (m *Manager) GetOwnPosts(ctx context.Context, uid int) ([]Post, error) {
-	var query string
-	res := make([]Post, 0)
-
-	query = `
-		select id, user_id, text, created_at
-		from posts
-		where deleted_at is null and user_id = ?
-		order by id desc
-		limit 100 offset 0
-	`
-
-	err := m.DB.SelectContext(ctx, &res, query, uid)
-	return res, err
+	return posts, nil
 }

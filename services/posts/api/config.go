@@ -5,8 +5,8 @@ import (
 )
 
 type config struct {
-	DatabaseURL  string   `env:"DATABASE_URL"`
-	SlavesUrls   []string `env:"SLAVES_URLS" envSeparator:","`
+	MongoURL     string   `env:"MONGO_URL" envDefault:"mongodb://mongodb:27017"`
+	MongoDB      string   `env:"MONGO_DB" envDefault:"highload"`
 	KafkaBrokers []string `env:"KAFKA_BROKERS" envSeparator:","`
 	KafkaTopic   string   `env:"KAFKA_TOPIC" envDefault:"posts_feed"`
 	RedisURL     string   `env:"REDIS_URL"`

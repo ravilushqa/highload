@@ -12,8 +12,8 @@ services:
     depends_on:
       - users-api
       - chats-api
-#      - posts-api
-#      - posts-daemon
+      - posts-api
+      - posts-daemon
       - counters-api
       - nginx
     networks:
@@ -65,14 +65,10 @@ services:
       - 50051
     depends_on:
       - redis
-      - mysql_master
-      - mysql_slave1
-      - mysql_slave2
       - kafka
-      - haproxy
+      - mongodb
     environment:
-      DATABASE_URL: "root:@(haproxy:3306)/app"
-      SLAVES_URLS: "root:@(haproxy:3307)/app"
+      MONGO_URL: "mongodb://mongodb:27017"
       REDIS_URL: "redis://redis:6379"
       KAFKA_BROKERS: "kafka:9092"
     restart: on-failure
@@ -90,10 +86,8 @@ services:
       - redis
       - kafka
       - centrifugo
-      - haproxy
     environment:
-      DATABASE_URL: "root:@(haproxy:3306)/app"
-      SLAVES_URLS: "root:@(haproxy:3307)/app"
+      MONGO_URL: "mongodb://mongodb:27017"
       REDIS_URL: "redis://redis:6379"
       KAFKA_BROKERS: "kafka:9092"
     networks:
@@ -137,106 +131,6 @@ services:
       - 27017:27017
     volumes:
       - mongodb_data:/data/db
-    networks:
-      - otus
-  mysql_master:
-    container_name: mysql_master
-    image: mysql:5.7.30
-    ports:
-      - 3306:3306
-    restart: always
-    volumes:
-      - mysql_master_data:/var/lib/mysql
-      - ./docker/mysql/master.cnf:/etc/mysql/my.cnf
-      - ./docker/mysql/master.sql:/data/start.sql
-    environment:
-      MYSQL_DATABASE: "app"
-      MYSQL_USER: "user"
-      MYSQL_PASSWORD: "password"
-      MYSQL_ALLOW_EMPTY_PASSWORD: 1
-    networks:
-      - otus
-  #    command: --init-file /data/start.sql
-  mysql_slave1:
-    image: mysql:5.7.30
-    ports:
-      - 33061:3306
-    restart: always
-    depends_on:
-      - mysql_master
-    volumes:
-      - mysql_slave1_data:/var/lib/mysql
-      - ./docker/mysql/slave1.cnf:/etc/mysql/my.cnf
-      - ./docker/mysql/slave.sql:/data/start.sql
-    environment:
-      MYSQL_DATABASE: "app"
-      MYSQL_USER: "user"
-      MYSQL_PASSWORD: "password"
-      MYSQL_ALLOW_EMPTY_PASSWORD: 1
-    networks:
-      - otus
-  #    command: --init-file /data/start.sql
-  mysql_slave2:
-    image: mysql:5.7.30
-    ports:
-      - 33062:3306
-    restart: always
-    depends_on:
-      - mysql_master
-    volumes:
-      - mysql_slave2_data:/var/lib/mysql
-      - ./docker/mysql/slave2.cnf:/etc/mysql/my.cnf
-      - ./docker/mysql/slave.sql:/data/start.sql
-    environment:
-      MYSQL_DATABASE: "app"
-      MYSQL_USER: "user"
-      MYSQL_PASSWORD: "password"
-      MYSQL_ALLOW_EMPTY_PASSWORD: 1
-    networks:
-      - otus
-  #    command: --init-file /data/start.sql
-  db-node-1:
-    build:
-      context: docker/mysql
-      dockerfile: Dockerfile
-    restart: unless-stopped
-    environment:
-      MYSQL_DATABASE: messages
-      MYSQL_USER: messages
-      MYSQL_PASSWORD: secret
-      MYSQL_ROOT_PASSWORD: '1'
-    command: >
-      --init-file /data/start.sql
-      --sql-mode='STRICT_TRANS_TABLES,ERROR_FOR_DIVISION_BY_ZERO,NO_AUTO_CREATE_USER,NO_ENGINE_SUBSTITUTION'
-      --general-log=ON
-      --log-queries-not-using-indexes=ON
-    ports:
-      - 3360:3306
-    volumes:
-      - db-node-1-data:/var/lib/mysql
-      - ./docker/mysql/messages.sql:/data/start.sql
-    networks:
-      - otus
-  db-node-2:
-    build:
-      context: docker/mysql
-      dockerfile: Dockerfile
-    restart: unless-stopped
-    environment:
-      MYSQL_DATABASE: messages
-      MYSQL_USER: messages
-      MYSQL_PASSWORD: secret
-      MYSQL_ROOT_PASSWORD: '1'
-    command: >
-      --init-file /data/start.sql
-      --sql-mode='STRICT_TRANS_TABLES,ERROR_FOR_DIVISION_BY_ZERO,NO_AUTO_CREATE_USER,NO_ENGINE_SUBSTITUTION'
-      --general-log=ON
-      --log-queries-not-using-indexes=ON
-    ports:
-      - 3361:3306
-    volumes:
-      - db-node-2-data:/var/lib/mysql
-      - ./docker/mysql/messages.sql:/data/start.sql
     networks:
       - otus
   prometheus:
@@ -290,54 +184,28 @@ services:
     networks:
       - otus
   zookeeper:
-    image: zookeeper:3.6.1
+    image: wurstmeister/zookeeper
     restart: unless-stopped
+    ports:
+      - 2181:2181
     networks:
       - otus
   kafka:
-    depends_on:
-      - zookeeper
-    environment:
-      JMX_PORT: 9999
-      KAFKA_ADVERTISED_HOST_NAME: kafka
-      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
-    image: wurstmeister/kafka:2.11-2.0.1
+    image: wurstmeister/kafka
+    restart: unless-stopped
     ports:
       - 9092:9092
-    restart: unless-stopped
-    networks:
-      - otus
-  tarantool:
-    build:
-      context: .
-      dockerfile: docker/tarantool/Dockerfile
-    volumes:
-      - tarantool_data:/var/lib/tarantool
-      - ./docker/tarantool/app.lua:/usr/local/etc/tarantool/instances.enabled/app.lua
-      - ./docker/tarantool/app.lua:/usr/local/etc/tarantool/available.enabled/app.lua
-    ports:
-      - 3301:3301
-      - 3302:3302
-    networks:
-      - otus
-  mysql_tarantool_replication:
-    build:
-      context: .
-      dockerfile: docker/mysql_tarantool_replication/Dockerfile
-    volumes:
-      - ./docker/mysql_tarantool_replication/replicator.yml:/usr/local/etc/replicator.yml
+    environment:
+      KAFKA_ADVERTISED_HOST_NAME: kafka
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_CREATE_TOPICS: "posts_feed:1:1"
     depends_on:
-      - tarantool
-      - mysql_master
-    privileged: true
+      - zookeeper
     networks:
       - otus
-    command: >
-      bash -c "cd /usr/local/sbin
-      && ./replicatord -c /usr/local/etc/replicator.yml"
   centrifugo:
     container_name: centrifugo
-    image: centrifugo/centrifugo:latest
+    image: centrifugo/centrifugo:v2.8.1
     volumes:
       - ./docker/centrifugo/config.json:/centrifugo/config.json
     command: centrifugo -c config.json
@@ -347,23 +215,6 @@ services:
       nofile:
         soft: 65535
         hard: 65535
-    networks:
-      - otus
-  haproxy:
-    image: haproxy:2.1.7
-    container_name: haproxy
-    restart: "no"
-    volumes:
-      - "./docker/haproxy/haproxy.cfg:/usr/local/etc/haproxy/haproxy.cfg"
-    ports:
-      - "4080:80"
-      - "8404:8404"
-      - 3306
-      - 3307
-    depends_on:
-      - mysql_master
-      - mysql_slave1
-      - mysql_slave2
     networks:
       - otus
   nginx:

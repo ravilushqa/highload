@@ -38,9 +38,8 @@ func (c *Controller) Store(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	_ = uid
 	_, err := c.postsClient.Store(r.Context(), &grpc.StoreRequest{
-		UserId: 1, //@todo
+		UserId: uid,
 		Text:   text,
 	})
 	if err != nil {
@@ -55,7 +54,7 @@ func (c *Controller) Store(w http.ResponseWriter, r *http.Request) {
 
 func (c *Controller) index(w http.ResponseWriter, r *http.Request) {
 	uid, _ := lib.GetAuthUserID(r.Context())
-	resp, err := c.postsClient.GetByUserID(r.Context(), &grpc.GetByUserIDRequest{UserId: 1}) //@todo
+	resp, err := c.postsClient.GetByUserID(r.Context(), &grpc.GetByUserIDRequest{UserId: uid})
 	if err != nil {
 		c.l.Error("failed get users", zap.Error(err))
 		w.WriteHeader(http.StatusInternalServerError)

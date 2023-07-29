@@ -7,7 +7,6 @@ import (
 	"net"
 
 	"github.com/go-redis/redis"
-	"github.com/golang/protobuf/ptypes"
 	"github.com/golang/protobuf/ptypes/timestamp"
 	grpcmiddleware "github.com/grpc-ecosystem/go-grpc-middleware"
 	grpczap "github.com/grpc-ecosystem/go-grpc-middleware/logging/zap"
@@ -17,15 +16,17 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/reflection"
 	"google.golang.org/grpc/status"
+	"google.golang.org/protobuf/types/known/timestamppb"
 
 	kafkaproducerprovider "github.com/ravilushqa/highload/providers/kafka-producer"
 	postsGrpc "github.com/ravilushqa/highload/services/posts/api/grpc"
 	"github.com/ravilushqa/highload/services/posts/lib/post"
 )
 
-const cacheKey = "feed:user_id:%d"
+const cacheKey = "feed:user_id:%s"
 
 type Api struct {
+	postsGrpc.UnimplementedPostsServer
 	logger        *zap.Logger
 	redis         *redis.Client
 	postManager   *post.Manager
@@ -72,7 +73,7 @@ func (a *Api) Run(ctx context.Context) error {
 func (a *Api) GetFeed(ctx context.Context, req *postsGrpc.GetFeedRequest) (*postsGrpc.GetFeedResponse, error) {
 	list, err := a.redis.LRange(fmt.Sprintf(cacheKey, req.UserId), 0, 1000).Result()
 	if err != nil {
-		a.logger.Error("failed to get feed from cache", zap.Error(err), zap.Int64("user_id", req.UserId))
+		a.logger.Error("failed to get feed from cache", zap.Error(err), zap.String("user_id", req.UserId))
 		return nil, status.New(codes.Internal, err.Error()).Err()
 	}
 	posts := make([]*postsGrpc.Post, 0, len(list))
@@ -80,25 +81,18 @@ func (a *Api) GetFeed(ctx context.Context, req *postsGrpc.GetFeedRequest) (*post
 		var p post.Post
 		err = json.Unmarshal([]byte(jsonPost), &p)
 		if err != nil {
-			a.logger.Error("failed unmarshal post", zap.Error(err), zap.Int64("user_id", req.UserId))
+			a.logger.Error("failed unmarshal post", zap.Error(err), zap.String("user_id", req.UserId))
 			return nil, status.New(codes.Internal, err.Error()).Err()
 		}
-		ca, err := ptypes.TimestampProto(p.CreatedAt)
-		if err != nil {
-			return nil, status.New(codes.Internal, err.Error()).Err()
-		}
-
+		ca := timestamppb.New(p.CreatedAt)
 		var da *timestamp.Timestamp
-		if p.DeletedAt.Valid {
-			da, err = ptypes.TimestampProto(p.DeletedAt.Time)
-			if err != nil {
-				return nil, status.New(codes.Internal, err.Error()).Err()
-			}
+		if p.DeletedAt != nil {
+			da = timestamppb.New(*p.DeletedAt)
 		}
 
 		posts = append(posts, &postsGrpc.Post{
-			Id:        int64(p.ID),
-			UserId:    int64(p.UserID),
+			Id:        p.ID.Hex(),
+			UserId:    p.UserID,
 			Text:      p.Text,
 			CreatedAt: ca,
 			DeletedAt: da,
@@ -111,7 +105,7 @@ func (a *Api) GetFeed(ctx context.Context, req *postsGrpc.GetFeedRequest) (*post
 }
 
 func (a *Api) GetByUserID(ctx context.Context, req *postsGrpc.GetByUserIDRequest) (*postsGrpc.GetByUserIDResponse, error) {
-	posts, err := a.postManager.GetOwnPosts(ctx, int(req.UserId))
+	posts, err := a.postManager.GetOwnPosts(ctx, req.UserId)
 	if err != nil {
 		return nil, status.New(codes.Internal, err.Error()).Err()
 	}
@@ -119,22 +113,16 @@ func (a *Api) GetByUserID(ctx context.Context, req *postsGrpc.GetByUserIDRequest
 	res := make([]*postsGrpc.Post, 0, len(posts))
 
 	for _, p := range posts {
-		ca, err := ptypes.TimestampProto(p.CreatedAt)
-		if err != nil {
-			return nil, status.New(codes.Internal, err.Error()).Err()
-		}
+		ca := timestamppb.New(p.CreatedAt)
 
 		var da *timestamp.Timestamp
-		if p.DeletedAt.Valid {
-			da, err = ptypes.TimestampProto(p.DeletedAt.Time)
-			if err != nil {
-				return nil, status.New(codes.Internal, err.Error()).Err()
-			}
+		if p.DeletedAt != nil {
+			da = timestamppb.New(*p.DeletedAt)
 		}
 
 		res = append(res, &postsGrpc.Post{
-			Id:        int64(p.ID),
-			UserId:    int64(p.UserID),
+			Id:        p.ID.Hex(),
+			UserId:    p.UserID,
 			Text:      p.Text,
 			CreatedAt: ca,
 			DeletedAt: da,
@@ -146,7 +134,7 @@ func (a *Api) GetByUserID(ctx context.Context, req *postsGrpc.GetByUserIDRequest
 
 func (a *Api) Store(ctx context.Context, req *postsGrpc.StoreRequest) (*postsGrpc.StoreResponse, error) {
 	p := &post.Post{
-		UserID: int(req.UserId),
+		UserID: req.UserId,
 		Text:   req.Text,
 	}
 	p, err := a.postManager.Insert(ctx, p)
@@ -155,17 +143,11 @@ func (a *Api) Store(ctx context.Context, req *postsGrpc.StoreRequest) (*postsGrp
 		return nil, status.New(codes.Internal, err.Error()).Err()
 	}
 
-	ca, err := ptypes.TimestampProto(p.CreatedAt)
-	if err != nil {
-		return nil, status.New(codes.Internal, err.Error()).Err()
-	}
+	ca := timestamppb.New(p.CreatedAt)
 
 	var da *timestamp.Timestamp
-	if p.DeletedAt.Valid {
-		da, err = ptypes.TimestampProto(p.DeletedAt.Time)
-		if err != nil {
-			return nil, status.New(codes.Internal, err.Error()).Err()
-		}
+	if p.DeletedAt != nil {
+		da = timestamppb.New(*p.DeletedAt)
 	}
 
 	message, err := json.Marshal(p)
@@ -176,8 +158,8 @@ func (a *Api) Store(ctx context.Context, req *postsGrpc.StoreRequest) (*postsGrp
 	}
 
 	return &postsGrpc.StoreResponse{Post: &postsGrpc.Post{
-		Id:        int64(p.ID),
-		UserId:    int64(p.UserID),
+		Id:        p.ID.Hex(),
+		UserId:    p.UserID,
 		Text:      p.Text,
 		CreatedAt: ca,
 		DeletedAt: da,

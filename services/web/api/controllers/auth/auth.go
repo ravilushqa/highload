@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"html/template"
 	"net/http"
-	"strings"
+	"strconv"
 	"time"
 
 	"github.com/go-chi/chi"
@@ -117,6 +117,12 @@ func (c *Controller) register(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	sexpb, err := strconv.Atoi(r.FormValue("register-form-sex"))
+	if err != nil {
+		w.WriteHeader(http.StatusUnprocessableEntity)
+		return
+	}
+
 	storeResponse, err := c.usersClient.Store(r.Context(), &usersGrpc.StoreRequest{
 		Email:     r.FormValue("register-form-email"),
 		Password:  string(hashedPassword),
@@ -124,10 +130,11 @@ func (c *Controller) register(w http.ResponseWriter, r *http.Request) {
 		LastName:  r.FormValue("register-form-last-name"),
 		Birthday:  bdProto,
 		Interests: r.FormValue("register-form-interests"),
-		Sex:       usersGrpc.Sex(usersGrpc.Sex_value[strings.Title(r.FormValue("register-form-sex"))]),
+		Sex:       usersGrpc.Sex(sexpb),
 		City:      r.FormValue("register-form-city"),
 	})
 
+	fmt.Println(storeResponse)
 	if err != nil {
 		http.Redirect(w, r, r.Header.Get("Referer"), 302)
 		return

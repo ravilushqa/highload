@@ -1,14 +1,15 @@
 package post
 
 import (
-	"database/sql"
 	"time"
+
+	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
 type Post struct {
-	ID        int          `json:"id"`
-	UserID    int          `json:"user_id" db:"user_id"`
-	Text      string       `json:"text"`
-	CreatedAt time.Time    `json:"created_at" db:"created_at"`
-	DeletedAt sql.NullTime `json:"deleted_at" db:"deleted_at"`
+	ID        primitive.ObjectID `json:"id" bson:"_id,omitempty"`
+	UserID    string             `json:"user_id" bson:"user_id"`
+	Text      string             `json:"text"`
+	CreatedAt time.Time          `json:"created_at" bson:"created_at"`
+	DeletedAt *time.Time         `json:"deleted_at" bson:"deleted_at"`
 }

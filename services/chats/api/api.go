@@ -157,7 +157,7 @@ func (a *Api) FindOrCreateChat(ctx context.Context, req *chatsGrpc.FindOrCreateC
 		a.logger.Error("failed get users dialog chat", zap.Error(err))
 		return nil, status.New(codes.Internal, err.Error()).Err()
 	}
-	if chatID == "" { // chatID == 0 @todo
+	if chatID == "" {
 		chatID, err = a.chatManager.Insert(ctx, &chat.Chat{
 			Type: "dialog",
 		})

@@ -1,15 +1,17 @@
 package main
 
 import (
+	"context"
+
 	"github.com/go-redis/redis"
 	_ "github.com/go-sql-driver/mysql"
-	"github.com/linxGnu/mssqlx"
 	"github.com/neonxp/rutina"
+	"go.mongodb.org/mongo-driver/mongo"
 	"go.uber.org/dig"
 	"go.uber.org/zap"
 
-	"github.com/ravilushqa/highload/providers/db"
 	kafkaproducerprovider "github.com/ravilushqa/highload/providers/kafka-producer"
+	"github.com/ravilushqa/highload/providers/mongodb"
 	redisprovider "github.com/ravilushqa/highload/providers/redis"
 	"github.com/ravilushqa/highload/services/posts/lib/post"
 )
@@ -22,8 +24,8 @@ func buildContainer() (*dig.Container, error) {
 		func(c *config) (*redis.Client, error) {
 			return redisprovider.New(c.RedisURL)
 		},
-		func(c *config) (*mssqlx.DBs, error) {
-			return db.New(c.DatabaseURL, c.SlavesUrls)
+		func(c *config) (*mongo.Database, error) {
+			return mongodb.New(context.Background(), c.MongoURL, c.MongoDB)
 		},
 		func(c *config) (*kafkaproducerprovider.KafkaProducer, error) {
 			return kafkaproducerprovider.New(c.KafkaBrokers, c.KafkaTopic, nil)
@@ -67,9 +69,12 @@ func main() {
 		tl.Error("run failed", zap.Error(err))
 	}
 
-	err = container.Invoke(func(l *zap.Logger, r *redis.Client) error {
+	err = container.Invoke(func(l *zap.Logger, r *redis.Client, db *mongo.Database) error {
 		if err := r.ShutdownSave().Err(); err != nil {
 			l.Error("failed to shutdown redis", zap.Error(err))
+		}
+		if err := db.Client().Disconnect(context.Background()); err != nil {
+			l.Error("failed disconnect from mongo", zap.Error(err))
 		}
 		l.Info("gracefully shutdown...")
 		return l.Sync()

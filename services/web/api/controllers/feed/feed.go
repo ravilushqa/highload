@@ -29,7 +29,7 @@ func (c *Controller) Router(r chi.Router) chi.Router {
 func (c *Controller) feed(w http.ResponseWriter, r *http.Request) {
 	uid, _ := lib.GetAuthUserID(r.Context())
 
-	res, err := c.postsClient.GetFeed(r.Context(), &grpc.GetFeedRequest{UserId: 1}) //@todo
+	res, err := c.postsClient.GetFeed(r.Context(), &grpc.GetFeedRequest{UserId: uid})
 	if err != nil {
 		c.l.Error("failed get feed", zap.NamedError("error", err))
 		w.WriteHeader(http.StatusInternalServerError)
