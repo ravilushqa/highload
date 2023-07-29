@@ -1,8 +1,8 @@
-//nolint
+// nolint
 package main
 
 import (
-	"fmt"
+	"context"
 	"math/rand"
 	"reflect"
 	"time"
@@ -10,15 +10,16 @@ import (
 	"github.com/bxcodec/faker/v3"
 	"github.com/caarlos0/env"
 	_ "github.com/go-sql-driver/mysql"
-	"github.com/jmoiron/sqlx"
+
+	"github.com/ravilushqa/highload/providers/mongodb"
 )
 
 type config struct {
-	DatabaseUrl string `env:"DATABASE_URL" envDefault:"user:password@(localhost:3306)/app"`
+	MONGO_URL string `env:"MONGO_URL" envDefault:"mongodb://localhost:27017"`
+	MONGO_DB  string `env:"MONGO_DB" envDefault:"highload"`
 }
 
 type User struct {
-	ID        int       `faker:"-"`
 	Email     string    `faker:"email"`
 	Password  string    `faker:"password"`
 	FirstName string    `faker:"first_name"`
@@ -54,37 +55,25 @@ func main() {
 		panic(err)
 	}
 
-	db, err := sqlx.Connect("mysql", fmt.Sprint(c.DatabaseUrl, "?parseTime=true"))
+	database, err := mongodb.New(context.Background(), c.MONGO_URL, c.MONGO_DB)
 	if err != nil {
-		panic(err)
+		return
 	}
+	col := database.Collection("users")
 	CustomGenerator()
 	u := User{}
+	users := make([]any, 1000)
 
 	for i := 0; i < 1000; i++ {
 		println("iter: ", i)
-
-		sqlStr := `insert into users (email, password, firstname, lastname, birthday, sex, interests, city) VALUES`
-		var vals []interface{}
 		for j := 0; j < 1000; j++ {
-
 			_ = faker.FakeData(&u)
-			sqlStr += "(?, ?, ?, ?, ?, ?, ?, ?),"
-			vals = append(vals, u.Email, u.Password, u.FirstName, u.LastName, u.Birthday, u.Sex, u.Interests, u.City)
+			users[j] = u
 		}
-		//trim the last ,
-		sqlStr = sqlStr[0 : len(sqlStr)-1]
-		//prepare the statement
-		stmt, _ := db.Prepare(sqlStr)
-
-		//format all vals at once
-		res, _ := stmt.Exec(vals...)
-		count, err := res.RowsAffected()
+		_, err := col.InsertMany(context.Background(), users)
 		if err != nil {
 			panic(err)
 		}
-		println("count: ", count)
-
 	}
 
 }
