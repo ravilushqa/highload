@@ -54,7 +54,7 @@ func registerHooks(lifecycle fx.Lifecycle, l *zap.Logger, db *mongo.Database, a 
 		fx.Hook{
 			OnStart: func(context.Context) error {
 				addr := "0.0.0.0:50051"
-				lis, err := net.Listen("tcp", addr) //@todo
+				lis, err := net.Listen("tcp", addr)
 				if err != nil {
 					return err
 				}

@@ -10,6 +10,7 @@ import (
 	"go.uber.org/dig"
 	"go.uber.org/zap"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials/insecure"
 
 	centrifugoclient "github.com/ravilushqa/highload/providers/centrifugo-client"
 	kafkaconsumerprovider "github.com/ravilushqa/highload/providers/kafka-consumer"
@@ -33,7 +34,7 @@ func buildContainer() (*dig.Container, error) {
 		},
 		newDaemon,
 		func(c *config) (usersGrpc.UsersClient, error) {
-			conn, err := grpc.Dial(c.UsersURL, grpc.WithInsecure())
+			conn, err := grpc.Dial(c.UsersURL, grpc.WithTransportCredentials(insecure.NewCredentials()))
 			if err != nil {
 				return nil, err
 			}
@@ -86,5 +87,4 @@ func main() {
 	if err != nil {
 		tl.Error("shutdown failed", zap.Error(err))
 	}
-
 }

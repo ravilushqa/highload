@@ -82,5 +82,4 @@ func main() {
 	if err != nil {
 		tl.Error("shutdown failed", zap.Error(err))
 	}
-
 }

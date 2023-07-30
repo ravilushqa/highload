@@ -81,7 +81,6 @@ func (m *Manager) GetChatMembers(ctx context.Context, chatID string) ([]string, 
 // @todo: optimize
 func (m *Manager) GetUsersDialogChat(ctx context.Context, uID1, uID2 string) (string, error) {
 	cursor, err := m.col.Find(ctx, bson.M{"user_id": uID1})
-
 	if err != nil {
 		return "", err
 	}

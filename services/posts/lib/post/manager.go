@@ -28,7 +28,6 @@ func (m *Manager) Insert(ctx context.Context, p *Post) (*Post, error) {
 		"text":       p.Text,
 		"created_at": p.CreatedAt,
 	})
-
 	if err != nil {
 		return nil, err
 	}
@@ -49,7 +48,6 @@ func (m *Manager) GetOwnPosts(ctx context.Context, uid string) ([]*Post, error) 
 			"$exists": false,
 		},
 	}, opts)
-
 	if err != nil {
 		return nil, err
 	}

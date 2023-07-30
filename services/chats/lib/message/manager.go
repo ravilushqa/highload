@@ -3,7 +3,7 @@ package message
 import (
 	"context"
 
-	"github.com/satori/go.uuid"
+	uuid "github.com/satori/go.uuid"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"

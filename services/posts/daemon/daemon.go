@@ -15,8 +15,10 @@ import (
 	usersGrpc "github.com/ravilushqa/highload/services/users/api/grpc"
 )
 
-var cacheKey = "feed:user_id:%s"
-var centrifugoKey = "feed_user_id_%s"
+var (
+	cacheKey      = "feed:user_id:%s"
+	centrifugoKey = "feed_user_id_%s"
+)
 
 type postMessage struct {
 	ID        string    `json:"id"`

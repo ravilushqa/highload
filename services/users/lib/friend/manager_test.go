@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"github.com/testcontainers/testcontainers-go"
 	"github.com/testcontainers/testcontainers-go/wait"
 	"go.mongodb.org/mongo-driver/bson"
@@ -25,7 +25,7 @@ func TestGetRelation(t *testing.T) {
 		},
 		Started: true,
 	})
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	defer mongoC.Terminate(context.Background())
 
 	// Get the MongoDB connection string from the container.
@@ -38,7 +38,7 @@ func TestGetRelation(t *testing.T) {
 	if err != nil {
 		t.Fatal(fmt.Errorf("error creating mongo client: %w", err))
 	}
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	defer client.Disconnect(context.Background())
 
 	db := client.Database("test-db")
@@ -51,7 +51,7 @@ func TestGetRelation(t *testing.T) {
 		bson.M{"user_id": "user3", "friend_id": "user1", "approved": false},
 	}
 	_, err = collection.InsertMany(context.Background(), testData)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	// Create an instance of your Manager type.
 	manager := &Manager{
@@ -75,8 +75,8 @@ func TestGetRelation(t *testing.T) {
 	for _, tc := range testCases {
 		t.Run(tc.authUser+"-"+tc.user, func(t *testing.T) {
 			status, err := manager.GetRelation(context.Background(), tc.authUser, tc.user)
-			assert.NoError(t, err)
-			assert.Equal(t, tc.expected, status)
+			require.NoError(t, err)
+			require.Equal(t, tc.expected, status)
 		})
 	}
 }

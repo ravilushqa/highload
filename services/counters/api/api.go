@@ -27,12 +27,9 @@ func NewApi(logger *zap.Logger, redis *redis.Client) *Api {
 }
 
 func (a *Api) IncrementUnreadMessageCounter(ctx context.Context, req *countersGrpc.IncrementUnreadMessageCounterRequest) (*empty.Empty, error) {
-	//err := a.redis.ZAdd("chat_" + strconv.Itoa(int(userID)), redis.Z{Score: 1, Member: chatID}).Err() @todo think about it
-
+	// err := a.redis.ZAdd("chat_" + strconv.Itoa(int(userID)), redis.Z{Score: 1, Member: chatID}).Err() @todo think about it
 	for _, userID := range req.UserIds {
-		err := a.redis.HIncrBy(
-			fmt.Sprintf(unreadmessageCacheKey, userID), req.ChatId, 1).Err()
-
+		err := a.redis.HIncrBy(fmt.Sprintf(unreadmessageCacheKey, userID), req.ChatId, 1).Err()
 		if err != nil {
 			return new(empty.Empty), status.New(codes.Internal, err.Error()).Err()
 		}

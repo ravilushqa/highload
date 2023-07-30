@@ -30,14 +30,14 @@ func buildContainer() (*dig.Container, error) {
 			return lib.NewAuth(c.JwtSecret), nil
 		},
 		func(c *config) (chatsGrpc.ChatsClient, error) {
-			conn, err := grpc.Dial(c.ChatsURL, grpc.WithInsecure())
+			conn, err := grpc.Dial(c.ChatsURL, grpc.WithTransportCredentials(insecure.NewCredentials()))
 			if err != nil {
 				return nil, err
 			}
 			return chatsGrpc.NewChatsClient(conn), nil
 		},
 		func(c *config) (postsGrpc.PostsClient, error) {
-			conn, err := grpc.Dial(c.PostsURL, grpc.WithInsecure())
+			conn, err := grpc.Dial(c.PostsURL, grpc.WithTransportCredentials(insecure.NewCredentials()))
 			if err != nil {
 				return nil, err
 			}
@@ -100,5 +100,4 @@ func main() {
 	if err != nil {
 		tl.Error("shutdown failed", zap.Error(err))
 	}
-
 }

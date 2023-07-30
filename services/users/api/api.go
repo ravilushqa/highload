@@ -5,9 +5,10 @@ import (
 	"strings"
 	"time"
 
-	"github.com/golang/protobuf/ptypes"
 	"github.com/golang/protobuf/ptypes/empty"
 	"github.com/golang/protobuf/ptypes/timestamp"
+	"golang.org/x/text/cases"
+	"golang.org/x/text/language"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/timestamppb"
@@ -78,23 +79,11 @@ func (a *Api) GetById(ctx context.Context, req *usersGrpc.GetByIdRequest) (*user
 
 func (a *Api) GetFriendsIds(ctx context.Context, req *usersGrpc.GetFriendsIdsRequest) (*usersGrpc.GetFriendsIdsResponse, error) {
 	friendIds, err := a.friendManager.GetFriends(ctx, req.UserId)
-	if err != nil {
-		return nil, status.New(codes.Internal, err.Error()).Err()
-	}
-	res := make([]string, 0, len(friendIds))
-	for _, v := range friendIds {
-		res = append(res, v)
-	}
-
-	return &usersGrpc.GetFriendsIdsResponse{UserIds: res}, err
+	return &usersGrpc.GetFriendsIdsResponse{UserIds: friendIds}, err
 }
 
 func (a *Api) GetListByIds(ctx context.Context, req *usersGrpc.GetListByIdsRequest) (*usersGrpc.GetListByIdsResponse, error) {
-	ids := make([]string, 0, len(req.UserIds))
-	for _, v := range req.UserIds {
-		ids = append(ids, v)
-	}
-	friends, err := a.userManager.GetListByIds(ctx, ids)
+	friends, err := a.userManager.GetListByIds(ctx, req.UserIds)
 	if err != nil {
 		return nil, status.New(codes.Internal, err.Error()).Err()
 	}
@@ -118,7 +107,7 @@ func (a *Api) GetRelation(ctx context.Context, req *usersGrpc.GetRelationRequest
 	}
 
 	return &usersGrpc.GetRelationResponse{
-		Relation: usersGrpc.UserRelation(usersGrpc.UserRelation_value[strings.Title(string(relation))]),
+		Relation: usersGrpc.UserRelation(usersGrpc.UserRelation_value[cases.Title(language.Und).String(string(relation))]),
 	}, err
 }
 
@@ -141,16 +130,12 @@ func (a *Api) GetByEmail(ctx context.Context, req *usersGrpc.GetByEmailRequest) 
 }
 
 func (a *Api) Store(ctx context.Context, req *usersGrpc.StoreRequest) (*usersGrpc.StoreResponse, error) {
-	bd, err := ptypes.Timestamp(req.Birthday)
-	if err != nil {
-		return nil, status.New(codes.Internal, err.Error()).Err()
-	}
 	userID, err := a.userManager.Store(ctx, &user.User{
 		Email:     req.Email,
 		Password:  req.Password,
 		FirstName: req.FirstName,
 		LastName:  req.LastName,
-		Birthday:  bd,
+		Birthday:  req.Birthday.AsTime(),
 		Interests: req.Interests,
 		Sex:       user.Sex(strings.ToLower(req.Sex.String())),
 		City:      req.City,
@@ -179,7 +164,7 @@ func (a *Api) user2proto(u *user.User) (*usersGrpc.User, error) {
 		LastName:  u.LastName,
 		Birthday:  bd,
 		Interests: u.Interests,
-		Sex:       usersGrpc.Sex(usersGrpc.Sex_value[strings.Title(string(u.Sex))]),
+		Sex:       usersGrpc.Sex(usersGrpc.Sex_value[cases.Title(language.Und).String(string(u.Sex))]),
 		City:      u.City,
 		CreatedAt: ca,
 		DeletedAt: da,

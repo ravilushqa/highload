@@ -8,9 +8,9 @@ import (
 	"time"
 
 	"github.com/go-chi/chi"
-	"github.com/golang/protobuf/ptypes"
 	"go.uber.org/zap"
 	"golang.org/x/crypto/bcrypt"
+	"google.golang.org/protobuf/types/known/timestamppb"
 
 	usersGrpc "github.com/ravilushqa/highload/services/users/api/grpc"
 	"github.com/ravilushqa/highload/services/web/lib"
@@ -66,7 +66,6 @@ func (c *Controller) login(w http.ResponseWriter, r *http.Request) {
 				Name:    "jwt",
 				Value:   token,
 				Expires: time.Now().AddDate(0, 0, 14),
-				//HttpOnly: true,
 			})
 
 			http.Redirect(w, r, fmt.Sprintf("/users/%s", userResponse.User.Id), http.StatusTemporaryRedirect)
@@ -105,11 +104,6 @@ func (c *Controller) register(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusUnprocessableEntity)
 		return
 	}
-	bdProto, err := ptypes.TimestampProto(bd)
-	if err != nil {
-		w.WriteHeader(http.StatusUnprocessableEntity)
-		return
-	}
 
 	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(r.FormValue("register-form-password")), bcrypt.DefaultCost)
 	if err != nil {
@@ -128,7 +122,7 @@ func (c *Controller) register(w http.ResponseWriter, r *http.Request) {
 		Password:  string(hashedPassword),
 		FirstName: r.FormValue("register-form-first-name"),
 		LastName:  r.FormValue("register-form-last-name"),
-		Birthday:  bdProto,
+		Birthday:  timestamppb.New(bd),
 		Interests: r.FormValue("register-form-interests"),
 		Sex:       usersGrpc.Sex(sexpb),
 		City:      r.FormValue("register-form-city"),
@@ -149,12 +143,10 @@ func (c *Controller) register(w http.ResponseWriter, r *http.Request) {
 			Name:    "jwt",
 			Value:   token,
 			Expires: time.Now().AddDate(0, 0, 14),
-			//HttpOnly: true,
 		})
 
 		http.Redirect(w, r, fmt.Sprintf("/users/%s", storeResponse.Id), http.StatusTemporaryRedirect)
 	}
-
 }
 
 func (c *Controller) logout(w http.ResponseWriter, r *http.Request) {
@@ -163,7 +155,6 @@ func (c *Controller) logout(w http.ResponseWriter, r *http.Request) {
 		Value:   "",
 		Path:    "/",
 		Expires: time.Time{},
-		//HttpOnly: true,
 	}
 
 	http.SetCookie(w, cookie)

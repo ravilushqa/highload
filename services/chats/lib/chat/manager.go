@@ -23,7 +23,6 @@ func (m *Manager) Insert(ctx context.Context, c *Chat) (string, error) {
 		"name": c.Name,
 		"type": c.Type,
 	})
-
 	if err != nil {
 		return "", err
 	}

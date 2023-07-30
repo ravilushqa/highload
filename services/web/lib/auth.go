@@ -20,7 +20,6 @@ type Auth struct {
 
 func NewAuth(secret string) *Auth {
 	return &Auth{token: jwtauth.New("HS256", []byte(secret), nil)}
-
 }
 
 func (a *Auth) GetToken() *jwtauth.JWTAuth {

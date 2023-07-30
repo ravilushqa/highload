@@ -7,7 +7,6 @@ import (
 	"time"
 
 	"github.com/axengine/go-saga"
-	"github.com/golang/protobuf/ptypes"
 	"github.com/golang/protobuf/ptypes/empty"
 	"github.com/golang/protobuf/ptypes/timestamp"
 	grpcmiddleware "github.com/grpc-ecosystem/go-grpc-middleware"
@@ -47,7 +46,7 @@ func NewApi(chatUserManager *chatuser.Manager, chatManager *chat.Manager, messag
 
 func (a *Api) Run(ctx context.Context) error {
 	addr := ":50051"
-	lis, err := net.Listen("tcp", addr) //@todo
+	lis, err := net.Listen("tcp", addr)
 	if err != nil {
 		return err
 	}
@@ -87,13 +86,8 @@ func (a *Api) GetUserChats(ctx context.Context, req *chatsGrpc.GetUserChatsReque
 		return nil, status.New(codes.Internal, err.Error()).Err()
 	}
 
-	chatIDsRes := make([]string, 0, len(chatIDs))
-	for _, v := range chatIDs {
-		chatIDsRes = append(chatIDsRes, v)
-	}
-
 	return &chatsGrpc.GetUserChatsResponse{
-		ChatIds: chatIDsRes,
+		ChatIds: chatIDs,
 	}, nil
 }
 
@@ -193,30 +187,20 @@ func (a *Api) FindOrCreateChat(ctx context.Context, req *chatsGrpc.FindOrCreateC
 func (a *Api) messagesToProto(messages []message.Message) ([]*chatsGrpc.Message, error) {
 	resMessages := make([]*chatsGrpc.Message, 0, len(messages))
 	for _, v := range messages {
-		ca, err := ptypes.TimestampProto(v.CreatedAt)
-		if err != nil {
-			return nil, err
-		}
 		var ua *timestamp.Timestamp
 		if v.UpdatedAt != nil {
 			ua = timestamppb.New(*v.UpdatedAt)
-			if err != nil {
-				return nil, err
-			}
 		}
 		var da *timestamp.Timestamp
 		if v.DeletedAt != nil {
 			da = timestamppb.New(*v.DeletedAt)
-			if err != nil {
-				return nil, err
-			}
 		}
 		resMessages = append(resMessages, &chatsGrpc.Message{
 			Uuid:      v.UUID,
 			UserId:    v.UserID,
 			ChatId:    v.ChatID,
 			Text:      v.Text,
-			CreatedAt: ca,
+			CreatedAt: timestamppb.New(v.CreatedAt),
 			UpdatedAt: ua,
 			DeletedAt: da,
 		})
@@ -227,7 +211,7 @@ func (a *Api) messagesToProto(messages []message.Message) ([]*chatsGrpc.Message,
 func (a *Api) initSagas() {
 	a.saga.AddSubTxDef(
 		"store_message",
-		func(ctx context.Context, userID, chatID string, text string) error {
+		func(ctx context.Context, userID, chatID, text string) error {
 			_, err := a.messageManager.Insert(ctx, &message.Message{
 				UserID: userID,
 				ChatID: chatID,
@@ -236,7 +220,7 @@ func (a *Api) initSagas() {
 
 			return err
 		},
-		func(ctx context.Context, userID, chatID string, text string) error {
+		func(ctx context.Context, userID, chatID, text string) error {
 			return a.messageManager.HardDeleteLastMessage(ctx, chatID, userID, text)
 		})
 

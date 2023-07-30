@@ -10,11 +10,12 @@ import (
 	"go.uber.org/dig"
 	"go.uber.org/zap"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials/insecure"
 
 	"github.com/ravilushqa/highload/providers/mongodb"
 	sagaProvider "github.com/ravilushqa/highload/providers/saga"
 	"github.com/ravilushqa/highload/services/chats/lib/chat"
-	"github.com/ravilushqa/highload/services/chats/lib/chat_user"
+	chatuser "github.com/ravilushqa/highload/services/chats/lib/chat_user"
 	"github.com/ravilushqa/highload/services/chats/lib/message"
 	countersGrpc "github.com/ravilushqa/highload/services/counters/api/grpc"
 )
@@ -32,7 +33,7 @@ func buildContainer() (*dig.Container, error) {
 		chat.NewManager,
 		chatuser.NewManager,
 		func(c *config) (countersGrpc.CountersClient, error) {
-			conn, err := grpc.Dial(c.CountersURL, grpc.WithInsecure())
+			conn, err := grpc.Dial(c.CountersURL, grpc.WithTransportCredentials(insecure.NewCredentials()))
 			if err != nil {
 				return nil, err
 			}
@@ -88,5 +89,4 @@ func main() {
 	if err != nil {
 		tl.Error("shutdown failed", zap.Error(err))
 	}
-
 }

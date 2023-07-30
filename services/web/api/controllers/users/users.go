@@ -171,7 +171,6 @@ func (c *Controller) chatOpen(w http.ResponseWriter, r *http.Request) {
 		UserId_1: authUserID,
 		UserId_2: userID,
 	})
-
 	if err != nil {
 		c.logger.Error("failed find or create chat", zap.Error(err))
 		w.WriteHeader(http.StatusInternalServerError)

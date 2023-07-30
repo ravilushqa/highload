@@ -39,7 +39,7 @@ func NewApi(logger *zap.Logger, redis *redis.Client, postManager *post.Manager, 
 
 func (a *Api) Run(ctx context.Context) error {
 	addr := ":50051"
-	lis, err := net.Listen("tcp", addr) //@todo
+	lis, err := net.Listen("tcp", addr)
 	if err != nil {
 		return err
 	}

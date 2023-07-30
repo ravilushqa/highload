@@ -17,8 +17,6 @@ type ProviderOption func(clientOptions *options.ClientOptions) *options.ClientOp
 
 // New creates mongodb connection which is ready for use.
 func New(ctx context.Context, url, dbName string, providerOptions ...ProviderOption) (*mongo.Database, error) {
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
 	opts := options.Client()
 
 	for _, providerOption := range providerOptions {
