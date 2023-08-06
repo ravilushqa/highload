@@ -8,6 +8,10 @@ x-common-service: &common-service
     context: .
   expose:
     - 8080
+  environment:
+    - CHATS_URL=chats-api:50051
+    - POSTS_URL=posts-api:50051
+    - USERS_URL=users-api:50051
   networks:
     - otus
 
@@ -15,6 +19,9 @@ x-api-service: &api-service
   build:
     context: .
   restart: on-failure
+  environment:
+    - MONGO_URL=mongodb://mongodb:27017
+    - MONGO_DB=highload
   networks:
     - otus
 
@@ -50,9 +57,6 @@ services:
     depends_on:
       - mongodb
       - redis
-    environment:
-      MONGO_URL: "mongodb://mongodb:27017"
-      REDIS_URL: "redis:6379"
   posts-api:
     <<: *api-service
     build:

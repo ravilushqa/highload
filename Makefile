@@ -64,3 +64,6 @@ init-tools:
 # run golangci-lint
 lint: init-tools
 	./bin/golangci-lint run --timeout=30m ./...
+
+helm-install:
+	helm install highload docker-compose/

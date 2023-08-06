@@ -2,6 +2,7 @@ package friend
 
 import (
 	"context"
+	"errors"
 
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -27,28 +28,6 @@ func New(db *mongo.Database) *Manager {
 
 func (m *Manager) GetFriends(ctx context.Context, id string) ([]string, error) {
 	filter := bson.M{"user_id": id, "approved": true}
-	projection := bson.M{"friend_id": 1}
-
-	cursor, err := m.col.Find(ctx, filter, options.Find().SetProjection(projection))
-	if err != nil {
-		return nil, err
-	}
-	defer cursor.Close(ctx)
-
-	var friendIDs []string
-	for cursor.Next(ctx) {
-		var result bson.M
-		if err := cursor.Decode(&result); err != nil {
-			return nil, err
-		}
-		friendIDs = append(friendIDs, result["friend_id"].(string))
-	}
-
-	return friendIDs, nil
-}
-
-func (m *Manager) GetFriendRequests(ctx context.Context, id string) ([]string, error) {
-	filter := bson.M{"user_id": id, "approved": false}
 	projection := bson.M{"friend_id": 1}
 
 	cursor, err := m.col.Find(ctx, filter, options.Find().SetProjection(projection))
@@ -114,7 +93,7 @@ func (m *Manager) GetRelation(ctx context.Context, authUser, user string) (Statu
 	var result Friend
 	err := m.col.FindOne(ctx, filter).Decode(&result)
 	if err != nil {
-		if err == mongo.ErrNoDocuments {
+		if errors.Is(err, mongo.ErrNoDocuments) {
 			filter = bson.M{
 				"user_id":   user,
 				"friend_id": authUser,
@@ -123,7 +102,7 @@ func (m *Manager) GetRelation(ctx context.Context, authUser, user string) (Statu
 			var result Friend
 			err = m.col.FindOne(ctx, filter).Decode(&result)
 			if err != nil {
-				if err == mongo.ErrNoDocuments {
+				if errors.Is(err, mongo.ErrNoDocuments) {
 					return None, nil
 				}
 				return None, err

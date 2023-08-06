@@ -1,6 +1,6 @@
 module github.com/deliveryhero/dh-adtech-advertisers/tools
 
-go 1.20
+go 1.19
 
 require github.com/golangci/golangci-lint v1.53.3
 
