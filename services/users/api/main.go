@@ -16,7 +16,6 @@ import (
 
 	"github.com/ravilushqa/highload/providers/mongodb"
 	usersGrpc "github.com/ravilushqa/highload/services/users/api/grpc"
-	"github.com/ravilushqa/highload/services/users/lib/friend"
 	"github.com/ravilushqa/highload/services/users/lib/user"
 )
 
@@ -30,7 +29,6 @@ func main() {
 			},
 			NewApi,
 			user.New,
-			friend.New,
 		),
 		fx.Invoke(
 			registerHooks,

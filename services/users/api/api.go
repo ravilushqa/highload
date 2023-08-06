@@ -7,6 +7,7 @@ import (
 
 	"github.com/golang/protobuf/ptypes/empty"
 	"github.com/golang/protobuf/ptypes/timestamp"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 	"golang.org/x/text/cases"
 	"golang.org/x/text/language"
 	"google.golang.org/grpc/codes"
@@ -14,18 +15,16 @@ import (
 	"google.golang.org/protobuf/types/known/timestamppb"
 
 	usersGrpc "github.com/ravilushqa/highload/services/users/api/grpc"
-	"github.com/ravilushqa/highload/services/users/lib/friend"
 	"github.com/ravilushqa/highload/services/users/lib/user"
 )
 
 type Api struct {
 	usersGrpc.UnimplementedUsersServer
-	userManager   *user.Manager
-	friendManager *friend.Manager
+	userManager *user.Manager
 }
 
-func NewApi(userManager *user.Manager, friendManager *friend.Manager) *Api {
-	return &Api{userManager: userManager, friendManager: friendManager}
+func NewApi(userManager *user.Manager) *Api {
+	return &Api{userManager: userManager}
 }
 
 func (a *Api) GetAll(ctx context.Context, req *usersGrpc.GetUsersRequest) (*usersGrpc.GetUsersResponse, error) {
@@ -49,7 +48,16 @@ func (a *Api) GetAll(ctx context.Context, req *usersGrpc.GetUsersRequest) (*user
 }
 
 func (a *Api) FriendRequest(ctx context.Context, req *usersGrpc.FriendRequestRequest) (*empty.Empty, error) {
-	if err := a.friendManager.FriendRequest(ctx, req.RequesterUserId, req.AddedUserId); err != nil {
+	userID, err := primitive.ObjectIDFromHex(req.RequesterUserId)
+	if err != nil {
+		return nil, status.New(codes.InvalidArgument, err.Error()).Err()
+	}
+	subscriberID, err := primitive.ObjectIDFromHex(req.AddedUserId)
+	if err != nil {
+		return nil, status.New(codes.InvalidArgument, err.Error()).Err()
+	}
+
+	if err := a.userManager.Subscribe(ctx, userID, subscriberID); err != nil {
 		return nil, status.New(codes.Internal, err.Error()).Err()
 	}
 
@@ -57,7 +65,17 @@ func (a *Api) FriendRequest(ctx context.Context, req *usersGrpc.FriendRequestReq
 }
 
 func (a *Api) ApproveFriendRequest(ctx context.Context, req *usersGrpc.ApproveFriendRequestRequest) (*empty.Empty, error) {
-	if err := a.friendManager.ApproveFriendRequest(ctx, req.ApproverUserId, req.RequesterUserId); err != nil {
+	userID, err := primitive.ObjectIDFromHex(req.ApproverUserId)
+	if err != nil {
+		return nil, status.New(codes.InvalidArgument, err.Error()).Err()
+	}
+
+	subscriberID, err := primitive.ObjectIDFromHex(req.RequesterUserId)
+	if err != nil {
+		return nil, status.New(codes.InvalidArgument, err.Error()).Err()
+	}
+
+	if err := a.userManager.Subscribe(ctx, userID, subscriberID); err != nil {
 		return nil, status.New(codes.Internal, err.Error()).Err()
 	}
 
@@ -78,8 +96,22 @@ func (a *Api) GetById(ctx context.Context, req *usersGrpc.GetByIdRequest) (*user
 }
 
 func (a *Api) GetFriendsIds(ctx context.Context, req *usersGrpc.GetFriendsIdsRequest) (*usersGrpc.GetFriendsIdsResponse, error) {
-	friendIds, err := a.friendManager.GetFriends(ctx, req.UserId)
-	return &usersGrpc.GetFriendsIdsResponse{UserIds: friendIds}, err
+	userID, err := primitive.ObjectIDFromHex(req.UserId)
+	if err != nil {
+		return nil, status.New(codes.InvalidArgument, err.Error()).Err()
+	}
+
+	friendIds, err := a.userManager.GetFriends(ctx, userID)
+	if err != nil {
+		return nil, status.New(codes.Internal, err.Error()).Err()
+	}
+
+	// @TODO
+	friendIdsStr := make([]string, 0, len(friendIds))
+	for _, v := range friendIds {
+		friendIdsStr = append(friendIdsStr, v.ID.Hex())
+	}
+	return &usersGrpc.GetFriendsIdsResponse{UserIds: friendIdsStr}, err
 }
 
 func (a *Api) GetListByIds(ctx context.Context, req *usersGrpc.GetListByIdsRequest) (*usersGrpc.GetListByIdsResponse, error) {
@@ -101,7 +133,17 @@ func (a *Api) GetListByIds(ctx context.Context, req *usersGrpc.GetListByIdsReque
 }
 
 func (a *Api) GetRelation(ctx context.Context, req *usersGrpc.GetRelationRequest) (*usersGrpc.GetRelationResponse, error) {
-	relation, err := a.friendManager.GetRelation(ctx, req.FromUserId, req.ToUserId)
+	fromUserID, err := primitive.ObjectIDFromHex(req.FromUserId)
+	if err != nil {
+		return nil, status.New(codes.InvalidArgument, err.Error()).Err()
+	}
+
+	toUserID, err := primitive.ObjectIDFromHex(req.ToUserId)
+	if err != nil {
+		return nil, status.New(codes.InvalidArgument, err.Error()).Err()
+	}
+
+	relation, err := a.userManager.GetRelations(ctx, fromUserID, toUserID)
 	if err != nil {
 		return nil, status.New(codes.Internal, err.Error()).Err()
 	}
