@@ -115,7 +115,7 @@ enum Sex {
 
 enum UserRelation {
     None = 0;
-    Added = 1;
-    Requested = 2;
+    Subscription = 1;
+    Subscriber = 2;
     Friends = 3;
 }

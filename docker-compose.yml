@@ -20,7 +20,7 @@ x-api-service: &api-service
     context: .
   restart: on-failure
   environment:
-    - MONGO_URL=mongodb://mongodb:27017
+    - MONGO_URL=${MONGO_URL}
     - MONGO_DB=highload
   networks:
     - otus
@@ -69,7 +69,6 @@ services:
       - kafka
       - mongodb
     environment:
-      MONGO_URL: "mongodb://mongodb:27017"
       REDIS_URL: "redis://redis:6379"
       KAFKA_BROKERS: "kafka:9092"
 
@@ -85,7 +84,6 @@ services:
       - kafka
       - centrifugo
     environment:
-      MONGO_URL: "mongodb://mongodb:27017"
       REDIS_URL: "redis://redis:6379"
       KAFKA_BROKERS: "kafka:9092"
 
@@ -98,8 +96,6 @@ services:
       - 50051
     depends_on:
       - mongodb
-    environment:
-      MONGO_URL: "mongodb://mongodb:27017"
 
   counters-api:
     <<: *api-service

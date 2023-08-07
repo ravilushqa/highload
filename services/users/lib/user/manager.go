@@ -198,11 +198,11 @@ func (m *Manager) Subscribe(ctx context.Context, userID, subscriberID primitive.
 	// @TODO: optimize?!
 	var user, subscriber *Friend
 	if users[0].ID == userID {
-		user = &Friend{ID: userID, FirstName: users[0].FirstName, LastName: users[0].LastName}
-		subscriber = &Friend{ID: subscriberID, FirstName: users[1].FirstName, LastName: users[1].LastName}
+		user = &Friend{ID: userID, FirstName: users[0].FirstName, LastName: users[0].LastName, City: users[0].City}
+		subscriber = &Friend{ID: subscriberID, FirstName: users[1].FirstName, LastName: users[1].LastName, City: users[1].City}
 	} else {
-		user = &Friend{ID: userID, FirstName: users[1].FirstName, LastName: users[1].LastName}
-		subscriber = &Friend{ID: subscriberID, FirstName: users[0].FirstName, LastName: users[0].LastName}
+		user = &Friend{ID: userID, FirstName: users[1].FirstName, LastName: users[1].LastName, City: users[1].City}
+		subscriber = &Friend{ID: subscriberID, FirstName: users[0].FirstName, LastName: users[0].LastName, City: users[0].City}
 	}
 
 	_, err = m.col.UpdateOne(ctx, bson.M{"_id": userID}, bson.M{"$addToSet": bson.M{"subscriptions": subscriber}})
