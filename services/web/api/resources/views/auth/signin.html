@@ -1,126 +1,106 @@
 {{define "content"}}
-    <section id="content">
-        <div class="content-wrap">
-            <div class="container clearfix">
-                <div class="accordion accordion-lg mx-auto mb-0 clearfix" style="max-width: 550px;">
-                    <div class="accordion-header">
-                        <div class="accordion-icon">
-                            <i class="accordion-closed icon-lock3"></i>
-                            <i class="accordion-open icon-unlock"></i>
-                        </div>
-                        <div class="accordion-title">
-                            Login to your Account
-                        </div>
-                    </div>
-                    <div class="accordion-content clearfix">
-                        <form id="login-form" name="login-form" class="row mb-0" action="/login" method="post">
-                            <div class="col-12 form-group">
-                                <label for="login-form-email">Email address:</label>
-                                <input type="text" id="login-form-email" name="login-form-email" value=""
-                                       class="form-control"/>
-                            </div>
-
-                            <div class="col-12 form-group">
-                                <label for="login-form-password">Password:</label>
-                                <input type="password" id="login-form-password" name="login-form-password" value=""
-                                       class="form-control"/>
-                            </div>
-
-                            <div class="col-12 form-group">
-                                <button class="button button-3d button-black m-0" id="login-form-submit"
-                                        name="login-form-submit" value="login">Login
-                                </button>
-                                <a href="#" class="float-right">Forgot Password?</a>
-                            </div>
-                        </form>
-                    </div>
-
-                    <div class="accordion-header">
-                        <div class="accordion-icon">
-                            <i class="accordion-closed icon-user4"></i>
-                            <i class="accordion-open icon-ok-sign"></i>
-                        </div>
-                        <div class="accordion-title">
-                            New Signup? Register for an Account
-                        </div>
-                    </div>
-                    <div class="accordion-content clearfix">
-                        <form id="register-form" name="register-form" class="row mb-0" action="/register" method="post">
-                            <div class="col-12 form-group">
-                                <label for="register-form-first-name">First name:</label>
-                                <input type="text" id="register-form-first-name" name="register-form-first-name"
-                                       value="" class="form-control"/>
-                            </div>
-
-                            <div class="col-12 form-group">
-                                <label for="register-form-last-name">Last name:</label>
-                                <input type="text" id="register-form-last-name" name="register-form-last-name" value=""
-                                       class="form-control"/>
-                            </div>
-
-                            <div class="col-12 form-group">
-                                <label for="register-form-email">Email Address:</label>
-                                <input type="text" id="register-form-email" name="register-form-email" value=""
-                                       class="form-control"/>
-                            </div>
-
-                            <div class="col-12 form-group">
-                                <label for="register-form-password">Choose Password:</label>
-                                <input type="password" id="register-form-password" name="register-form-password"
-                                       value="" class="form-control"/>
-                            </div>
-
-                            {{/*                            <div class="col-12 form-group">*/}}
-                            {{/*                                <label for="register-form-repassword">Re-enter Password:</label>*/}}
-                            {{/*                                <input type="password" id="register-form-repassword" name="register-form-repassword" value="" class="form-control" />*/}}
-                            {{/*                            </div>*/}}
-
-                            <div class="col-12 form-group">
-                                <label for="register-form-birthday">Birthday:</label>
-                                <input type="date" id="register-form-birthday" name="register-form-birthday" value=""
-                                       class="form-control"/>
-                            </div>
-
-                            <div class="col-12 form-group">
-                                <h4>Sex</h4>
-                                <div>
-                                    <input id="register-form-sex-male" class="radio-style" name="register-form-sex"
-                                           value="Male" type="radio" checked>
-                                    <label for="register-form-sex-male" class="radio-style-1-label">Male</label>
-                                </div>
-                                <div>
-                                    <input id="register-form-sex-female" class="radio-style" name="register-form-sex"
-                                           value="Female" type="radio">
-                                    <label for="register-form-sex-female" class="radio-style-1-label">Female</label>
-                                </div>
-                                <div>
-                                    <input id="register-form-sex-other" class="radio-style" name="register-form-sex"
-                                           value="Other" type="radio">
-                                    <label for="register-form-sex-other" class="radio-style-1-label">Other</label>
-                                </div>
-                            </div>
-
-                            <div class="col-12 form-group">
-                                <label for="register-form-interests">Interests:</label>
-                                <input type="text" id="register-form-interests" name="register-form-interests" value=""
-                                       class="form-control"/>
-                            </div>
-
-                            <div class="col-12 form-group">
-                                <label for="register-form-city">City:</label>
-                                <input type="text" id="register-form-city" name="register-form-city" value=""
-                                       class="form-control"/>
-                            </div>
-
-                            <div class="col-12 form-group">
-                                <button class="button button-3d button-black m-0" id="register-form-submit"
-                                        name="register-form-submit" value="register">Register Now
-                                </button>
-                            </div>
-                        </form>
+<section class="section">
+    <div class="container">
+        <div class="box">
+            <h2 class="title is-4">Login to your Account</h2>
+            <form id="login-form" hx-post="/login" hx-trigger="submit">
+                <div class="field">
+                    <label class="label">Email address:</label>
+                    <div class="control">
+                        <input class="input" type="text" name="login-form-email">
                     </div>
                 </div>
-            </div>
+
+                <div class="field">
+                    <label class="label">Password:</label>
+                    <div class="control">
+                        <input class="input" type="password" name="login-form-password">
+                    </div>
+                </div>
+
+                <div class="field">
+                    <div class="control">
+                        <button class="button is-primary">Login</button>
+                        <a class="is-pulled-right">Forgot Password?</a>
+                    </div>
+                </div>
+            </form>
         </div>
-    </section><!-- #content end -->
+
+        <div class="box">
+            <h2 class="title is-4">New Signup? Register for an Account</h2>
+            <form id="register-form" hx-post="/register" hx-trigger="submit">
+                <div class="field">
+                    <label class="label">First name:</label>
+                    <div class="control">
+                        <input class="input" type="text" name="register-form-first-name">
+                    </div>
+                </div>
+
+                <div class="field">
+                    <label class="label">Last name:</label>
+                    <div class="control">
+                        <input class="input" type="text" name="register-form-last-name">
+                    </div>
+                </div>
+
+                <div class="field">
+                    <label class="label">Email Address:</label>
+                    <div class="control">
+                        <input class="input" type="text" name="register-form-email">
+                    </div>
+                </div>
+
+                <div class="field">
+                    <label class="label">Choose Password:</label>
+                    <div class="control">
+                        <input class="input" type="password" name="register-form-password">
+                    </div>
+                </div>
+
+                <div class="field">
+                    <label class="label">Birthday:</label>
+                    <div class="control">
+                        <input class="input" type="date" name="register-form-birthday">
+                    </div>
+                </div>
+
+                <div class="field">
+                    <label class="label">Sex:</label>
+                    <div class="control">
+                        <label class="radio">
+                            <input type="radio" name="register-form-sex" value="Male" checked> Male
+                        </label>
+                        <label class="radio">
+                            <input type="radio" name="register-form-sex" value="Female"> Female
+                        </label>
+                        <label class="radio">
+                            <input type="radio" name="register-form-sex" value="Other"> Other
+                        </label>
+                    </div>
+                </div>
+
+                <div class="field">
+                    <label class="label">Interests:</label>
+                    <div class="control">
+                        <input class="input" type="text" name="register-form-interests">
+                    </div>
+                </div>
+
+                <div class="field">
+                    <label class="label">City:</label>
+                    <div class="control">
+                        <input class="input" type="text" name="register-form-city">
+                    </div>
+                </div>
+
+                <div class="field">
+                    <div class="control">
+                        <button class="button is-primary">Register Now</button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+</section>
 {{end}}

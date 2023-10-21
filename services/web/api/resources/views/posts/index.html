@@ -1,39 +1,33 @@
 {{define "content"}}
-    <!-- Document Wrapper
-        ============================================= -->
-    <div id="wrapper" class="clearfix">
+<section id="content" class="section">
+    <div class="columns">
+        <!-- Sidebar Navigation -->
+        <div class="column is-3">
+            {{template "nav" .}}
+        </div>
 
-        <!-- Content
-        ============================================= -->
-        <section id="content">
-            <div class="content-wrap">
-                <div class="container clearfix">
-                    <div class="row clearfix">
-                        <div class="col-md-3">
-                            {{template "nav" .}}
-                        </div>
-                        <div class="w-100 line d-block d-md-none"></div>
-                        <div class="col-md-9">
-                            <div class="container">
-                                <h3 class=" text-center">Posts</h3>
-                                <form action="/posts" method="post">
-                                    <input type="text" name="text">
-                                    <button type="submit">Send</button>
-                                </form>
-                                {{range .Posts}}
-                                    <p>{{.CreatedAt}} : {{.Text}}</p>
-                                {{end}}
-                            </div>
-                        </div>
+        <!-- Main Content -->
+        <div class="column is-9">
+            <div class="container">
+                <h3 class="title is-3 has-text-centered">Posts</h3>
+                <form action="/posts" method="post" class="field has-addons">
+                    <div class="control">
+                        <input class="input" type="text" name="text" placeholder="Write your post">
                     </div>
-                </div>
+                    <div class="control">
+                        <button type="submit" class="button is-primary">Send</button>
+                    </div>
+                </form>
+
+                {{range .Posts}}
+                <article class="message is-small">
+                    <div class="message-body">
+                        <small>{{.CreatedAt}}</small> : {{.Text}}
+                    </div>
+                </article>
+                {{end}}
             </div>
-        </section><!-- #content end -->
-
-
-    </div><!-- #wrapper end -->
-
-    <!-- Go To Top
-    ============================================= -->
-    <div id="gotoTop" class="icon-angle-up"></div>
+        </div>
+    </div>
+</section>
 {{end}}

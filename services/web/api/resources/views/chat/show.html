@@ -1,39 +1,33 @@
 {{define "content"}}
-    <!-- Document Wrapper
-        ============================================= -->
-    <div id="wrapper" class="clearfix">
+<section id="content" class="section">
+    <div class="columns">
+        <!-- Sidebar Navigation -->
+        <div class="column is-3">
+            {{template "nav" .}}
+        </div>
 
-        <!-- Content
-        ============================================= -->
-        <section id="content">
-            <div class="content-wrap">
-                <div class="container clearfix">
-                    <div class="row clearfix">
-                        <div class="col-md-3">
-                            {{template "nav" .}}
-                        </div>
-                        <div class="w-100 line d-block d-md-none"></div>
-                        <div class="col-md-9">
-                            <div class="container">
-                                <h3 class=" text-center">Chat</h3>
-                                {{range .Messages}}
-                                    <p>User #{{.UserId}}: {{.Text}}</p>
-                                {{end}}
-                                <form action="/chats/{{.ChatID}}/message" method="post">
-                                    <input type="text" name="text">
-                                    <button type="submit">Send</button>
-                                </form>
-                            </div>
-                        </div>
+        <!-- Main Content -->
+        <div class="column is-9">
+            <div class="container">
+                <h3 class="title is-3 has-text-centered">Chats</h3>
+                {{range .Messages}}
+                <article class="message is-small">
+                    <div class="message-body">
+                        User #{{.UserId}}: {{.Text}}
                     </div>
-                </div>
+                </article>
+                {{end}}
+
+                <form action="/chats/{{.ChatID}}/message" method="post" class="field has-addons">
+                    <div class="control is-expanded">
+                        <input class="input" type="text" name="text" placeholder="Write your message">
+                    </div>
+                    <div class="control">
+                        <button type="submit" class="button is-primary">Send</button>
+                    </div>
+                </form>
             </div>
-        </section><!-- #content end -->
-
-
-    </div><!-- #wrapper end -->
-
-    <!-- Go To Top
-    ============================================= -->
-    <div id="gotoTop" class="icon-angle-up"></div>
+        </div>
+    </div>
+</section>
 {{end}}

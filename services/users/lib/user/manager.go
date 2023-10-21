@@ -22,6 +22,12 @@ func New(l *zap.Logger, database *mongo.Database) *Manager {
 }
 
 func (m *Manager) Store(ctx context.Context, user *User) (*primitive.ObjectID, error) {
+	if user.Subscriptions == nil {
+		user.Subscriptions = make([]*Friend, 0)
+	}
+	if user.Subscribers == nil {
+		user.Subscribers = make([]*Friend, 0)
+	}
 	res, err := m.col.InsertOne(ctx, user)
 	if err != nil {
 		return nil, fmt.Errorf("failed to insert user: %w", err)

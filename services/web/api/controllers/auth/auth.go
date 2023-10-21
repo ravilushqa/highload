@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"html/template"
 	"net/http"
-	"strconv"
 	"time"
 
 	"github.com/go-chi/chi"
@@ -115,13 +114,6 @@ func (c *Controller) register(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	sexpb, err := strconv.Atoi(r.FormValue("register-form-sex"))
-	if err != nil {
-		c.logger.Error("failed parse sex", zap.Error(err))
-		w.WriteHeader(http.StatusUnprocessableEntity)
-		return
-	}
-
 	storeResponse, err := c.usersClient.Store(r.Context(), &usersGrpc.StoreRequest{
 		Email:     r.FormValue("register-form-email"),
 		Password:  string(hashedPassword),
@@ -129,7 +121,7 @@ func (c *Controller) register(w http.ResponseWriter, r *http.Request) {
 		LastName:  r.FormValue("register-form-last-name"),
 		Birthday:  timestamppb.New(bd),
 		Interests: r.FormValue("register-form-interests"),
-		Sex:       usersGrpc.Sex(sexpb),
+		Sex:       usersGrpc.Sex(usersGrpc.Sex_value[r.FormValue("register-form-sex")]),
 		City:      r.FormValue("register-form-city"),
 	})
 	if err != nil {

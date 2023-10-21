@@ -1,81 +1,45 @@
 {{define "content"}}
-    <!-- Document Wrapper
-        ============================================= -->
-    <div id="wrapper" class="clearfix">
+<section id="content" class="section">
+    <div class="columns">
+        <!-- Sidebar Navigation -->
+        <div class="column is-3">
+            {{template "nav" .}}
+        </div>
 
-        <!-- Content
-        ============================================= -->
-        <section id="content">
-            <div class="content-wrap">
-                <div class="container clearfix">
-                    <div class="row clearfix">
-                        <div class="col-md-3">
-                            {{template "nav" .}}
-                        </div>
-                        <div class="w-100 line d-block d-md-none"></div>
-                        <div class="col-md-9">
-                            <div class="heading-block border-0">
-                                <h3>Users</h3>
-                            </div>
-                            <div class="clear"></div>
-                            <div class="row clearfix">
-                                <div class="col-lg-12">
-                                    <div class="tabs tabs-alt clearfix" id="tabs-profile">
-                                        <div class="tab-container">
-                                            <div class="tab-content clearfix" id="tab-friends">
-                                                <div class="row topmargin-sm">
-                                                    {{range .Users}}
-                                                        <div class="col-lg-3 col-md-6 bottommargin">
-                                                            <div class="team">
-                                                                <div class="team-image">
-                                                                    <img src="/public/images/icons/avatar.jpg"
-                                                                         alt="{{ .FirstName}} {{ .LastName}}">
-                                                                </div>
-                                                                <div class="team-desc">
-                                                                    <div class="team-title">
-                                                                        <a href="/users/{{ .Id}}">
-                                                                            <h4>{{ .FirstName}} {{ .LastName}}</h4></a>
-                                                                        <span>{{ .City}}</span></div>
-                                                                </div>
-                                                            </div>
-                                                        </div>
-                                                    {{end}}
-                                                </div>
-                                            </div>
-                                            <div class="tab-content clearfix" id="tab-users">
-                                                <div class="row topmargin-sm">
-                                                    {{range .Users}}
-                                                        <div class="col-lg-3 col-md-6 bottommargin">
-                                                            <div class="team">
-                                                                <div class="team-image">
-                                                                    <img src="/public/images/icons/avatar.jpg"
-                                                                         alt="{{ .FirstName}} {{ .LastName}}">
-                                                                </div>
-                                                                <div class="team-desc">
-                                                                    <div class="team-title">
-                                                                        <a href="/users/{{ .Id}}">
-                                                                            <h4>{{ .FirstName}} {{ .LastName}}</h4></a>
-                                                                        <span>{{ .City}}</span></div>
-                                                                </div>
-                                                            </div>
-                                                        </div>
-                                                    {{end}}
-                                                </div>
-                                            </div>
+        <!-- Main Content -->
+        <div class="column is-9">
+            <div class="block">
+                <h3 class="title is-3 has-text-centered">Users</h3>
+            </div>
+            <div class="tabs is-boxed">
+                <div hx-target="#tabs-content" id="tabs-profile">
+                    <!-- Tab Content -->
+                    <div id="tabs-content">
+                        <div class="columns is-multiline">
+                            {{range .Users}}
+                            <div class="column is-3">
+                                <div class="card">
+                                    <div class="card-image">
+                                        <figure class="image is-1by1">
+                                            <img src="/public/images/icons/avatar.jpg" alt="{{ .FirstName}} {{ .LastName}}">
+                                        </figure>
+                                    </div>
+                                    <div class="card-content">
+                                        <div class="content">
+                                            <a href="/users/{{ .Id}}">
+                                                <strong>{{ .FirstName}} {{ .LastName}}</strong>
+                                            </a>
+                                            <p>{{ .City}}</p>
                                         </div>
                                     </div>
                                 </div>
                             </div>
+                            {{end}}
                         </div>
                     </div>
                 </div>
             </div>
-        </section><!-- #content end -->
-
-
-    </div><!-- #wrapper end -->
-
-    <!-- Go To Top
-    ============================================= -->
-    <div id="gotoTop" class="icon-angle-up"></div>
+        </div>
+    </div>
+</section>
 {{end}}

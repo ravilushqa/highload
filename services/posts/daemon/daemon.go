@@ -97,6 +97,8 @@ func (d *daemon) handle(msg *sarama.ConsumerMessage) error {
 		return nil
 	}
 
+	d.logger.Info("subscribers", zap.Any("subscribers", subscribersResponse.UserIds))
+
 	for _, id := range subscribersResponse.UserIds {
 		key := fmt.Sprintf(cacheKey, id)
 		llen, err := d.redis.LLen(key).Result()
@@ -140,7 +142,7 @@ func (d *daemon) handle(msg *sarama.ConsumerMessage) error {
 
 		if res.NumClients == 0 {
 			d.logger.Info("empty centrifugo clients")
-			return nil
+			continue
 		}
 
 		err = d.centrifugo.Publish(context.Background(), fmt.Sprintf(centrifugoKey, id), msg.Value)

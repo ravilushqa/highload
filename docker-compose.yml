@@ -28,23 +28,23 @@ x-api-service: &api-service
 services:
   app:
     <<: *common-service
-    depends_on:
-      - users-api
-      - chats-api
-      - posts-api
-      - posts-daemon
-      - counters-api
-      - nginx
+#    depends_on:
+#      - users-api
+#      - chats-api
+#      - posts-api
+#      - posts-daemon
+#      - counters-api
+#      - nginx
 
   app-2:
     <<: *common-service
-    depends_on:
-      - chats-api
-      - posts-api
-      - posts-daemon
-      - users-api
-      - counters-api
-      - nginx
+#    depends_on:
+#      - chats-api
+#      - posts-api
+#      - posts-daemon
+#      - users-api
+#      - counters-api
+#      - nginx
 
   chats-api:
     <<: *api-service
@@ -166,9 +166,10 @@ services:
       retries: 3
       test: [ "CMD", "redis-cli","ping" ]
       timeout: 10s
-    image: redis:5
+    image: redis/redis-stack:latest
     ports:
       - 6379:6379
+      - 8001:8001
     restart: unless-stopped
     networks:
       - otus

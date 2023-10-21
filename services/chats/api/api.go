@@ -3,8 +3,6 @@ package main
 import (
 	"context"
 	"net"
-	"strconv"
-	"time"
 
 	"github.com/axengine/go-saga"
 	"github.com/golang/protobuf/ptypes/empty"
@@ -133,11 +131,25 @@ func (a *Api) StoreMessage(ctx context.Context, req *chatsGrpc.StoreMessageReque
 		}
 	}
 
-	err = a.saga.StartSaga(ctx, strconv.Itoa(time.Now().Nanosecond())).
-		ExecSub("store_message", req.UserId, req.ChatId, req.Text).
-		ExecSub("update_counter", req.ChatId, receivers).
-		EndSaga()
+	// saga is dead for some reason
+	//err = a.saga.StartSaga(ctx, strconv.Itoa(time.Now().Nanosecond())).
+	//	ExecSub("store_message", req.UserId, req.ChatId, req.Text).
+	//	ExecSub("update_counter", req.ChatId, receivers).
+	//	EndSaga()
 
+	_, err = a.messageManager.Insert(ctx, &message.Message{
+		UserID: req.UserId,
+		ChatID: req.ChatId,
+		Text:   req.Text,
+	})
+	if err != nil {
+		return &empty.Empty{}, status.New(codes.Internal, err.Error()).Err()
+	}
+
+	_, err = a.countersClient.IncrementUnreadMessageCounter(ctx, &countersGrpc.IncrementUnreadMessageCounterRequest{
+		UserIds: receivers,
+		ChatId:  req.ChatId,
+	})
 	if err != nil {
 		return &empty.Empty{}, status.New(codes.Internal, err.Error()).Err()
 	}
