@@ -41,6 +41,7 @@ func (c *Controller) login(w http.ResponseWriter, r *http.Request) {
 	password := r.FormValue("login-form-password")
 
 	if len(email) == 0 || len(password) == 0 {
+		c.logger.Error("failed parse form", zap.Error(fmt.Errorf("email or password is empty")))
 		_, _ = w.Write([]byte("Please provide email and password to obtain the token"))
 		w.WriteHeader(http.StatusUnprocessableEntity)
 		return
@@ -95,24 +96,28 @@ func (c *Controller) signin(w http.ResponseWriter, r *http.Request) {
 func (c *Controller) register(w http.ResponseWriter, r *http.Request) {
 	err := r.ParseForm()
 	if err != nil {
+		c.logger.Error("failed parse form", zap.Error(err))
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
 
 	bd, err := time.Parse("2006-01-02", r.FormValue("register-form-birthday"))
 	if err != nil {
+		c.logger.Error("failed parse birthday", zap.Error(err))
 		w.WriteHeader(http.StatusUnprocessableEntity)
 		return
 	}
 
 	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(r.FormValue("register-form-password")), bcrypt.DefaultCost)
 	if err != nil {
+		c.logger.Error("failed generate password", zap.Error(err))
 		w.WriteHeader(http.StatusUnprocessableEntity)
 		return
 	}
 
 	sexpb, err := strconv.Atoi(r.FormValue("register-form-sex"))
 	if err != nil {
+		c.logger.Error("failed parse sex", zap.Error(err))
 		w.WriteHeader(http.StatusUnprocessableEntity)
 		return
 	}
@@ -127,15 +132,15 @@ func (c *Controller) register(w http.ResponseWriter, r *http.Request) {
 		Sex:       usersGrpc.Sex(sexpb),
 		City:      r.FormValue("register-form-city"),
 	})
-
-	fmt.Println(storeResponse)
 	if err != nil {
+		c.logger.Error("failed store user", zap.Error(err))
 		http.Redirect(w, r, r.Header.Get("Referer"), 302)
 		return
 	}
 
 	token, err := c.auth.EncodeToken(storeResponse.Id)
 	if err != nil {
+		c.logger.Error("failed generate token", zap.Error(err))
 		w.WriteHeader(http.StatusInternalServerError)
 		_, _ = w.Write([]byte("Error generating JWT token: " + err.Error()))
 	} else {

@@ -65,5 +65,6 @@ init-tools:
 lint: init-tools
 	./bin/golangci-lint run --timeout=30m ./...
 
-helm-install:
-	helm install highload docker-compose/
+# run go test with coverage
+test-coverage:
+	go test -race -coverprofile=coverage.txt -covermode=atomic ./...
