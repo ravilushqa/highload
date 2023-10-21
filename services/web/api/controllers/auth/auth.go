@@ -4,13 +4,12 @@ import (
 	"fmt"
 	"html/template"
 	"net/http"
-	"strings"
 	"time"
 
 	"github.com/go-chi/chi"
-	"github.com/golang/protobuf/ptypes"
 	"go.uber.org/zap"
 	"golang.org/x/crypto/bcrypt"
+	"google.golang.org/protobuf/types/known/timestamppb"
 
 	usersGrpc "github.com/ravilushqa/highload/services/users/api/grpc"
 	"github.com/ravilushqa/highload/services/web/lib"
@@ -41,6 +40,7 @@ func (c *Controller) login(w http.ResponseWriter, r *http.Request) {
 	password := r.FormValue("login-form-password")
 
 	if len(email) == 0 || len(password) == 0 {
+		c.logger.Error("failed parse form", zap.Error(fmt.Errorf("email or password is empty")))
 		_, _ = w.Write([]byte("Please provide email and password to obtain the token"))
 		w.WriteHeader(http.StatusUnprocessableEntity)
 		return
@@ -57,7 +57,7 @@ func (c *Controller) login(w http.ResponseWriter, r *http.Request) {
 	err = bcrypt.CompareHashAndPassword([]byte(userResponse.User.Password), []byte(password))
 
 	if err == nil {
-		token, err := c.auth.EncodeToken(int(userResponse.User.Id))
+		token, err := c.auth.EncodeToken(userResponse.User.Id)
 		if err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
 			_, _ = w.Write([]byte("Error generating JWT token: " + err.Error()))
@@ -66,10 +66,9 @@ func (c *Controller) login(w http.ResponseWriter, r *http.Request) {
 				Name:    "jwt",
 				Value:   token,
 				Expires: time.Now().AddDate(0, 0, 14),
-				//HttpOnly: true,
 			})
 
-			http.Redirect(w, r, fmt.Sprintf("/users/%d", userResponse.User.Id), http.StatusTemporaryRedirect)
+			http.Redirect(w, r, fmt.Sprintf("/users/%s", userResponse.User.Id), http.StatusTemporaryRedirect)
 		}
 	} else {
 		w.WriteHeader(http.StatusUnauthorized)
@@ -81,7 +80,7 @@ func (c *Controller) login(w http.ResponseWriter, r *http.Request) {
 func (c *Controller) signin(w http.ResponseWriter, r *http.Request) {
 	if lib.IsAuth(r) {
 		uid, _ := lib.GetAuthUserID(r.Context())
-		http.Redirect(w, r, fmt.Sprintf("/users/%d", uid), http.StatusTemporaryRedirect)
+		http.Redirect(w, r, fmt.Sprintf("/users/%s", uid), http.StatusTemporaryRedirect)
 	}
 	tmpl, err := template.ParseFiles("resources/views/base.html", "resources/views/auth/signin.html")
 	if err != nil {
@@ -96,23 +95,21 @@ func (c *Controller) signin(w http.ResponseWriter, r *http.Request) {
 func (c *Controller) register(w http.ResponseWriter, r *http.Request) {
 	err := r.ParseForm()
 	if err != nil {
+		c.logger.Error("failed parse form", zap.Error(err))
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
 
 	bd, err := time.Parse("2006-01-02", r.FormValue("register-form-birthday"))
 	if err != nil {
-		w.WriteHeader(http.StatusUnprocessableEntity)
-		return
-	}
-	bdProto, err := ptypes.TimestampProto(bd)
-	if err != nil {
+		c.logger.Error("failed parse birthday", zap.Error(err))
 		w.WriteHeader(http.StatusUnprocessableEntity)
 		return
 	}
 
 	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(r.FormValue("register-form-password")), bcrypt.DefaultCost)
 	if err != nil {
+		c.logger.Error("failed generate password", zap.Error(err))
 		w.WriteHeader(http.StatusUnprocessableEntity)
 		return
 	}
@@ -122,19 +119,20 @@ func (c *Controller) register(w http.ResponseWriter, r *http.Request) {
 		Password:  string(hashedPassword),
 		FirstName: r.FormValue("register-form-first-name"),
 		LastName:  r.FormValue("register-form-last-name"),
-		Birthday:  bdProto,
+		Birthday:  timestamppb.New(bd),
 		Interests: r.FormValue("register-form-interests"),
-		Sex:       usersGrpc.Sex(usersGrpc.Sex_value[strings.Title(r.FormValue("register-form-sex"))]),
+		Sex:       usersGrpc.Sex(usersGrpc.Sex_value[r.FormValue("register-form-sex")]),
 		City:      r.FormValue("register-form-city"),
 	})
-
 	if err != nil {
+		c.logger.Error("failed store user", zap.Error(err))
 		http.Redirect(w, r, r.Header.Get("Referer"), 302)
 		return
 	}
 
-	token, err := c.auth.EncodeToken(int(storeResponse.Id))
+	token, err := c.auth.EncodeToken(storeResponse.Id)
 	if err != nil {
+		c.logger.Error("failed generate token", zap.Error(err))
 		w.WriteHeader(http.StatusInternalServerError)
 		_, _ = w.Write([]byte("Error generating JWT token: " + err.Error()))
 	} else {
@@ -142,12 +140,10 @@ func (c *Controller) register(w http.ResponseWriter, r *http.Request) {
 			Name:    "jwt",
 			Value:   token,
 			Expires: time.Now().AddDate(0, 0, 14),
-			//HttpOnly: true,
 		})
 
-		http.Redirect(w, r, fmt.Sprintf("/users/%d", storeResponse.Id), http.StatusTemporaryRedirect)
+		http.Redirect(w, r, fmt.Sprintf("/users/%s", storeResponse.Id), http.StatusTemporaryRedirect)
 	}
-
 }
 
 func (c *Controller) logout(w http.ResponseWriter, r *http.Request) {
@@ -156,7 +152,6 @@ func (c *Controller) logout(w http.ResponseWriter, r *http.Request) {
 		Value:   "",
 		Path:    "/",
 		Expires: time.Time{},
-		//HttpOnly: true,
 	}
 
 	http.SetCookie(w, cookie)

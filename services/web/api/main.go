@@ -1,12 +1,14 @@
 package main
 
 import (
+	"fmt"
+
 	_ "github.com/go-sql-driver/mysql"
-	"github.com/linxGnu/mssqlx"
 	"github.com/neonxp/rutina"
 	"go.uber.org/dig"
 	"go.uber.org/zap"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials/insecure"
 
 	chatsGrpc "github.com/ravilushqa/highload/services/chats/api/grpc"
 	postsGrpc "github.com/ravilushqa/highload/services/posts/api/grpc"
@@ -28,23 +30,23 @@ func buildContainer() (*dig.Container, error) {
 			return lib.NewAuth(c.JwtSecret), nil
 		},
 		func(c *config) (chatsGrpc.ChatsClient, error) {
-			conn, err := grpc.Dial(c.ChatsURL, grpc.WithInsecure())
+			conn, err := grpc.Dial(c.ChatsURL, grpc.WithTransportCredentials(insecure.NewCredentials()))
 			if err != nil {
 				return nil, err
 			}
 			return chatsGrpc.NewChatsClient(conn), nil
 		},
 		func(c *config) (postsGrpc.PostsClient, error) {
-			conn, err := grpc.Dial(c.PostsURL, grpc.WithInsecure())
+			conn, err := grpc.Dial(c.PostsURL, grpc.WithTransportCredentials(insecure.NewCredentials()))
 			if err != nil {
 				return nil, err
 			}
 			return postsGrpc.NewPostsClient(conn), nil
 		},
 		func(c *config) (usersGrpc.UsersClient, error) {
-			conn, err := grpc.Dial(c.UsersURL, grpc.WithInsecure())
+			conn, err := grpc.Dial(c.UsersURL, grpc.WithTransportCredentials(insecure.NewCredentials()))
 			if err != nil {
-				return nil, err
+				return nil, fmt.Errorf("failed to dial users grpc: %w", err)
 			}
 			return usersGrpc.NewUsersClient(conn), nil
 		},
@@ -91,15 +93,11 @@ func main() {
 		tl.Error("run failed", zap.Error(err))
 	}
 
-	err = container.Invoke(func(l *zap.Logger, db *mssqlx.DBs) error {
-		if errs := db.Destroy(); len(errs) > 0 {
-			l.Error("failed to close db", zap.Errors("errors", errs))
-		}
+	err = container.Invoke(func(l *zap.Logger) error {
 		l.Info("gracefully shutdown...")
 		return l.Sync()
 	})
 	if err != nil {
 		tl.Error("shutdown failed", zap.Error(err))
 	}
-
 }

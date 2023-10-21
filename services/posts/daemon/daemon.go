@@ -15,12 +15,14 @@ import (
 	usersGrpc "github.com/ravilushqa/highload/services/users/api/grpc"
 )
 
-var cacheKey = "feed:user_id:%d"
-var centrifugoKey = "feed_user_id_%d"
+var (
+	cacheKey      = "feed:user_id:%s"
+	centrifugoKey = "feed_user_id_%s"
+)
 
 type postMessage struct {
-	ID        int       `json:"id"`
-	UserID    int       `json:"user_id"`
+	ID        string    `json:"id"`
+	UserID    string    `json:"user_id"`
 	Text      string    `json:"text"`
 	CreatedAt time.Time `json:"created_at"`
 }
@@ -86,7 +88,7 @@ func (d *daemon) handle(msg *sarama.ConsumerMessage) error {
 		return nil
 	}
 
-	subscribersResponse, err := d.usersClient.GetFriendsIds(context.Background(), &usersGrpc.GetFriendsIdsRequest{UserId: int64(m.UserID)})
+	subscribersResponse, err := d.usersClient.GetFriendsIds(context.Background(), &usersGrpc.GetFriendsIdsRequest{UserId: m.UserID})
 	if err != nil {
 		d.logger.Error(
 			"failed get subscribers",
@@ -95,6 +97,8 @@ func (d *daemon) handle(msg *sarama.ConsumerMessage) error {
 		return nil
 	}
 
+	d.logger.Info("subscribers", zap.Any("subscribers", subscribersResponse.UserIds))
+
 	for _, id := range subscribersResponse.UserIds {
 		key := fmt.Sprintf(cacheKey, id)
 		llen, err := d.redis.LLen(key).Result()
@@ -102,8 +106,8 @@ func (d *daemon) handle(msg *sarama.ConsumerMessage) error {
 			d.logger.Error(
 				"failed llen",
 				zap.Error(err),
-				zap.Int64("user_id", id),
-				zap.Int("post_id", m.ID),
+				zap.String("user_id", id),
+				zap.String("post_id", m.ID),
 			)
 			return nil
 		}
@@ -116,19 +120,20 @@ func (d *daemon) handle(msg *sarama.ConsumerMessage) error {
 			d.logger.Error(
 				"failed set message to user's cache",
 				zap.Error(err),
-				zap.Int64("user_id", id),
-				zap.Int("post_id", m.ID),
+				zap.String("user_id", id),
+				zap.String("post_id", m.ID),
 			)
 			return nil
 		}
 
+		d.logger.Info("set message to centrifugo", zap.String("feed_user_id", fmt.Sprintf(centrifugoKey, id)))
 		res, err := d.centrifugo.PresenceStats(context.Background(), fmt.Sprintf(centrifugoKey, id))
 		if err != nil {
 			d.logger.Error(
 				"failed check presence centrifugo",
 				zap.Error(err),
-				zap.Int64("user_id", id),
-				zap.Int("post_id", m.ID),
+				zap.String("user_id", id),
+				zap.String("post_id", m.ID),
 				zap.String("channel", fmt.Sprintf(centrifugoKey, id)),
 				zap.String("msg", string(msg.Value)),
 			)
@@ -137,7 +142,7 @@ func (d *daemon) handle(msg *sarama.ConsumerMessage) error {
 
 		if res.NumClients == 0 {
 			d.logger.Info("empty centrifugo clients")
-			return nil
+			continue
 		}
 
 		err = d.centrifugo.Publish(context.Background(), fmt.Sprintf(centrifugoKey, id), msg.Value)
@@ -145,8 +150,8 @@ func (d *daemon) handle(msg *sarama.ConsumerMessage) error {
 			d.logger.Error(
 				"failed set message to centrifugo",
 				zap.Error(err),
-				zap.Int64("user_id", id),
-				zap.Int("post_id", m.ID),
+				zap.String("user_id", id),
+				zap.String("post_id", m.ID),
 				zap.String("channel", fmt.Sprintf(centrifugoKey, id)),
 				zap.String("msg", string(msg.Value)),
 			)

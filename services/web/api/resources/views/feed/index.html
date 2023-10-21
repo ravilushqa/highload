@@ -1,39 +1,30 @@
 {{define "content"}}
-<!-- Document Wrapper
-    ============================================= -->
-<div id="wrapper" class="clearfix">
+<section id="content" class="section">
+    <div class="columns">
+        <!-- Sidebar Navigation -->
+        <div class="column is-3">
+            {{template "nav" .}}
+        </div>
 
-    <!-- Content
-    ============================================= -->
-    <section id="content">
-        <div class="content-wrap">
-            <div class="container clearfix">
-                <div class="row clearfix">
-                    <div class="col-md-3">
-                        {{template "nav" .}}
-                    </div>
-                    <div class="w-100 line d-block d-md-none"></div>
-                    <div class="col-md-9">
-                        <div class="container">
-                            <h3 class=" text-center">Feed</h3>
-                            <div id="feed">
-                                {{range .Posts}}
-                                <p>User #{{.UserId}}: {{.Text}}</p>
-                                {{end}}
-                            </div>
+        <!-- Main Content -->
+        <div class="column is-9">
+            <div class="container">
+                <header class="has-text-centered">
+                    <h3 class="title is-3">Feed</h3>
+                </header>
+                <div id="feed" class="box p-5 has-shadow">
+                    {{range .Posts}}
+                    <article class="message is-small is-primary is-light">
+                        <div class="message-body">
+                            <strong>User #{{.UserId}}:</strong> {{.Text}}
                         </div>
-                    </div>
+                    </article>
+                    {{end}}
                 </div>
             </div>
         </div>
-    </section><!-- #content end -->
-
-
-</div><!-- #wrapper end -->
-
-<!-- Go To Top
-============================================= -->
-<div id="gotoTop" class="icon-angle-up"></div>
+    </div>
+</section>
 
 <script type="text/javascript">
     var centrifuge = new Centrifuge('ws://localhost:8000/connection/websocket');
@@ -45,6 +36,7 @@
         var text = document.createTextNode("User #" + message.data.user_id + ": " + message.data.text);
         tag.appendChild(text);
         var element = document.getElementById("feed");
+        console.log("Event received", message.data)
         element.prepend(tag);
     });
 

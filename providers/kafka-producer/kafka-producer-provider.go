@@ -34,7 +34,7 @@ func (kp *KafkaProducer) Close() error {
 }
 
 // SendMessage sends message
-func (kp *KafkaProducer) SendMessage(payload []byte, key []byte) error {
+func (kp *KafkaProducer) SendMessage(payload, key []byte) error {
 	kfkMessage := sarama.ProducerMessage{Topic: kp.topic, Value: sarama.ByteEncoder(payload)}
 
 	if len(key) > 0 {

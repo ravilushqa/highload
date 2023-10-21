@@ -1,37 +1,26 @@
 {{define "content"}}
-    <!-- Document Wrapper
-        ============================================= -->
-    <div id="wrapper" class="clearfix">
+<section id="content" class="section">
+    <div class="columns">
+        <!-- Sidebar Navigation -->
+        <div class="column is-3">
+            {{template "nav" .}}
+        </div>
 
-        <!-- Content
-        ============================================= -->
-        <section id="content">
-            <div class="content-wrap">
-                <div class="container clearfix">
-                    <div class="row clearfix">
-                        <div class="col-md-3">
-                            {{template "nav" .}}
-                        </div>
-                        <div class="w-100 line d-block d-md-none"></div>
-                        <div class="col-md-9">
-                            <div class="container">
-                                <h3 class=" text-center">Chats</h3>
-                                {{range .ChatIDs}}
-                                    <ul>
-                                        <li><a href="/chats/{{.}}">Chat #{{.}}</a></li>
-                                    </ul>
-                                {{end}}
-                            </div>
-                        </div>
-                    </div>
-                </div>
+        <!-- Main Content -->
+        <div class="column is-9">
+            <div class="container">
+                <h3 class="title is-3 has-text-centered">Chats</h3>
+                {{range .ChatIDs}}
+                <ul>
+                    <li><a href="/chats/{{.}}">Chat #{{.}}</a></li>
+                </ul>
+                {{end}}
+
+                {{if eq (len .ChatIDs) 0}}
+                <p class="has-text-centered">No chats yet.</p>
+                {{end}}
             </div>
-        </section><!-- #content end -->
-
-
-    </div><!-- #wrapper end -->
-
-    <!-- Go To Top
-    ============================================= -->
-    <div id="gotoTop" class="icon-angle-up"></div>
+        </div>
+    </div>
+</section>
 {{end}}

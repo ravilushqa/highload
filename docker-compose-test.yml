@@ -1,0 +1,161 @@
+version: "3.7"
+
+x-common-service: &common-service
+  build:
+    dockerfile: docker/web/Dockerfile
+    args:
+      SERVICE_PATH: services/web/api
+    context: .
+  ports:
+    - 9080:8080
+  environment:
+    - CHATS_URL=chats-api:50051
+    - POSTS_URL=posts-api:50051
+    - USERS_URL=users-api:50051
+  depends_on:
+    - users-api
+#    - chats-api
+#    - posts-api
+#    - posts-daemon
+#    - counters-api
+#    - nginx
+  networks:
+    - test-network
+
+x-api-service: &api-service
+  restart: on-failure
+  environment:
+    - MONGO_URL=mongodb://mongodb:27017/?retryWrites=true&w=majority
+    - MONGO_DB=highload
+  networks:
+    - test-network
+
+services:
+  app:
+    <<: *common-service
+#  chats-api:
+#    <<: *api-service
+#    build:
+#      args:
+#        SERVICE_PATH: services/chats/api
+#    expose:
+#      - 50051
+#    depends_on:
+#      - mongodb
+#      - redis
+#
+#  posts-api:
+#    <<: *api-service
+#    build:
+#      args:
+#        SERVICE_PATH: services/posts/api
+#    expose:
+#      - 50051
+#    depends_on:
+#      - redis
+#      - kafka
+#      - mongodb
+#    environment:
+#      REDIS_URL: "redis://redis:6379"
+#      KAFKA_BROKERS: "kafka:9092"
+#
+#  posts-daemon:
+#    <<: *api-service
+#    build:
+#      args:
+#        SERVICE_PATH: services/posts/daemon
+#    depends_on:
+#      - redis
+#      - kafka
+#      - centrifugo
+#    environment:
+#      REDIS_URL: "redis://redis:6379"
+#      KAFKA_BROKERS: "kafka:9092"
+
+  users-api:
+    <<: *api-service
+    build:
+      args:
+        SERVICE_PATH: services/users/api
+    expose:
+      - 50051
+    depends_on:
+      - mongodb
+
+#  counters-api:
+#    <<: *api-service
+#    build:
+#      args:
+#        SERVICE_PATH: services/counters/api
+#    expose:
+#      - 50051
+#    depends_on:
+#      - redis
+#    environment:
+#      REDIS_URL: "redis://redis:6379"
+
+  mongodb:
+    image: mongo:6
+    restart: unless-stopped
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongodb_data:/data/db
+    networks:
+      - test-network
+#
+#  redis:
+#    healthcheck:
+#      interval: 30s
+#      retries: 3
+#      test: [ "CMD", "redis-cli","ping" ]
+#      timeout: 10s
+#    image: redis:5
+#    ports:
+#      - "6379"
+#    restart: unless-stopped
+#    networks:
+#      - test-network
+#
+#  zookeeper:
+#    image: wurstmeister/zookeeper
+#    restart: unless-stopped
+#    ports:
+#      - "2181"
+#    networks:
+#      - test-network
+#
+#  kafka:
+#    image: wurstmeister/kafka
+#    restart: unless-stopped
+#    ports:
+#      - "9092"
+#    environment:
+#      KAFKA_ADVERTISED_HOST_NAME: kafka
+#      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+#      KAFKA_CREATE_TOPICS: "posts_feed:1:1"
+#    depends_on:
+#      - zookeeper
+#    networks:
+#      - test-network
+#
+#  centrifugo:
+#    image: centrifugo/centrifugo:v2.8.1
+#    volumes:
+#      - ./docker/centrifugo/config.json:/centrifugo/config.json
+#    command: centrifugo -c config.json
+#    ports:
+#      - "8000"
+#    ulimits:
+#      nofile:
+#        soft: 65535
+#        hard: 65535
+#    networks:
+#      - test-network
+
+networks:
+  test-network:
+    driver: bridge
+
+volumes:
+  mongodb_data:

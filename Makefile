@@ -1,29 +1,70 @@
+.DEFAULT_GOAL := help
+# show help
+help:
+	@echo 'Usage:'
+	@echo ' make [target]'
+	@echo ''
+	@echo 'Targets:'
+	@awk '/^[a-zA-Z\-\_0-9]+:/ { \
+	helpMessage = match(lastLine, /^# (.*)/); \
+		if (helpMessage) { \
+			helpCommand = substr($$1, 0, index($$1, ":")-1); \
+			helpMessage = substr(lastLine, RSTART + 2, RLENGTH); \
+			printf "\033[36m%-22s\033[0m %s\n", helpCommand,helpMessage; \
+		} \
+	} \
+	{ lastLine = $$0 }' $(MAKEFILE_LIST)
+
+# up application in docker-compose
 up:
 	docker-compose up -d app app-2
+
+# up monitoring in docker-compose
 up-monitoring:
 	docker-compose up -d grafana cadvisor prometheus
+
+# docker-compose down
 down:
 	docker-compose down
+
+# restart application in docker-compose
 restart: down up
-exec_master:
-	docker exec -it mysql_master mysql -uroot
-exec_slave1:
-	docker exec -it highload_mysql_slave1_1 mysql -uroot
-exec_slave2:
-	docker exec -it highload_mysql_slave2_1 mysql -uroot
-exec_node1:
-	docker exec -it highload_db-node-1 mysql -uroot -p1
-exec_tarantool:
-	docker exec -it highload_tarantool_1 sh
-exec_tarantool_console:
-	docker exec -it highload_tarantool_1 tarantoolctl enter app.lua
-tarantool_bootstrap:
-	docker exec -it highload_tarantool_1 tarantoolctl start app.lua
+
+# generate proto for chats service
 gen-proto-chats:
-	 protoc -I. services/chats/api/grpc/api.proto --go_out=plugins=grpc:.
+	 protoc --go_out=. --go_opt=paths=source_relative \
+		--go-grpc_out=. --go-grpc_opt=paths=source_relative \
+		services/chats/api/grpc/api.proto
+
+# generate proto for posts service
 gen-proto-posts:
-	 protoc -I. services/posts/api/grpc/api.proto --go_out=plugins=grpc:.
+	 protoc --go_out=. --go_opt=paths=source_relative \
+		--go-grpc_out=. --go-grpc_opt=paths=source_relative \
+		services/posts/api/grpc/api.proto
+
+# generate proto for users service
 gen-proto-users:
-	 protoc -I. services/users/api/grpc/api.proto --go_out=plugins=grpc:.
+	 protoc --go_out=. --go_opt=paths=source_relative \
+		--go-grpc_out=. --go-grpc_opt=paths=source_relative \
+		services/users/api/grpc/api.proto
+
+# generate proto for counters
 gen-proto-counters:
-	 protoc -I. services/counters/api/grpc/api.proto --go_out=plugins=grpc:.
+	 protoc --go_out=. --go_opt=paths=source_relative \
+		--go-grpc_out=. --go-grpc_opt=paths=source_relative \
+		services/counters/api/grpc/api.proto
+
+# run this once to install tools required for development.
+init-tools:
+	cd tools && \
+	go mod tidy && \
+	go mod verify && \
+	go generate -x -tags "tools"
+
+# run golangci-lint
+lint: init-tools
+	./bin/golangci-lint run --timeout=30m ./...
+
+# run go test with coverage
+test-coverage:
+	go test -race -coverprofile=coverage.txt -covermode=atomic ./...

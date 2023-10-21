@@ -2,53 +2,17 @@
 <!DOCTYPE html>
 <html dir="ltr" lang="en-US">
 <head>
-    <meta http-equiv="content-type" content="text/html; charset=utf-8" />
-    <meta name="author" content="SemiColonWeb" />
-
-    <!-- Stylesheets
-    ============================================= -->
-    <link href="https://fonts.googleapis.com/css?family=Lato:300,400,400i,700|Poppins:300,400,500,600,700|PT+Serif:400,400i&display=swap" rel="stylesheet" type="text/css" />
-    <link rel="stylesheet" href="/public/css/bootstrap.css" type="text/css" />
-    <link rel="stylesheet" href="/public/css/style.css" type="text/css" />
-    <link rel="stylesheet" href="/public/css/dark.css" type="text/css" />
-    <link rel="stylesheet" href="/public/css/font-icons.css" type="text/css" />
-    <link rel="stylesheet" href="/public/css/animate.css" type="text/css" />
-    <link rel="stylesheet" href="/public/css/magnific-popup.css" type="text/css" />
-
-    <link rel="stylesheet" href="/public/css/custom.css" type="text/css" />
-    <link rel="stylesheet" href="/public/css/chat.css" type="text/css" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta http-equiv="content-type" content="text/html; charset=utf-8"/>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@0.9.4/css/bulma.min.css">
+    <script src="https://unpkg.com/htmx.org"></script>
     <script src="https://cdn.jsdelivr.net/gh/centrifugal/centrifuge-js@2.6.4/dist/centrifuge.min.js"></script>
-
-    <!-- Document Title
-    ============================================= -->
     <title>Highload course - Social Network</title>
-
+    <script src="https://cdn.jsdelivr.net/gh/centrifugal/centrifuge-js@2.6.4/dist/centrifuge.min.js"></script>
 </head>
 
 <body class="stretched">
-
-<!-- Document Wrapper
-============================================= -->
 {{template "content" .}}
-
-
-<!-- JavaScripts
-============================================= -->
-<script src="/public/js/jquery.js"></script>
-<script src="/public/js/plugins.min.js"></script>
-
-<!-- Footer Scripts
-============================================= -->
-<script src="/public/js/functions.js"></script>
-
-<!-- todo for users profile-->
-<script>
-    $( "#tabs-profile" ).on( "tabsactivate", function( event, ui ) {
-        $( '.flexslider .slide' ).resize();
-    });
-</script>
-
 </body>
 </html>
 {{end}}
+

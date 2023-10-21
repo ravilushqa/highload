@@ -1,33 +1,42 @@
 {{define "nav"}}
-
-    <div class="list-group">
-        <a href="/users/{{$.AuthUserID}}"
-           class="list-group-item list-group-item-action d-flex justify-content-between">
-            <div>Profile</div>
-            <i class="icon-user"></i></a>
-        <a href="/users"
-           class="list-group-item list-group-item-action d-flex justify-content-between">
-            <div>Users</div>
-            <i class="icon-users"></i></a>
-        <a href="/chats"
-           class="list-group-item list-group-item-action d-flex justify-content-between">
-            <div>Messages</div>
-            <i class="icon-envelope2"></i>
-        </a>
-        <a href="/posts"
-           class="list-group-item list-group-item-action d-flex justify-content-between">
-            <div>Posts</div>
-            <i class="icon-pencil2"></i>
-        </a>
-        <a href="/feed"
-           class="list-group-item list-group-item-action d-flex justify-content-between">
-            <div>Feed</div>
-            <i class="icon-rss2"></i>
-        </a>
-        <a href="/logout"
-           class="list-group-item list-group-item-action d-flex justify-content-between">
-            <div>Logout</div>
-            <i class="icon-line2-logout"></i></a>
-    </div>
-
+<aside class="menu">
+    <ul class="menu-list">
+        <li>
+            <a href="/users/{{$.AuthUserID}}" class="is-flex is-justify-content-space-between">
+                <span>Profile</span>
+                <span class="icon"><i class="icon-user"></i></span>
+            </a>
+        </li>
+        <li>
+            <a href="/users" class="is-flex is-justify-content-space-between">
+                <span>Users</span>
+                <span class="icon"><i class="icon-users"></i></span>
+            </a>
+        </li>
+        <li>
+            <a href="/chats" class="is-flex is-justify-content-space-between">
+                <span>Messages</span>
+                <span class="icon"><i class="icon-envelope2"></i></span>
+            </a>
+        </li>
+        <li>
+            <a href="/posts" class="is-flex is-justify-content-space-between">
+                <span>Posts</span>
+                <span class="icon"><i class="icon-pencil2"></i></span>
+            </a>
+        </li>
+        <li>
+            <a href="/feed" class="is-flex is-justify-content-space-between">
+                <span>Feed</span>
+                <span class="icon"><i class="icon-rss2"></i></span>
+            </a>
+        </li>
+        <li>
+            <a href="/logout" class="is-flex is-justify-content-space-between">
+                <span>Logout</span>
+                <span class="icon"><i class="icon-line2-logout"></i></span>
+            </a>
+        </li>
+    </ul>
+</aside>
 {{end}}

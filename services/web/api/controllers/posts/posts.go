@@ -39,7 +39,7 @@ func (c *Controller) Store(w http.ResponseWriter, r *http.Request) {
 	}
 
 	_, err := c.postsClient.Store(r.Context(), &grpc.StoreRequest{
-		UserId: int64(uid),
+		UserId: uid,
 		Text:   text,
 	})
 	if err != nil {
@@ -54,7 +54,7 @@ func (c *Controller) Store(w http.ResponseWriter, r *http.Request) {
 
 func (c *Controller) index(w http.ResponseWriter, r *http.Request) {
 	uid, _ := lib.GetAuthUserID(r.Context())
-	resp, err := c.postsClient.GetByUserID(r.Context(), &grpc.GetByUserIDRequest{UserId: int64(uid)})
+	resp, err := c.postsClient.GetByUserID(r.Context(), &grpc.GetByUserIDRequest{UserId: uid})
 	if err != nil {
 		c.l.Error("failed get users", zap.Error(err))
 		w.WriteHeader(http.StatusInternalServerError)
@@ -74,7 +74,7 @@ func (c *Controller) index(w http.ResponseWriter, r *http.Request) {
 	}
 
 	_ = tmpl.ExecuteTemplate(w, "layout", struct {
-		AuthUserID int
+		AuthUserID string
 		Posts      []*grpc.Post
 	}{uid, resp.Posts})
 }

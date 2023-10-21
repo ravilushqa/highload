@@ -3,7 +3,6 @@ package lib
 import (
 	"context"
 	"net/http"
-	"strconv"
 	"time"
 
 	"github.com/go-chi/jwtauth"
@@ -21,16 +20,15 @@ type Auth struct {
 
 func NewAuth(secret string) *Auth {
 	return &Auth{token: jwtauth.New("HS256", []byte(secret), nil)}
-
 }
 
 func (a *Auth) GetToken() *jwtauth.JWTAuth {
 	return a.token
 }
 
-func (a *Auth) EncodeToken(uid int) (string, error) {
+func (a *Auth) EncodeToken(uid string) (string, error) {
 	_, tokenString, err := a.token.Encode(jwt.StandardClaims{
-		Subject:   strconv.Itoa(uid),
+		Subject:   uid,
 		ExpiresAt: time.Now().AddDate(0, 0, 14).Unix(),
 	})
 	return tokenString, err
@@ -42,10 +40,10 @@ func IsAuth(r *http.Request) bool {
 	return err == nil && t != nil && ok
 }
 
-func GetAuthUserID(ctx context.Context) (int, error) {
+func GetAuthUserID(ctx context.Context) (string, error) {
 	_, claims, err := jwtauth.FromContext(ctx)
 	if err != nil {
-		return 0, err
+		return "", err
 	}
-	return strconv.Atoi(claims["sub"].(string))
+	return claims["sub"].(string), nil
 }

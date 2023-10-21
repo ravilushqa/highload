@@ -38,7 +38,7 @@ func registerHooks(lifecycle fx.Lifecycle, l *zap.Logger, r *redis.Client, a *Ap
 		fx.Hook{
 			OnStart: func(ctx context.Context) error {
 				addr := ":50051"
-				lis, err := net.Listen("tcp", addr) //@todo
+				lis, err := net.Listen("tcp", addr)
 				if err != nil {
 					return err
 				}
