@@ -1,10 +1,12 @@
-FROM centos:7
+FROM --platform=linux/arm64 oraclelinux:9
 
-RUN yum -y install epel-release && \
-    yum -y update && \
-    yum -y clean all
+RUN dnf -y install oracle-epel-release-el9 && \
+    dnf -y install https://dev.mysql.com/get/mysql80-community-release-el9-1.noarch.rpm && \
+    dnf -y update && \
+    dnf -y clean all
 
-RUN yum -y install git ncurses-devel cmake gcc-c++ boost boost-devel wget unzip nano bzip2 mysql-devel mysql-lib make
+RUN dnf -y install git ncurses-devel cmake gcc-c++ boost boost-devel wget unzip nano bzip2 mysql-community-devel make && \
+    dnf clean all
 
 RUN git clone https://github.com/tarantool/mysql-tarantool-replication.git mysql_tarantool-replication
 

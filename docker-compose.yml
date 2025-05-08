@@ -119,7 +119,7 @@ services:
     restart: on-failure
     depends_on:
       - mysql_master
-      - tarantool
+      # - tarantool
       - haproxy
     environment:
       DATABASE_URL: "root:@(haproxy:3306)/app"
@@ -143,7 +143,8 @@ services:
       - otus
   mysql_master:
     container_name: mysql_master
-    image: mysql:5.7.30
+    image: mysql:8.0
+    platform: linux/arm64
     ports:
       - 3306:3306
     restart: always
@@ -160,7 +161,8 @@ services:
       - otus
   #    command: --init-file /data/start.sql
   mysql_slave1:
-    image: mysql:5.7.30
+    image: mysql:8.0
+    platform: linux/arm64
     ports:
       - 33061:3306
     restart: always
@@ -179,7 +181,8 @@ services:
       - otus
   #    command: --init-file /data/start.sql
   mysql_slave2:
-    image: mysql:5.7.30
+    image: mysql:8.0
+    platform: linux/arm64
     ports:
       - 33062:3306
     restart: always
@@ -209,7 +212,7 @@ services:
       MYSQL_ROOT_PASSWORD: '1'
     command: >
       --init-file /data/start.sql
-      --sql-mode='STRICT_TRANS_TABLES,ERROR_FOR_DIVISION_BY_ZERO,NO_AUTO_CREATE_USER,NO_ENGINE_SUBSTITUTION'
+      --sql-mode='STRICT_TRANS_TABLES,ERROR_FOR_DIVISION_BY_ZERO,NO_ENGINE_SUBSTITUTION'
       --general-log=ON
       --log-queries-not-using-indexes=ON
     ports:
@@ -231,7 +234,7 @@ services:
       MYSQL_ROOT_PASSWORD: '1'
     command: >
       --init-file /data/start.sql
-      --sql-mode='STRICT_TRANS_TABLES,ERROR_FOR_DIVISION_BY_ZERO,NO_AUTO_CREATE_USER,NO_ENGINE_SUBSTITUTION'
+      --sql-mode='STRICT_TRANS_TABLES,ERROR_FOR_DIVISION_BY_ZERO,NO_ENGINE_SUBSTITUTION'
       --general-log=ON
       --log-queries-not-using-indexes=ON
     ports:
@@ -285,15 +288,20 @@ services:
       retries: 3
       test: [ "CMD", "redis-cli","ping" ]
       timeout: 10s
-    image: redis:5
+    image: redis:7.2
+    platform: linux/arm64
     ports:
       - 6379:6379
     restart: unless-stopped
     networks:
       - otus
   zookeeper:
-    image: zookeeper:3.6.1
+    image: confluentinc/cp-zookeeper:7.4.0
+    platform: linux/arm64
     restart: unless-stopped
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_TICK_TIME: 2000
     networks:
       - otus
   kafka:
@@ -301,45 +309,51 @@ services:
       - zookeeper
     environment:
       JMX_PORT: 9999
-      KAFKA_ADVERTISED_HOST_NAME: kafka
+      KAFKA_BROKER_ID: 1
       KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
-    image: wurstmeister/kafka:2.11-2.0.1
+      KAFKA_LISTENERS: PLAINTEXT://0.0.0.0:9092
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+    image: confluentinc/cp-kafka:7.4.0
+    platform: linux/arm64
     ports:
       - 9092:9092
     restart: unless-stopped
     networks:
       - otus
-  tarantool:
-    build:
-      context: .
-      dockerfile: docker/tarantool/Dockerfile
-    volumes:
-      - tarantool_data:/var/lib/tarantool
-      - ./docker/tarantool/app.lua:/usr/local/etc/tarantool/instances.enabled/app.lua
-      - ./docker/tarantool/app.lua:/usr/local/etc/tarantool/available.enabled/app.lua
-    ports:
-      - 3301:3301
-      - 3302:3302
-    networks:
-      - otus
-  mysql_tarantool_replication:
-    build:
-      context: .
-      dockerfile: docker/mysql_tarantool_replication/Dockerfile
-    volumes:
-      - ./docker/mysql_tarantool_replication/replicator.yml:/usr/local/etc/replicator.yml
-    depends_on:
-      - tarantool
-      - mysql_master
-    privileged: true
-    networks:
-      - otus
-    command: >
-      bash -c "cd /usr/local/sbin
-      && ./replicatord -c /usr/local/etc/replicator.yml"
+  # Tarantool services temporarily disabled
+  # tarantool:
+  #   build:
+  #     context: .
+  #     dockerfile: docker/tarantool/Dockerfile
+  #   volumes:
+  #     - tarantool_data:/var/lib/tarantool
+  #     - ./docker/tarantool/app.lua:/usr/local/etc/tarantool/instances.enabled/app.lua
+  #     - ./docker/tarantool/app.lua:/usr/local/etc/tarantool/available.enabled/app.lua
+  #   ports:
+  #     - 3301:3301
+  #     - 3302:3302
+  #   networks:
+  #     - otus
+  # mysql_tarantool_replication:
+  #   build:
+  #     context: .
+  #     dockerfile: docker/mysql_tarantool_replication/Dockerfile
+  #   volumes:
+  #     - ./docker/mysql_tarantool_replication/replicator.yml:/usr/local/etc/replicator.yml
+  #   depends_on:
+  #     - tarantool
+  #     - mysql_master
+  #   privileged: true
+  #   networks:
+  #     - otus
+  #   command: >
+  #     bash -c "cd /usr/local/sbin
+  #     && ./replicatord -c /usr/local/etc/replicator.yml"
   centrifugo:
     container_name: centrifugo
-    image: centrifugo/centrifugo:latest
+    image: centrifugo/centrifugo:v5
+    platform: linux/arm64
     volumes:
       - ./docker/centrifugo/config.json:/centrifugo/config.json
     command: centrifugo -c config.json
@@ -352,7 +366,8 @@ services:
     networks:
       - otus
   haproxy:
-    image: haproxy:2.1.7
+    image: haproxy:2.9
+    platform: linux/arm64
     container_name: haproxy
     restart: "no"
     volumes:
@@ -369,7 +384,8 @@ services:
     networks:
       - otus
   nginx:
-    image: nginx:1.19.0
+    image: nginx:1.25
+    platform: linux/arm64
     container_name: nginx
     restart: on-failure
     networks:
@@ -390,4 +406,4 @@ volumes:
   db-node-2-data:
   grafana_data:
   grafana_data_provisioning:
-  tarantool_data:
+  # tarantool_data:
