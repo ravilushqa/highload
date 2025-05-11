@@ -1,4 +1,4 @@
-FROM golang:1.15 as build
+FROM --platform=linux/arm64 golang:1.24.2-bullseye as build
 ARG SERVICE_PATH
 WORKDIR /opt/app
 COPY go.mod .
