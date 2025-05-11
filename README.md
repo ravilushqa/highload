@@ -4,8 +4,10 @@ A high-performance, scalable social network platform built with Go and a microse
 
 ## Architecture Diagram
 
-The architecture is available in two formats:
-1. [PlantUML Diagram](docs/architecture.puml) - Detailed technical diagram
+![Highload Social Network Architecture](docs/architecture.svg)
+
+The architecture is also available in PlantUML format:
+- [PlantUML Diagram Source](docs/architecture.puml) - For custom rendering
 
 ## Project Overview
 
@@ -19,7 +21,8 @@ This project demonstrates a robust implementation of distributed systems princip
 
 ## Technical Architecture
 
-_Refer to the architecture diagrams above for a visual representation of the system components and their interactions. The PlantUML diagram provides a comprehensive view while the Markdown version is accessible without additional tools._
+_Refer to the architecture diagram above for a visual representation of the system components and their interactions. The SVG format ensures the diagram is viewable in any modern browser without additional tools._
+
 
 ### Backend Services (Go)
 
@@ -110,17 +113,15 @@ Regenerate protocol buffers:
 make gen-proto
 ```
 
-Generate architecture diagram:
+View architecture diagram:
 ```
-# Install PlantUML if not already installed
+# The SVG diagram can be viewed directly in any browser
+# or SVG-compatible viewer without additional tools
+
+# If you want to modify the PlantUML diagram and regenerate:
 brew install plantuml    # macOS with Homebrew
 apt-get install plantuml # Debian/Ubuntu
-
-# Generate PNG from the PlantUML file
 plantuml docs/architecture.puml
-
-# The Markdown version (docs/architecture.md) can be viewed directly
-# in any text editor or Markdown viewer without additional tools
 ```
 
 ## API Services
