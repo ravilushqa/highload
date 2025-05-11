@@ -1,0 +1,221 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
+<svg width="1000" height="800" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+    <defs>
+        <!-- Arrow marker definition -->
+        <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5"
+                markerWidth="6" markerHeight="6" orient="auto">
+            <path d="M 0 0 L 10 5 L 0 10 z" fill="#666"/>
+        </marker>
+        <!-- Component styles -->
+        <linearGradient id="client-gradient" x1="0%" y1="0%" x2="0%" y2="100%">
+            <stop offset="0%" style="stop-color:#E1F5FE;stop-opacity:1" />
+            <stop offset="100%" style="stop-color:#B3E5FC;stop-opacity:1" />
+        </linearGradient>
+        <linearGradient id="api-gradient" x1="0%" y1="0%" x2="0%" y2="100%">
+            <stop offset="0%" style="stop-color:#E8F5E9;stop-opacity:1" />
+            <stop offset="100%" style="stop-color:#C8E6C9;stop-opacity:1" />
+        </linearGradient>
+        <linearGradient id="service-gradient" x1="0%" y1="0%" x2="0%" y2="100%">
+            <stop offset="0%" style="stop-color:#DCEDC8;stop-opacity:1" />
+            <stop offset="100%" style="stop-color:#AED581;stop-opacity:1" />
+        </linearGradient>
+        <linearGradient id="data-gradient" x1="0%" y1="0%" x2="0%" y2="100%">
+            <stop offset="0%" style="stop-color:#FFF9C4;stop-opacity:1" />
+            <stop offset="100%" style="stop-color:#FFF176;stop-opacity:1" />
+        </linearGradient>
+        <linearGradient id="cache-gradient" x1="0%" y1="0%" x2="0%" y2="100%">
+            <stop offset="0%" style="stop-color:#FFECB3;stop-opacity:1" />
+            <stop offset="100%" style="stop-color:#FFD54F;stop-opacity:1" />
+        </linearGradient>
+        <linearGradient id="messaging-gradient" x1="0%" y1="0%" x2="0%" y2="100%">
+            <stop offset="0%" style="stop-color:#F8BBD0;stop-opacity:1" />
+            <stop offset="100%" style="stop-color:#F48FB1;stop-opacity:1" />
+        </linearGradient>
+        <linearGradient id="metrics-gradient" x1="0%" y1="0%" x2="0%" y2="100%">
+            <stop offset="0%" style="stop-color:#D1C4E9;stop-opacity:1" />
+            <stop offset="100%" style="stop-color:#B39DDB;stop-opacity:1" />
+        </linearGradient>
+        <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
+            <feDropShadow dx="2" dy="2" stdDeviation="3" flood-opacity="0.3"/>
+        </filter>
+    </defs>
+    
+    <!-- Title -->
+    <text x="500" y="30" font-family="Arial" font-size="24" text-anchor="middle" font-weight="bold">Highload Social Network Platform Architecture</text>
+    
+    <!-- Layer Labels -->
+    <text x="100" y="80" font-family="Arial" font-size="16" font-weight="bold">Client Layer</text>
+    <text x="100" y="230" font-family="Arial" font-size="16" font-weight="bold">API Layer</text>
+    <text x="100" y="380" font-family="Arial" font-size="16" font-weight="bold">Service Layer</text>
+    <text x="100" y="530" font-family="Arial" font-size="16" font-weight="bold">Data Layer</text>
+    <text x="100" y="680" font-family="Arial" font-size="16" font-weight="bold">Infrastructure</text>
+    
+    <!-- Client Layer -->
+    <rect x="200" y="60" width="120" height="60" rx="10" ry="10" fill="url(#client-gradient)" stroke="#0288D1" stroke-width="2" filter="url(#shadow)"/>
+    <text x="260" y="95" font-family="Arial" font-size="14" text-anchor="middle">Web Client</text>
+    
+    <rect x="380" y="60" width="120" height="60" rx="10" ry="10" fill="url(#client-gradient)" stroke="#0288D1" stroke-width="2" filter="url(#shadow)"/>
+    <text x="440" y="95" font-family="Arial" font-size="14" text-anchor="middle">Mobile Client</text>
+    
+    <!-- API Layer -->
+    <rect x="280" y="170" width="120" height="60" rx="10" ry="10" fill="#E1E1E1" stroke="#757575" stroke-width="2" filter="url(#shadow)"/>
+    <text x="340" y="195" font-family="Arial" font-size="14" text-anchor="middle">NGINX</text>
+    <text x="340" y="215" font-family="Arial" font-size="12" text-anchor="middle">Load Balancer</text>
+    
+    <rect x="280" y="270" width="240" height="60" rx="10" ry="10" fill="url(#api-gradient)" stroke="#2E7D32" stroke-width="2" filter="url(#shadow)"/>
+    <text x="400" y="295" font-family="Arial" font-size="14" text-anchor="middle">Web API Gateway (Go/Chi)</text>
+    <text x="400" y="315" font-family="Arial" font-size="12" text-anchor="middle">JWT Authentication</text>
+    
+    <!-- Service Layer -->
+    <rect x="160" y="380" width="120" height="60" rx="10" ry="10" fill="url(#service-gradient)" stroke="#558B2F" stroke-width="2" filter="url(#shadow)"/>
+    <text x="220" y="405" font-family="Arial" font-size="14" text-anchor="middle">Users Service</text>
+    <text x="220" y="425" font-family="Arial" font-size="12" text-anchor="middle">(gRPC)</text>
+    
+    <rect x="300" y="380" width="120" height="60" rx="10" ry="10" fill="url(#service-gradient)" stroke="#558B2F" stroke-width="2" filter="url(#shadow)"/>
+    <text x="360" y="405" font-family="Arial" font-size="14" text-anchor="middle">Posts Service</text>
+    <text x="360" y="425" font-family="Arial" font-size="12" text-anchor="middle">(gRPC)</text>
+    
+    <rect x="440" y="380" width="120" height="60" rx="10" ry="10" fill="url(#service-gradient)" stroke="#558B2F" stroke-width="2" filter="url(#shadow)"/>
+    <text x="500" y="405" font-family="Arial" font-size="14" text-anchor="middle">Chats Service</text>
+    <text x="500" y="425" font-family="Arial" font-size="12" text-anchor="middle">(gRPC)</text>
+    
+    <rect x="580" y="380" width="120" height="60" rx="10" ry="10" fill="url(#service-gradient)" stroke="#558B2F" stroke-width="2" filter="url(#shadow)"/>
+    <text x="640" y="405" font-family="Arial" font-size="14" text-anchor="middle">Counters Service</text>
+    <text x="640" y="425" font-family="Arial" font-size="12" text-anchor="middle">(gRPC)</text>
+    
+    <rect x="720" y="380" width="120" height="60" rx="10" ry="10" fill="url(#service-gradient)" stroke="#558B2F" stroke-width="2" filter="url(#shadow)"/>
+    <text x="780" y="405" font-family="Arial" font-size="14" text-anchor="middle">Posts Daemon</text>
+    <text x="780" y="425" font-family="Arial" font-size="12" text-anchor="middle">(Go)</text>
+    
+    <!-- Data Layer - HAProxy -->
+    <rect x="360" y="490" width="180" height="60" rx="10" ry="10" fill="#E1E1E1" stroke="#757575" stroke-width="2" filter="url(#shadow)"/>
+    <text x="450" y="515" font-family="Arial" font-size="14" text-anchor="middle">HAProxy</text>
+    <text x="450" y="535" font-family="Arial" font-size="12" text-anchor="middle">DB Load Balancer</text>
+    
+    <!-- Data Layer - Databases -->
+    <rect x="160" y="580" width="120" height="60" rx="10" ry="10" fill="url(#data-gradient)" stroke="#FBC02D" stroke-width="2" filter="url(#shadow)"/>
+    <text x="220" y="605" font-family="Arial" font-size="14" text-anchor="middle">MySQL Master</text>
+    <text x="220" y="625" font-family="Arial" font-size="12" text-anchor="middle">Primary DB</text>
+    
+    <rect x="300" y="580" width="120" height="60" rx="10" ry="10" fill="url(#data-gradient)" stroke="#FBC02D" stroke-width="2" filter="url(#shadow)"/>
+    <text x="360" y="605" font-family="Arial" font-size="14" text-anchor="middle">MySQL Slave 1</text>
+    <text x="360" y="625" font-family="Arial" font-size="12" text-anchor="middle">Read Replica</text>
+    
+    <rect x="440" y="580" width="120" height="60" rx="10" ry="10" fill="url(#data-gradient)" stroke="#FBC02D" stroke-width="2" filter="url(#shadow)"/>
+    <text x="500" y="605" font-family="Arial" font-size="14" text-anchor="middle">MySQL Slave 2</text>
+    <text x="500" y="625" font-family="Arial" font-size="12" text-anchor="middle">Read Replica</text>
+    
+    <!-- Chat DB Shards -->
+    <rect x="580" y="580" width="120" height="60" rx="10" ry="10" fill="url(#data-gradient)" stroke="#FBC02D" stroke-width="2" filter="url(#shadow)"/>
+    <text x="640" y="605" font-family="Arial" font-size="14" text-anchor="middle">Chat DB Node 1</text>
+    <text x="640" y="625" font-family="Arial" font-size="12" text-anchor="middle">Messages Shard</text>
+    
+    <rect x="720" y="580" width="120" height="60" rx="10" ry="10" fill="url(#data-gradient)" stroke="#FBC02D" stroke-width="2" filter="url(#shadow)"/>
+    <text x="780" y="605" font-family="Arial" font-size="14" text-anchor="middle">Chat DB Node 2</text>
+    <text x="780" y="625" font-family="Arial" font-size="12" text-anchor="middle">Messages Shard</text>
+    
+    <!-- Redis and Kafka -->
+    <rect x="300" y="670" width="120" height="60" rx="10" ry="10" fill="url(#cache-gradient)" stroke="#FF8F00" stroke-width="2" filter="url(#shadow)"/>
+    <text x="360" y="695" font-family="Arial" font-size="14" text-anchor="middle">Redis</text>
+    <text x="360" y="715" font-family="Arial" font-size="12" text-anchor="middle">Cache & Pub/Sub</text>
+    
+    <rect x="440" y="670" width="120" height="60" rx="10" ry="10" fill="url(#messaging-gradient)" stroke="#C2185B" stroke-width="2" filter="url(#shadow)"/>
+    <text x="500" y="695" font-family="Arial" font-size="14" text-anchor="middle">Kafka</text>
+    <text x="500" y="715" font-family="Arial" font-size="12" text-anchor="middle">Event Streaming</text>
+    
+    <!-- Monitoring and WebSockets -->
+    <rect x="580" y="670" width="120" height="60" rx="10" ry="10" fill="url(#metrics-gradient)" stroke="#4527A0" stroke-width="2" filter="url(#shadow)"/>
+    <text x="640" y="695" font-family="Arial" font-size="14" text-anchor="middle">Prometheus</text>
+    <text x="640" y="715" font-family="Arial" font-size="12" text-anchor="middle">Metrics</text>
+    
+    <rect x="720" y="670" width="120" height="60" rx="10" ry="10" fill="url(#metrics-gradient)" stroke="#4527A0" stroke-width="2" filter="url(#shadow)"/>
+    <text x="780" y="695" font-family="Arial" font-size="14" text-anchor="middle">Grafana</text>
+    <text x="780" y="715" font-family="Arial" font-size="12" text-anchor="middle">Dashboards</text>
+    
+    <rect x="160" y="670" width="120" height="60" rx="10" ry="10" fill="url(#client-gradient)" stroke="#0288D1" stroke-width="2" filter="url(#shadow)"/>
+    <text x="220" y="695" font-family="Arial" font-size="14" text-anchor="middle">Centrifugo</text>
+    <text x="220" y="715" font-family="Arial" font-size="12" text-anchor="middle">WebSockets</text>
+    
+    <!-- Connections -->
+    <!-- Client to NGINX -->
+    <line x1="260" y1="120" x2="320" y2="170" stroke="#666" stroke-width="2" marker-end="url(#arrow)"/>
+    <line x1="440" y1="120" x2="360" y2="170" stroke="#666" stroke-width="2" marker-end="url(#arrow)"/>
+    
+    <!-- NGINX to API Gateway -->
+    <line x1="340" y1="230" x2="340" y2="270" stroke="#666" stroke-width="2" marker-end="url(#arrow)"/>
+    
+    <!-- API Gateway to Services -->
+    <line x1="320" y1="330" x2="220" y2="380" stroke="#666" stroke-width="2" marker-end="url(#arrow)"/>
+    <line x1="360" y1="330" x2="360" y2="380" stroke="#666" stroke-width="2" marker-end="url(#arrow)"/>
+    <line x1="420" y1="330" x2="500" y2="380" stroke="#666" stroke-width="2" marker-end="url(#arrow)"/>
+    <line x1="480" y1="330" x2="640" y2="380" stroke="#666" stroke-width="2" marker-end="url(#arrow)"/>
+    
+    <!-- Services to HAProxy -->
+    <line x1="220" y1="440" x2="400" y2="490" stroke="#666" stroke-width="2" marker-end="url(#arrow)"/>
+    <line x1="360" y1="440" x2="400" y2="490" stroke="#666" stroke-width="2" marker-end="url(#arrow)"/>
+    <line x1="500" y1="440" x2="450" y2="490" stroke="#666" stroke-width="2" marker-end="url(#arrow)"/>
+    
+    <!-- HAProxy to Databases -->
+    <line x1="380" y1="550" x2="220" y2="580" stroke="#666" stroke-width="2" marker-end="url(#arrow)"/>
+    <line x1="420" y1="550" x2="360" y2="580" stroke="#666" stroke-width="2" marker-end="url(#arrow)"/>
+    <line x1="480" y1="550" x2="500" y2="580" stroke="#666" stroke-width="2" marker-end="url(#arrow)"/>
+    
+    <!-- Chat service to DB shards -->
+    <line x1="520" y1="440" x2="640" y2="580" stroke="#666" stroke-width="2" marker-end="url(#arrow)"/>
+    <line x1="540" y1="440" x2="780" y2="580" stroke="#666" stroke-width="2" marker-end="url(#arrow)"/>
+    
+    <!-- Posts Service to Kafka -->
+    <line x1="360" y1="440" x2="460" y2="670" stroke="#666" stroke-width="2" marker-end="url(#arrow)"/>
+    
+    <!-- Kafka to Posts Daemon -->
+    <line x1="520" y1="670" x2="780" y2="440" stroke="#666" stroke-width="2" marker-end="url(#arrow)"/>
+    
+    <!-- Counters Service to Redis -->
+    <line x1="640" y1="440" x2="360" y2="670" stroke="#666" stroke-width="2" marker-end="url(#arrow)"/>
+    
+    <!-- Posts Daemon to Redis (for feed updates) -->
+    <line x1="720" y1="440" x2="380" y2="670" stroke="#666" stroke-width="2" marker-end="url(#arrow)"/>
+    
+    <!-- Posts Daemon to Centrifugo -->
+    <line x1="780" y1="440" x2="240" y2="670" stroke="#666" stroke-width="2" marker-end="url(#arrow)" stroke-dasharray="5,5"/>
+    
+    <!-- All Services to Prometheus -->
+    <line x1="450" y1="460" x2="620" y2="670" stroke="#666" stroke-width="2" marker-end="url(#arrow)" stroke-dasharray="5,5"/>
+    
+    <!-- Prometheus to Grafana -->
+    <line x1="700" y1="700" x2="720" y2="700" stroke="#666" stroke-width="2" marker-end="url(#arrow)"/>
+    
+    <!-- Clients to Centrifugo -->
+    <line x1="240" y1="120" x2="200" y2="670" stroke="#666" stroke-width="2" marker-end="url(#arrow)" stroke-dasharray="5,5"/>
+    <line x1="420" y1="120" x2="240" y2="670" stroke="#666" stroke-width="2" marker-end="url(#arrow)" stroke-dasharray="5,5"/>
+    
+    <!-- DB Replication -->
+    <path d="M 180,640 C 180,660 280,680 280,660 L 280,640" stroke="#666" stroke-width="2" marker-end="url(#arrow)" fill="none"/>
+    <path d="M 180,640 C 180,680 420,700 420,660 L 420,640" stroke="#666" stroke-width="2" marker-end="url(#arrow)" fill="none"/>
+    
+    <!-- Legend -->
+    <rect x="830" y="420" width="20" height="20" fill="url(#client-gradient)" stroke="#0288D1" stroke-width="1"/>
+    <text x="855" y="435" font-family="Arial" font-size="12" text-anchor="start">Client Component</text>
+    
+    <rect x="830" y="450" width="20" height="20" fill="url(#service-gradient)" stroke="#558B2F" stroke-width="1"/>
+    <text x="855" y="465" font-family="Arial" font-size="12" text-anchor="start">Service (gRPC)</text>
+    
+    <rect x="830" y="480" width="20" height="20" fill="url(#data-gradient)" stroke="#FBC02D" stroke-width="1"/>
+    <text x="855" y="495" font-family="Arial" font-size="12" text-anchor="start">Database</text>
+    
+    <rect x="830" y="510" width="20" height="20" fill="url(#cache-gradient)" stroke="#FF8F00" stroke-width="1"/>
+    <text x="855" y="525" font-family="Arial" font-size="12" text-anchor="start">Cache</text>
+    
+    <rect x="830" y="540" width="20" height="20" fill="url(#messaging-gradient)" stroke="#C2185B" stroke-width="1"/>
+    <text x="855" y="555" font-family="Arial" font-size="12" text-anchor="start">Messaging</text>
+    
+    <rect x="830" y="570" width="20" height="20" fill="url(#metrics-gradient)" stroke="#4527A0" stroke-width="1"/>
+    <text x="855" y="585" font-family="Arial" font-size="12" text-anchor="start">Monitoring</text>
+    
+    <line x1="830" y1="605" x2="850" y2="605" stroke="#666" stroke-width="2" marker-end="url(#arrow)"/>
+    <text x="855" y="610" font-family="Arial" font-size="12" text-anchor="start">Synchronous</text>
+    
+    <line x1="830" y1="630" x2="850" y2="630" stroke="#666" stroke-width="2" stroke-dasharray="5,5" marker-end="url(#arrow)"/>
+    <text x="855" y="635" font-family="Arial" font-size="12" text-anchor="start">Asynchronous</text>
+</svg>
