@@ -6,7 +6,6 @@ A high-performance, scalable social network platform built with Go and a microse
 
 The architecture is available in two formats:
 1. [PlantUML Diagram](docs/architecture.puml) - Detailed technical diagram
-2. [Markdown Diagram](docs/architecture.md) - Text-based version for quick reference
 
 ## Project Overview
 
