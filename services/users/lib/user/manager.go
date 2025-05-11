@@ -2,24 +2,20 @@ package user
 
 import (
 	"context"
-	"database/sql"
 	"fmt"
-	"time"
 
 	"github.com/jmoiron/sqlx"
 	"github.com/linxGnu/mssqlx"
-	"github.com/tarantool/go-tarantool"
 	"go.uber.org/zap"
 )
 
 type Manager struct {
-	l         *zap.Logger
-	DB        *mssqlx.DBs
-	tarantool *tarantool.Connection
+	l  *zap.Logger
+	DB *mssqlx.DBs
 }
 
-func New(DB *mssqlx.DBs, tarantool *tarantool.Connection, l *zap.Logger) *Manager {
-	return &Manager{DB: DB, tarantool: tarantool, l: l}
+func New(DB *mssqlx.DBs, l *zap.Logger) *Manager {
+	return &Manager{DB: DB, l: l}
 }
 func (m *Manager) Store(ctx context.Context, user *User) (int, error) {
 	query := `
@@ -49,59 +45,8 @@ func (m *Manager) Store(ctx context.Context, user *User) (int, error) {
 }
 
 func (m *Manager) GetByID(ctx context.Context, id int) (*User, error) {
-	if m.tarantool == nil {
-		return m.getByIDMysql(ctx, id)
-	}
-	resp, err := m.tarantool.Select("mysqldata", "primary", 0, 1, tarantool.IterEq, []interface{}{uint(id)})
-	if err != nil {
-		return nil, err
-	}
-	data := resp.Data[0].([]interface{})
-	bd := data[5].(string)
-	bdTime, err := time.Parse("2006-01-02", bd)
-	if err != nil {
-		return nil, fmt.Errorf("bd parse err %w", err)
-	}
-
-	createdAt := data[9].(string)
-	createdAtTime, err := time.Parse("2006-01-02 15:04:05", createdAt)
-	if err != nil {
-		return nil, fmt.Errorf("createdAt parse err %w", err)
-	}
-
-	var DeletedAt sql.NullTime
-
-	switch v := data[10].(type) {
-	case nil:
-		DeletedAt.Valid = false
-	case string:
-		deletedAtTime, err := time.Parse("2006-01-02 15:04:05", v)
-		if err != nil {
-			return nil, fmt.Errorf("deletedAt parse err %w", err)
-		}
-		DeletedAt.Valid = true
-		DeletedAt.Time = deletedAtTime
-	}
-
-	if DeletedAt.Valid {
-		return nil, sql.ErrNoRows
-	}
-
-	res := &User{
-		ID:        int(data[0].(uint64)),
-		Email:     data[1].(string),
-		Password:  data[2].(string),
-		FirstName: data[3].(string),
-		LastName:  data[4].(string),
-		Birthday:  bdTime,
-		Interests: data[6].(string),
-		Sex:       Sex(data[7].(string)),
-		City:      data[8].(string),
-		CreatedAt: createdAtTime,
-		DeletedAt: DeletedAt,
-	}
-
-	return res, err
+	return m.getByIDMysql(ctx, id)
+	
 }
 
 func (m *Manager) GetListByIds(ctx context.Context, ids []int) ([]User, error) {

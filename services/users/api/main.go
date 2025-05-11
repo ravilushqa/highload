@@ -9,14 +9,12 @@ import (
 	grpczap "github.com/grpc-ecosystem/go-grpc-middleware/logging/zap"
 	grpcprometheus "github.com/grpc-ecosystem/go-grpc-prometheus"
 	"github.com/linxGnu/mssqlx"
-	"github.com/tarantool/go-tarantool"
 	"go.uber.org/fx"
 	"go.uber.org/zap"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/reflection"
 
 	"github.com/ravilushqa/highload/providers/db"
-	tarantoolprovider "github.com/ravilushqa/highload/providers/tarantool"
 	usersGrpc "github.com/ravilushqa/highload/services/users/api/grpc"
 	"github.com/ravilushqa/highload/services/users/lib/friend"
 	"github.com/ravilushqa/highload/services/users/lib/user"
@@ -29,9 +27,6 @@ func main() {
 			zap.NewDevelopment,
 			func(c *config) (*mssqlx.DBs, error) {
 				return db.New(c.DatabaseURL, c.SlavesUrls)
-			},
-			func(c *config) (*tarantool.Connection, error) {
-				return tarantoolprovider.New(c.TarantoolURL, c.TarantoolUser, c.TarantoolPass)
 			},
 			NewApi,
 			user.New,

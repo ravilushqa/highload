@@ -1,4 +1,4 @@
-FROM --platform=linux/arm64 golang:1.24.2-bullseye as build
+FROM golang:1.24 as build
 RUN apt-get update && apt-get install -y \
     libssl-dev \
     pkg-config \
@@ -21,5 +21,5 @@ COPY --from=build /opt/app/bin/app ./app
 COPY --from=build /go/bin/dlv ./dlv
 #RUN apk add --no-cache tzdata
 RUN apk add --no-cache ca-certificates libc6-compat tzdata
-#CMD ./app
-CMD ["./dlv", "--listen=:40000", "--headless", "--continue", "--api-version=2", "--accept-multiclient", "exec", "./app"]
+CMD ["./app"]
+# CMD ["./dlv", "--listen=:40000", "--headless", "--continue", "--api-version=2", "--accept-multiclient", "exec", "./app"]

@@ -3,7 +3,7 @@ PLATFORM ?= linux/arm64,linux/amd64
 
 # Main application targets
 build:
-	docker-compose build --platform $(PLATFORM)
+	docker-compose build
 
 clean:
 	docker-compose down -v --remove-orphans

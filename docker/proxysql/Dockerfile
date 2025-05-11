@@ -1,4 +1,4 @@
-FROM proxysql/proxysql:2.5.5
+FROM --platform=linux/arm64 proxysql/proxysql:2.5.5
 
 # Update packages
 RUN apt update -y --fix-missing
