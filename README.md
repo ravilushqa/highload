@@ -23,6 +23,7 @@ This project demonstrates a robust implementation of distributed systems princip
 
 _Refer to the architecture diagram above for a visual representation of the system components and their interactions. The SVG format ensures the diagram is viewable in any modern browser without additional tools._
 
+
 ### Backend Services (Go)
 
 - **Web API Gateway**: RESTful API serving clients, using Chi router and JWT authentication
