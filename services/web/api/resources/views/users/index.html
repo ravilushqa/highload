@@ -1,13 +1,33 @@
 {{define "content"}}
-
-    <main>
-        {{template "nav" .}}
-        <h1>Users</h1>
-        <ul>
-        {{range .Users}}
-            <li><a hx-get="/users/{{.Id}}" hx-target="main">{{.FirstName}} {{.LastName}}</a> ({{.City}})</li>
-        {{end}}
-        </ul>
-    </main>
-
+    {{template "nav" .}}
+    
+    <div class="card">
+        <div style="display: flex; align-items: center; margin-bottom: 1rem;">
+            <i class="fas fa-users" style="font-size: 1.5rem; margin-right: 0.75rem; color: var(--primary);"></i>
+            <h1 style="margin: 0;">Users</h1>
+        </div>
+        
+        <div id="users">
+            {{if .Users}}
+                <ul style="list-style: none; padding: 0;">
+                {{range .Users}}
+                    <li class="card" style="padding: 1rem; margin-bottom: 1rem;">
+                        <a hx-get="/users/{{.Id}}" hx-target="#content-area" style="display: flex; align-items: center;">
+                            <img src="/public/images/icons/avatar.jpg" alt="{{.FirstName}} {{.LastName}}" class="avatar-sm">
+                            <div>
+                                <strong>{{.FirstName}} {{.LastName}}</strong>
+                                {{if .City}}<span style="color: #6b7280; font-size: 0.875rem;"> ({{.City}})</span>{{end}}
+                            </div>
+                        </a>
+                    </li>
+                {{end}}
+                </ul>
+            {{else}}
+                <div style="text-align: center; padding: 2rem 0;">
+                    <i class="fas fa-users" style="font-size: 2rem; color: var(--primary); margin-bottom: 1rem;"></i>
+                    <p>No users found.</p>
+                </div>
+            {{end}}
+        </div>
+    </div>
 {{end}}

@@ -1,33 +1,12 @@
 {{define "nav"}}
-
-    <div class="list-group">
-        <a href="/users/{{$.AuthUserID}}"
-           class="list-group-item list-group-item-action d-flex justify-content-between">
-            <div>Profile</div>
-            <i class="icon-user"></i></a>
-        <a href="/users"
-           class="list-group-item list-group-item-action d-flex justify-content-between">
-            <div>Users</div>
-            <i class="icon-users"></i></a>
-        <a href="/chats"
-           class="list-group-item list-group-item-action d-flex justify-content-between">
-            <div>Messages</div>
-            <i class="icon-envelope2"></i>
-        </a>
-        <a href="/posts"
-           class="list-group-item list-group-item-action d-flex justify-content-between">
-            <div>Posts</div>
-            <i class="icon-pencil2"></i>
-        </a>
-        <a href="/feed"
-           class="list-group-item list-group-item-action d-flex justify-content-between">
-            <div>Feed</div>
-            <i class="icon-rss2"></i>
-        </a>
-        <a href="/logout"
-           class="list-group-item list-group-item-action d-flex justify-content-between">
-            <div>Logout</div>
-            <i class="icon-line2-logout"></i></a>
-    </div>
-
+    <nav class="card">
+        <ul>
+            <li><a hx-get="/users/{{$.AuthUserID}}" hx-target="#content-area"><i class="fas fa-user"></i> Profile</a></li>
+            <li><a hx-get="/users" hx-target="#content-area"><i class="fas fa-users"></i> Users</a></li>
+            <li><a hx-get="/chats" hx-target="#content-area"><i class="fas fa-comments"></i> Messages</a></li>
+            <li><a hx-get="/posts" hx-target="#content-area"><i class="fas fa-file-alt"></i> Posts</a></li>
+            <li><a hx-get="/feed" hx-target="#content-area"><i class="fas fa-stream"></i> Feed</a></li>
+            <li><a href="/logout"><i class="fas fa-sign-out-alt"></i> Logout</a></li>
+        </ul>
+    </nav>
 {{end}}

@@ -38,11 +38,6 @@ func (c *Controller) index(w http.ResponseWriter, r *http.Request) {
 		_, _ = w.Write([]byte("something was wrong"))
 		return
 	}
-	if len(res.ChatIds) == 0 {
-		_, _ = w.Write([]byte("no chats"))
-		return
-	}
-
 	tmpl, err := template.ParseFiles(
 		"resources/views/base.html",
 		"resources/views/chat/nav.html",

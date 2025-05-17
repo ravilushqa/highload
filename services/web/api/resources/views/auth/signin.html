@@ -1,50 +1,87 @@
 {{define "content"}}
+    <div style="display: flex; justify-content: center; align-items: center; margin-top: 3rem;">
+        <div style="text-align: center; margin-bottom: 2rem;">
+            <h1 style="font-size: 2.5rem; color: var(--primary); margin-bottom: 0.5rem;">HighSocial</h1>
+            <p style="font-size: 1.2rem; color: #6b7280; margin-bottom: 2rem;">Connect with friends and the world around you.</p>
+        </div>
+    </div>
+    
+    <div style="display: flex; gap: 2rem; max-width: 1000px; margin: 0 auto;">
+        <div class="card" style="flex: 1;">
+            <div style="display: flex; align-items: center; margin-bottom: 1.5rem;">
+                <i class="fas fa-sign-in-alt" style="font-size: 1.5rem; margin-right: 0.75rem; color: var(--primary);"></i>
+                <h2 style="margin: 0;">Sign In</h2>
+            </div>
+            
+            <form action="/login" method="post">
+                <label for="login-form-email">Email</label>
+                <input type="email" id="login-form-email" name="login-form-email" placeholder="Enter your email">
 
-    <main>
-        <h1>Sign In</h1>
-        <form action="/login" method="post">
-            <label for="login-form-email">Email</label>
-            <input type="text" id="login-form-email" name="login-form-email">
+                <label for="login-form-password">Password</label>
+                <input type="password" id="login-form-password" name="login-form-password" placeholder="Enter your password">
 
-            <label for="login-form-password">Password</label>
-            <input type="password" id="login-form-password" name="login-form-password">
+                <button type="submit" class="btn-icon" style="width: 100%;">
+                    <i class="fas fa-lock-open"></i> Login
+                </button>
+            </form>
+        </div>
+        
+        <div class="card" style="flex: 1;">
+            <div style="display: flex; align-items: center; margin-bottom: 1.5rem;">
+                <i class="fas fa-user-plus" style="font-size: 1.5rem; margin-right: 0.75rem; color: var(--primary);"></i>
+                <h2 style="margin: 0;">Register</h2>
+            </div>
+            
+            <form action="/register" method="post">
+                <div style="display: flex; gap: 1rem;">
+                    <div style="flex: 1;">
+                        <label for="register-form-first-name">First name</label>
+                        <input type="text" id="register-form-first-name" name="register-form-first-name" placeholder="First name">
+                    </div>
+                    
+                    <div style="flex: 1;">
+                        <label for="register-form-last-name">Last name</label>
+                        <input type="text" id="register-form-last-name" name="register-form-last-name" placeholder="Last name">
+                    </div>
+                </div>
 
-            <button type="submit">Login</button>
-        </form>
+                <label for="register-form-email">Email</label>
+                <input type="email" id="register-form-email" name="register-form-email" placeholder="Email address">
 
-        <h2>Register</h2>
-        <form action="/register" method="post">
-            <label for="register-form-first-name">First name</label>
-            <input type="text" id="register-form-first-name" name="register-form-first-name">
+                <label for="register-form-password">Password</label>
+                <input type="password" id="register-form-password" name="register-form-password" placeholder="Create a password">
 
-            <label for="register-form-last-name">Last name</label>
-            <input type="text" id="register-form-last-name" name="register-form-last-name">
+                <label for="register-form-birthday">Birthday</label>
+                <input type="date" id="register-form-birthday" name="register-form-birthday">
 
-            <label for="register-form-email">Email</label>
-            <input type="text" id="register-form-email" name="register-form-email">
+                <fieldset style="margin: 1rem 0; border: 1px solid var(--card-border-color); padding: 1rem; border-radius: 8px;">
+                    <legend>Sex</legend>
+                    <div style="display: flex; gap: 1rem;">
+                        <label style="flex: 1; display: flex; align-items: center; padding: 0.5rem; border: 1px solid var(--card-border-color); border-radius: 4px; cursor: pointer;">
+                            <input type="radio" id="register-form-sex-male" name="register-form-sex" value="male" checked style="margin-right: 0.5rem;">
+                            Male
+                        </label>
+                        <label style="flex: 1; display: flex; align-items: center; padding: 0.5rem; border: 1px solid var(--card-border-color); border-radius: 4px; cursor: pointer;">
+                            <input type="radio" id="register-form-sex-female" name="register-form-sex" value="female" style="margin-right: 0.5rem;">
+                            Female
+                        </label>
+                        <label style="flex: 1; display: flex; align-items: center; padding: 0.5rem; border: 1px solid var(--card-border-color); border-radius: 4px; cursor: pointer;">
+                            <input type="radio" id="register-form-sex-other" name="register-form-sex" value="other" style="margin-right: 0.5rem;">
+                            Other
+                        </label>
+                    </div>
+                </fieldset>
 
-            <label for="register-form-password">Password</label>
-            <input type="password" id="register-form-password" name="register-form-password">
+                <label for="register-form-interests">Interests</label>
+                <input type="text" id="register-form-interests" name="register-form-interests" placeholder="Share your interests">
 
-            <label for="register-form-birthday">Birthday</label>
-            <input type="date" id="register-form-birthday" name="register-form-birthday">
+                <label for="register-form-city">City</label>
+                <input type="text" id="register-form-city" name="register-form-city" placeholder="Where do you live?">
 
-            <label>Sex</label>
-            <input type="radio" id="register-form-sex-male" name="register-form-sex" value="male" checked>
-            <label for="register-form-sex-male">Male</label>
-            <input type="radio" id="register-form-sex-female" name="register-form-sex" value="female">
-            <label for="register-form-sex-female">Female</label>
-            <input type="radio" id="register-form-sex-other" name="register-form-sex" value="other">
-            <label for="register-form-sex-other">Other</label>
-
-            <label for="register-form-interests">Interests</label>
-            <input type="text" id="register-form-interests" name="register-form-interests">
-
-            <label for="register-form-city">City</label>
-            <input type="text" id="register-form-city" name="register-form-city">
-
-            <button type="submit">Register</button>
-        </form>
-    </main>
-
+                <button type="submit" class="btn-icon" style="width: 100%;">
+                    <i class="fas fa-user-plus"></i> Register
+                </button>
+            </form>
+        </div>
+    </div>
 {{end}}

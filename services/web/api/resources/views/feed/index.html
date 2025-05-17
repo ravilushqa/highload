@@ -1,13 +1,37 @@
 {{define "content"}}
-
-    <main>
-        {{template "nav" .}}
-        <h1>Feed</h1>
-        <div id="feed">
-        {{range .Posts}}
-            <p>User #{{.UserId}}: {{.Text}}</p>
-        {{end}}
+    {{template "nav" .}}
+    
+    <div class="card">
+        <div style="display: flex; align-items: center; margin-bottom: 1rem;">
+            <i class="fas fa-stream" style="font-size: 1.5rem; margin-right: 0.75rem; color: var(--primary);"></i>
+            <h1 style="margin: 0;">Feed</h1>
         </div>
-    </main>
-
+        
+        <div id="feed">
+            {{if .Posts}}
+                {{range .Posts}}
+                    <div class="card" style="padding: 1rem; margin-bottom: 1rem;">
+                        <div style="display: flex; align-items: center; margin-bottom: 0.5rem;">
+                            <img src="/public/images/icons/avatar.jpg" alt="User Avatar" class="avatar-sm">
+                            <strong>User #{{.UserId}}</strong>
+                        </div>
+                        <p style="margin: 0.5rem 0;">{{.Text}}</p>
+                        <div style="display: flex; gap: 1rem; margin-top: 0.5rem; color: #6b7280; font-size: 0.875rem;">
+                            <button class="btn-icon" style="background: none; border: none; cursor: pointer; padding: 0.25rem 0.5rem; color: inherit;">
+                                <i class="far fa-heart"></i> Like
+                            </button>
+                            <button class="btn-icon" style="background: none; border: none; cursor: pointer; padding: 0.25rem 0.5rem; color: inherit;">
+                                <i class="far fa-comment"></i> Comment
+                            </button>
+                        </div>
+                    </div>
+                {{end}}
+            {{else}}
+                <div class="card" style="padding: 2rem; text-align: center;">
+                    <i class="fas fa-info-circle" style="font-size: 2rem; color: var(--primary); margin-bottom: 1rem;"></i>
+                    <p>Your feed is empty. Follow more friends to see their posts here.</p>
+                </div>
+            {{end}}
+        </div>
+    </div>
 {{end}}

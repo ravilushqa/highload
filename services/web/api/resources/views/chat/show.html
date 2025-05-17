@@ -1,17 +1,31 @@
 {{define "content"}}
-
-    <main>
-        {{template "nav" .}}
-        <h1>Chat</h1>
-        <div id="messages">
-        {{range .Messages}}
-            <p>User #{{.UserId}}: {{.Text}}</p>
-        {{end}}
+    {{template "nav" .}}
+    
+    <div class="card">
+        <div style="display: flex; align-items: center; margin-bottom: 1rem;">
+            <i class="fas fa-comments" style="font-size: 1.5rem; margin-right: 0.75rem; color: var(--primary);"></i>
+            <h1 style="margin: 0;">Chat</h1>
         </div>
-        <form hx-post="/chats/{{.ChatID}}/message" hx-target="#messages" hx-swap="beforeend">
-            <input type="text" name="text">
-            <button type="submit">Send</button>
+        
+        <div id="messages" style="height: 400px; overflow-y: auto; padding: 1rem; background-color: #f8f9fa; border-radius: 8px; margin-bottom: 1rem;">
+            {{range .Messages}}
+                {{if eq .UserId $.AuthUserID}}
+                    <div class="message-bubble message-sent">
+                        {{.Text}}
+                    </div>
+                {{else}}
+                    <div class="message-bubble message-received">
+                        <strong>User #{{.UserId}}:</strong> {{.Text}}
+                    </div>
+                {{end}}
+            {{end}}
+        </div>
+        
+        <form hx-post="/chats/{{.ChatID}}/message" hx-target="#messages" hx-swap="beforeend" style="display: flex; gap: 0.5rem;">
+            <input type="text" name="text" placeholder="Type your message..." style="flex-grow: 1;">
+            <button type="submit" class="btn-icon">
+                <i class="fas fa-paper-plane"></i> Send
+            </button>
         </form>
-    </main>
-
+    </div>
 {{end}}

@@ -1,14 +1,12 @@
 {{define "nav"}}
-
-    <nav>
+    <nav class="card">
         <ul>
-            <li><a hx-get="/users/{{$.AuthUserID}}" hx-target="main">Profile</a></li>
-            <li><a hx-get="/users" hx-target="main">Users</a></li>
-            <li><a hx-get="/chats" hx-target="main">Messages</a></li>
-            <li><a hx-get="/posts" hx-target="main">Posts</a></li>
-            <li><a hx-get="/feed" hx-target="main">Feed</a></li>
-            <li><a href="/logout">Logout</a></li>
+            <li><a hx-get="/users/{{$.AuthUserID}}" hx-target="#content-area"><i class="fas fa-user"></i> Profile</a></li>
+            <li><a hx-get="/users" hx-target="#content-area"><i class="fas fa-users"></i> Users</a></li>
+            <li><a hx-get="/chats" hx-target="#content-area"><i class="fas fa-comments"></i> Messages</a></li>
+            <li><a hx-get="/posts" hx-target="#content-area"><i class="fas fa-file-alt"></i> Posts</a></li>
+            <li><a hx-get="/feed" hx-target="#content-area"><i class="fas fa-stream"></i> Feed</a></li>
+            <li><a href="/logout"><i class="fas fa-sign-out-alt"></i> Logout</a></li>
         </ul>
     </nav>
-
 {{end}}
