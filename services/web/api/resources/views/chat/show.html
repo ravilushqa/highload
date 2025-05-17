@@ -1,39 +1,17 @@
 {{define "content"}}
-    <!-- Document Wrapper
-        ============================================= -->
-    <div id="wrapper" class="clearfix">
 
-        <!-- Content
-        ============================================= -->
-        <section id="content">
-            <div class="content-wrap">
-                <div class="container clearfix">
-                    <div class="row clearfix">
-                        <div class="col-md-3">
-                            {{template "nav" .}}
-                        </div>
-                        <div class="w-100 line d-block d-md-none"></div>
-                        <div class="col-md-9">
-                            <div class="container">
-                                <h3 class=" text-center">Chat</h3>
-                                {{range .Messages}}
-                                    <p>User #{{.UserId}}: {{.Text}}</p>
-                                {{end}}
-                                <form action="/chats/{{.ChatID}}/message" method="post">
-                                    <input type="text" name="text">
-                                    <button type="submit">Send</button>
-                                </form>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </section><!-- #content end -->
+    <main>
+        {{template "nav" .}}
+        <h1>Chat</h1>
+        <div id="messages">
+        {{range .Messages}}
+            <p>User #{{.UserId}}: {{.Text}}</p>
+        {{end}}
+        </div>
+        <form hx-post="/chats/{{.ChatID}}/message" hx-target="#messages" hx-swap="beforeend">
+            <input type="text" name="text">
+            <button type="submit">Send</button>
+        </form>
+    </main>
 
-
-    </div><!-- #wrapper end -->
-
-    <!-- Go To Top
-    ============================================= -->
-    <div id="gotoTop" class="icon-angle-up"></div>
 {{end}}

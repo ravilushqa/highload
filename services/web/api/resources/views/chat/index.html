@@ -1,37 +1,13 @@
 {{define "content"}}
-    <!-- Document Wrapper
-        ============================================= -->
-    <div id="wrapper" class="clearfix">
 
-        <!-- Content
-        ============================================= -->
-        <section id="content">
-            <div class="content-wrap">
-                <div class="container clearfix">
-                    <div class="row clearfix">
-                        <div class="col-md-3">
-                            {{template "nav" .}}
-                        </div>
-                        <div class="w-100 line d-block d-md-none"></div>
-                        <div class="col-md-9">
-                            <div class="container">
-                                <h3 class=" text-center">Chats</h3>
-                                {{range .ChatIDs}}
-                                    <ul>
-                                        <li><a href="/chats/{{.}}">Chat #{{.}}</a></li>
-                                    </ul>
-                                {{end}}
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </section><!-- #content end -->
+    <main>
+        {{template "nav" .}}
+        <h1>Chats</h1>
+        <ul>
+        {{range .ChatIDs}}
+            <li><a hx-get="/chats/{{.}}" hx-target="main">Chat #{{.}}</a></li>
+        {{end}}
+        </ul>
+    </main>
 
-
-    </div><!-- #wrapper end -->
-
-    <!-- Go To Top
-    ============================================= -->
-    <div id="gotoTop" class="icon-angle-up"></div>
 {{end}}
