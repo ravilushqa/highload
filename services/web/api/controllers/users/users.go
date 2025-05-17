@@ -1,7 +1,6 @@
 package users
 
 import (
-	"html/template"
 	"net/http"
 	"strconv"
 
@@ -10,6 +9,7 @@ import (
 
 	chatsGrpc "github.com/ravilushqa/highload/services/chats/api/grpc"
 	usersGrpc "github.com/ravilushqa/highload/services/users/api/grpc"
+	apiLib "github.com/ravilushqa/highload/services/web/api/lib"
 	"github.com/ravilushqa/highload/services/web/lib"
 )
 
@@ -45,21 +45,23 @@ func (c *Controller) index(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	tmpl, err := template.ParseFiles(
+	templateFiles := []string{
 		"resources/views/base.html",
 		"resources/views/users/nav.html",
 		"resources/views/users/index.html",
-	)
+	}
+
+	data := struct {
+		AuthUserID int
+		Users      []*usersGrpc.User
+	}{uid, res.Users}
+
+	err = apiLib.RenderTemplate(w, r, templateFiles, data)
 	if err != nil {
-		c.logger.Error("failed parse templates", zap.NamedError("error", err))
+		c.logger.Error("failed to render template", zap.NamedError("error", err))
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
-
-	_ = tmpl.ExecuteTemplate(w, "layout", struct {
-		AuthUserID int
-		Users      []*usersGrpc.User
-	}{uid, res.Users})
 }
 
 func (c *Controller) profile(w http.ResponseWriter, r *http.Request) {
@@ -114,18 +116,18 @@ func (c *Controller) profile(w http.ResponseWriter, r *http.Request) {
 		Status  usersGrpc.UserRelation
 	}{authUserID, getUserResponse.User, getListByIdsResponse.Users, status.Relation}
 
-	tmpl, err := template.ParseFiles(
+	templateFiles := []string{
 		"resources/views/base.html",
 		"resources/views/users/nav.html",
 		"resources/views/users/profile.html",
-	)
+	}
+
+	err = apiLib.RenderTemplate(w, r, templateFiles, data)
 	if err != nil {
-		c.logger.Error("failed parse templates", zap.NamedError("error", err))
+		c.logger.Error("failed to render template", zap.NamedError("error", err))
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
-
-	_ = tmpl.ExecuteTemplate(w, "layout", data)
 }
 
 func (c *Controller) add(w http.ResponseWriter, r *http.Request) {

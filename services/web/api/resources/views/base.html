@@ -8,6 +8,7 @@
     <link rel="stylesheet" href="https://unpkg.com/@picocss/pico@1.*/css/pico.min.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
     <script src="https://unpkg.com/htmx.org@1.9.2"></script>
+    <script src="https://cdn.jsdelivr.net/gh/centrifugal/centrifuge-js@2.6.4/dist/centrifuge.min.js"></script>
     <style>
         :root {
             --primary: #7048e8;
@@ -115,11 +116,13 @@
     </style>
 </head>
 <body>
-<main id="content-area" class="container">
+<main class="container">
     <header class="app-header">
         <h1 class="app-title">HighSocial</h1>
     </header>
-    {{template "content" .}}
+    <div id="content-area">
+        {{template "content" .}}
+    </div>
 </main>
 </body>
 </html>
