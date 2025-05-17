@@ -1,7 +1,13 @@
-drop user if exists repl@'%';
-FLUSH PRIVILEGES;
-CREATE USER repl@'%' IDENTIFIED WITH mysql_native_password BY 'slavepass';
+-- Only create replication user if it doesn't exist
+SET @repl_exists := (SELECT COUNT(*) FROM mysql.user WHERE User = 'repl' AND Host = '%');
+SET @sql := IF(@repl_exists > 0, 'SELECT "Replication user already exists"', 'CREATE USER repl@"%" IDENTIFIED WITH mysql_native_password BY "slavepass"');
+PREPARE stmt FROM @sql;
+EXECUTE stmt;
+DEALLOCATE PREPARE stmt;
+
+-- Always ensure replication privileges are granted
 GRANT REPLICATION SLAVE ON *.* TO repl@'%';
+FLUSH PRIVILEGES;
 
 create database if not exists app;
 use app;

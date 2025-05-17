@@ -1,4 +1,7 @@
-create table if not exists messages
+CREATE DATABASE IF NOT EXISTS messages;
+USE messages;
+
+CREATE TABLE IF NOT EXISTS messages
 (
     uuid       char(36)                            not null
         primary key,

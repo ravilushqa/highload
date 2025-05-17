@@ -37,6 +37,25 @@ exec_slave2:
 
 exec_node1:
 	docker-compose exec db-node-1 mysql -uroot -p1
+	
+# Fix replication after restart if needed
+fix-replication:
+	@echo "Getting master binary log position..."
+	$(eval MASTER_LOG_FILE := $(shell docker-compose exec mysql_master mysql -uroot -e "SHOW MASTER STATUS\G" | grep File | awk '{print $$2}'))
+	$(eval MASTER_LOG_POS := $(shell docker-compose exec mysql_master mysql -uroot -e "SHOW MASTER STATUS\G" | grep Position | awk '{print $$2}'))
+	@echo "Master log file: $(MASTER_LOG_FILE), position: $(MASTER_LOG_POS)"
+	
+	@echo "Fixing replication on slave1..."
+	-docker-compose exec mysql_slave1 mysql -uroot -e "STOP SLAVE;" 2>/dev/null || true
+	docker-compose exec mysql_slave1 mysql -uroot -e "RESET SLAVE; CHANGE MASTER TO MASTER_HOST='mysql_master', MASTER_USER='repl', MASTER_PASSWORD='slavepass', MASTER_LOG_FILE='$(MASTER_LOG_FILE)', MASTER_LOG_POS=$(MASTER_LOG_POS); START SLAVE;"
+	
+	@echo "Fixing replication on slave2..."
+	-docker-compose exec mysql_slave2 mysql -uroot -e "STOP SLAVE;" 2>/dev/null || true
+	docker-compose exec mysql_slave2 mysql -uroot -e "RESET SLAVE; CHANGE MASTER TO MASTER_HOST='mysql_master', MASTER_USER='repl', MASTER_PASSWORD='slavepass', MASTER_LOG_FILE='$(MASTER_LOG_FILE)', MASTER_LOG_POS=$(MASTER_LOG_POS); START SLAVE;"
+	
+	@echo "Replication fixed, checking status:"
+	docker-compose exec mysql_slave1 mysql -uroot -e "SHOW SLAVE STATUS\G" | grep -E "Slave_IO_Running:|Slave_SQL_Running:"
+	docker-compose exec mysql_slave2 mysql -uroot -e "SHOW SLAVE STATUS\G" | grep -E "Slave_IO_Running:|Slave_SQL_Running:"
 
 # Tarantool targets
 exec_tarantool:
