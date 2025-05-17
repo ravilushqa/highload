@@ -1,37 +1,30 @@
 {{define "content"}}
-    <!-- Document Wrapper
-        ============================================= -->
-    <div id="wrapper" class="clearfix">
-
-        <!-- Content
-        ============================================= -->
-        <section id="content">
-            <div class="content-wrap">
-                <div class="container clearfix">
-                    <div class="row clearfix">
-                        <div class="col-md-3">
-                            {{template "nav" .}}
-                        </div>
-                        <div class="w-100 line d-block d-md-none"></div>
-                        <div class="col-md-9">
-                            <div class="container">
-                                <h3 class=" text-center">Chats</h3>
-                                {{range .ChatIDs}}
-                                    <ul>
-                                        <li><a href="/chats/{{.}}">Chat #{{.}}</a></li>
-                                    </ul>
-                                {{end}}
-                            </div>
-                        </div>
-                    </div>
+    {{template "nav" .}}
+    
+    <div class="card">
+        <div style="display: flex; align-items: center; margin-bottom: 1rem;">
+            <i class="fas fa-comments" style="font-size: 1.5rem; margin-right: 0.75rem; color: var(--primary);"></i>
+            <h1 style="margin: 0;">Chats</h1>
+        </div>
+        
+        <div id="chats">
+            {{if .ChatIDs}}
+                <ul style="list-style: none; padding: 0;">
+                {{range .ChatIDs}}
+                    <li class="card" style="padding: 1rem; margin-bottom: 1rem;">
+                        <a hx-get="/chats/{{.}}" hx-target="#content-area" style="display: flex; align-items: center;">
+                            <i class="fas fa-comments" style="margin-right: 0.75rem; color: var(--primary);"></i>
+                            <span>Chat #{{.}}</span>
+                        </a>
+                    </li>
+                {{end}}
+                </ul>
+            {{else}}
+                <div style="text-align: center; padding: 2rem 0;">
+                    <i class="fas fa-comments" style="font-size: 2rem; color: var(--primary); margin-bottom: 1rem;"></i>
+                    <p>You don't have any active chats yet. Add friends and start conversations!</p>
                 </div>
-            </div>
-        </section><!-- #content end -->
-
-
-    </div><!-- #wrapper end -->
-
-    <!-- Go To Top
-    ============================================= -->
-    <div id="gotoTop" class="icon-angle-up"></div>
+            {{end}}
+        </div>
+    </div>
 {{end}}

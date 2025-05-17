@@ -1,54 +1,129 @@
 {{define "layout"}}
 <!DOCTYPE html>
-<html dir="ltr" lang="en-US">
+<html lang="en">
 <head>
-    <meta http-equiv="content-type" content="text/html; charset=utf-8" />
-    <meta name="author" content="SemiColonWeb" />
-
-    <!-- Stylesheets
-    ============================================= -->
-    <link href="https://fonts.googleapis.com/css?family=Lato:300,400,400i,700|Poppins:300,400,500,600,700|PT+Serif:400,400i&display=swap" rel="stylesheet" type="text/css" />
-    <link rel="stylesheet" href="/public/css/bootstrap.css" type="text/css" />
-    <link rel="stylesheet" href="/public/css/style.css" type="text/css" />
-    <link rel="stylesheet" href="/public/css/dark.css" type="text/css" />
-    <link rel="stylesheet" href="/public/css/font-icons.css" type="text/css" />
-    <link rel="stylesheet" href="/public/css/animate.css" type="text/css" />
-    <link rel="stylesheet" href="/public/css/magnific-popup.css" type="text/css" />
-
-    <link rel="stylesheet" href="/public/css/custom.css" type="text/css" />
-    <link rel="stylesheet" href="/public/css/chat.css" type="text/css" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <script src="https://cdn.jsdelivr.net/gh/centrifugal/centrifuge-js@2.6.4/dist/centrifuge.min.js"></script>
-
-    <!-- Document Title
-    ============================================= -->
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Highload course - Social Network</title>
-
+    <link rel="stylesheet" href="https://unpkg.com/@picocss/pico@1.*/css/pico.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
+    <script src="https://unpkg.com/htmx.org@1.9.2"></script>
+    <script src="https://cdn.jsdelivr.net/gh/centrifugal/centrifuge-js@2.6.4/dist/centrifuge.min.js"></script>
+    <style>
+        :root {
+            --primary: #7048e8;
+            --primary-hover: #5835c9;
+            --primary-focus: rgba(112, 72, 232, 0.25);
+            --primary-inverse: #fff;
+            --background-color: #f9fafb;
+            --card-background-color: #fff;
+            --card-border-color: #e5e7eb;
+            --card-box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+        }
+        
+        body {
+            background-color: var(--background-color);
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+        }
+        
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 1rem;
+        }
+        
+        .card {
+            background-color: var(--card-background-color);
+            border: 1px solid var(--card-border-color);
+            border-radius: 8px;
+            box-shadow: var(--card-box-shadow);
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+        }
+        
+        .avatar {
+            width: 100px;
+            height: 100px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 3px solid var(--primary);
+        }
+        
+        .avatar-sm {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            object-fit: cover;
+            margin-right: 10px;
+        }
+        
+        .friend-item {
+            display: flex;
+            align-items: center;
+            padding: 0.5rem;
+            transition: background-color 0.2s;
+            border-radius: 4px;
+        }
+        
+        .friend-item:hover {
+            background-color: rgba(0, 0, 0, 0.05);
+        }
+        
+        .btn-icon {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        .message-bubble {
+            max-width: 80%;
+            padding: 10px 15px;
+            border-radius: 18px;
+            margin-bottom: 10px;
+            line-height: 1.4;
+            position: relative;
+            word-wrap: break-word;
+        }
+        
+        .message-sent {
+            background-color: var(--primary);
+            color: white;
+            margin-left: auto;
+            border-bottom-right-radius: 4px;
+        }
+        
+        .message-received {
+            background-color: #e5e7eb;
+            color: #1f2937;
+            margin-right: auto;
+            border-bottom-left-radius: 4px;
+        }
+        
+        .app-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 2rem;
+            padding-bottom: 1rem;
+            border-bottom: 1px solid var(--card-border-color);
+        }
+        
+        .app-title {
+            font-size: 1.5rem;
+            margin: 0;
+            color: var(--primary);
+        }
+    </style>
 </head>
-
-<body class="stretched">
-
-<!-- Document Wrapper
-============================================= -->
-{{template "content" .}}
-
-
-<!-- JavaScripts
-============================================= -->
-<script src="/public/js/jquery.js"></script>
-<script src="/public/js/plugins.min.js"></script>
-
-<!-- Footer Scripts
-============================================= -->
-<script src="/public/js/functions.js"></script>
-
-<!-- todo for users profile-->
-<script>
-    $( "#tabs-profile" ).on( "tabsactivate", function( event, ui ) {
-        $( '.flexslider .slide' ).resize();
-    });
-</script>
-
+<body>
+<main class="container">
+    <header class="app-header">
+        <h1 class="app-title">HighSocial</h1>
+    </header>
+    <div id="content-area">
+        {{template "content" .}}
+    </div>
+</main>
 </body>
 </html>
 {{end}}

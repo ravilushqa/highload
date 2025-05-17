@@ -1,7 +1,6 @@
 package chats
 
 import (
-	"html/template"
 	"net/http"
 	"strconv"
 
@@ -9,6 +8,7 @@ import (
 	"go.uber.org/zap"
 
 	"github.com/ravilushqa/highload/services/chats/api/grpc"
+	apiLib "github.com/ravilushqa/highload/services/web/api/lib"
 	"github.com/ravilushqa/highload/services/web/lib"
 )
 
@@ -38,26 +38,19 @@ func (c *Controller) index(w http.ResponseWriter, r *http.Request) {
 		_, _ = w.Write([]byte("something was wrong"))
 		return
 	}
-	if len(res.ChatIds) == 0 {
-		_, _ = w.Write([]byte("no chats"))
-		return
-	}
 
-	tmpl, err := template.ParseFiles(
+	templateFiles := []string{
 		"resources/views/base.html",
 		"resources/views/chat/nav.html",
 		"resources/views/chat/index.html",
-	)
-	if err != nil {
-		c.logger.Error("failed parse templates", zap.NamedError("error", err))
-		w.WriteHeader(http.StatusInternalServerError)
-		return
 	}
 
-	err = tmpl.ExecuteTemplate(w, "layout", struct {
+	data := struct {
 		AuthUserID int
 		ChatIDs    []int64
-	}{uid, res.ChatIds})
+	}{uid, res.ChatIds}
+
+	err = apiLib.RenderTemplate(w, r, templateFiles, data)
 	if err != nil {
 		c.logger.Error("failed execute templates", zap.NamedError("error", err))
 		w.WriteHeader(http.StatusInternalServerError)
@@ -82,22 +75,24 @@ func (c *Controller) show(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	tmpl, err := template.ParseFiles(
+	templateFiles := []string{
 		"resources/views/base.html",
 		"resources/views/chat/nav.html",
 		"resources/views/chat/show.html",
-	)
-	if err != nil {
-		c.logger.Error("failed parse templates", zap.NamedError("error", err))
-		w.WriteHeader(http.StatusInternalServerError)
-		return
 	}
 
-	_ = tmpl.ExecuteTemplate(w, "layout", struct {
+	data := struct {
 		AuthUserID int
 		Messages   []*grpc.Message
 		ChatID     int
-	}{uid, res.Messages, chatID})
+	}{uid, res.Messages, chatID}
+
+	err = apiLib.RenderTemplate(w, r, templateFiles, data)
+	if err != nil {
+		c.logger.Error("failed to render template", zap.NamedError("error", err))
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
 }
 
 func (c *Controller) postMessage(w http.ResponseWriter, r *http.Request) {
