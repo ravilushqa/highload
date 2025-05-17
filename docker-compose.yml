@@ -379,7 +379,7 @@ services:
     platform: linux/arm64
     volumes:
       - ./docker/centrifugo/config.json:/centrifugo/config.json
-    command: centrifugo -c config.json
+    command: centrifugo -c config.json --client_insecure
     ports:
       - 8000:8000
     ulimits:

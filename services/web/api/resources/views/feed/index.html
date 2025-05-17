@@ -36,18 +36,36 @@
     </div>
 
     <script type="text/javascript">
-        var centrifuge = new Centrifuge('ws://localhost:8000/connection/websocket');
-        jwt = readCookie("jwt")
-        centrifuge.setToken(jwt)
-        centrifuge.subscribe("feed_user_id_" + parseJwt(jwt).sub, function (message) {
-            console.log(message);
+        const jwt = readCookie("jwt");
+        const userId = parseJwt(jwt).sub;
+        const centrifuge = new Centrifuge('ws://localhost:8000/connection/websocket', {
+            token: jwt
+        });
+        
+        centrifuge.on('connecting', function(ctx) {
+            console.log('Connecting to Centrifugo:', ctx);
+        });
+        
+        centrifuge.on('connected', function(ctx) {
+            console.log('Connected to Centrifugo:', ctx);
+        });
+        
+        centrifuge.on('disconnected', function(ctx) {
+            console.log('Disconnected from Centrifugo:', ctx);
+        });
+        
+        const channel = centrifuge.newSubscription("feed_user_id_" + userId);
+        
+        channel.on('publication', function(message) {
+            console.log('Received message:', message);
             var tag = document.createElement("p");
             var text = document.createTextNode("User #" + message.data.user_id + ": " + message.data.text);
             tag.appendChild(text);
             var element = document.getElementById("feed");
             element.prepend(tag);
         });
-
+        
+        channel.subscribe();
         centrifuge.connect();
 
         function readCookie(name) {

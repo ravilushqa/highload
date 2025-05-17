@@ -37,7 +37,7 @@ func newDaemon(logger *zap.Logger, redis *redis.Client, consumer sarama.Consumer
 }
 
 func (d *daemon) run(ctx context.Context) error {
-	topics := []string{"posts"}
+	topics := []string{"posts_feed"}
 	for {
 		err := d.consumer.Consume(ctx, topics, d)
 		if err != nil {
