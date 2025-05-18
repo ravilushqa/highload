@@ -1,6 +1,7 @@
 package chats
 
 import (
+	"html/template"
 	"net/http"
 	"strconv"
 
@@ -79,6 +80,7 @@ func (c *Controller) show(w http.ResponseWriter, r *http.Request) {
 		"resources/views/base.html",
 		"resources/views/chat/nav.html",
 		"resources/views/chat/show.html",
+		"resources/views/chat/messages.html",
 	}
 
 	data := struct {
@@ -113,6 +115,35 @@ func (c *Controller) postMessage(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		c.logger.Error("failed insert message", zap.NamedError("error", err))
 		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+	if apiLib.IsHTMXRequest(r) {
+		// fetch latest messages and render only the new message bubble(s)
+		res, err := c.chatsClient.GetChatMessages(r.Context(), &grpc.GetChatMessagesRequest{ChatId: int64(chatID), UserId: int64(uid)})
+		if err != nil {
+			c.logger.Error("failed to get chat messages after store", zap.Error(err))
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+		msgs := res.Messages
+		if len(msgs) == 0 {
+			return
+		}
+		last := msgs[len(msgs)-1]
+		data := struct {
+			AuthUserID int
+			Messages   []*grpc.Message
+		}{uid, []*grpc.Message{last}}
+		tpl, err := template.ParseFiles("resources/views/chat/messages.html")
+		if err != nil {
+			c.logger.Error("failed to parse messages template", zap.Error(err))
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+		if err := tpl.ExecuteTemplate(w, "messages", data); err != nil {
+			c.logger.Error("failed to render messages partial", zap.NamedError("error", err))
+			w.WriteHeader(http.StatusInternalServerError)
+		}
 		return
 	}
 	http.Redirect(w, r, r.Header.Get("Referer"), http.StatusFound)

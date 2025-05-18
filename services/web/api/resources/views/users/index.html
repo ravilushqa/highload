@@ -12,7 +12,7 @@
                 <ul style="list-style: none; padding: 0;">
                 {{range .Users}}
                     <li class="card" style="padding: 1rem; margin-bottom: 1rem;">
-                        <a hx-get="/users/{{.Id}}" hx-target="#content-area" style="display: flex; align-items: center;">
+                        <a href="/users/{{.Id}}" hx-get="/users/{{.Id}}" hx-target="#content-area" hx-push-url="true" style="display: flex; align-items: center;">
                             <img src="/public/images/icons/avatar.jpg" alt="{{.FirstName}} {{.LastName}}" class="avatar-sm">
                             <div>
                                 <strong>{{.FirstName}} {{.LastName}}</strong>

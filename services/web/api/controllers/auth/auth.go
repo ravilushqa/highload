@@ -218,6 +218,9 @@ func (c *Controller) register(w http.ResponseWriter, r *http.Request) {
 			//HttpOnly: true,
 		})
 
+		// Add a small delay to allow database replication to complete
+		time.Sleep(500 * time.Millisecond)
+
 		http.Redirect(w, r, fmt.Sprintf("/users/%d", storeResponse.Id), http.StatusTemporaryRedirect)
 	}
 }

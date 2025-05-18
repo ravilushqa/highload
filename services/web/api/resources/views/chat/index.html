@@ -12,7 +12,7 @@
                 <ul style="list-style: none; padding: 0;">
                 {{range .ChatIDs}}
                     <li class="card" style="padding: 1rem; margin-bottom: 1rem;">
-                        <a hx-get="/chats/{{.}}" hx-target="#content-area" style="display: flex; align-items: center;">
+                        <a href="/chats/{{.}}" hx-get="/chats/{{.}}" hx-target="#content-area" hx-push-url="true" style="display: flex; align-items: center;">
                             <i class="fas fa-comments" style="margin-right: 0.75rem; color: var(--primary);"></i>
                             <span>Chat #{{.}}</span>
                         </a>

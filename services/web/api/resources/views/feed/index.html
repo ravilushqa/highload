@@ -13,7 +13,8 @@
                     <div class="card" style="padding: 1rem; margin-bottom: 1rem;">
                         <div style="display: flex; align-items: center; margin-bottom: 0.5rem;">
                             <img src="/public/images/icons/avatar.jpg" alt="User Avatar" class="avatar-sm">
-                            <strong>User #{{.UserId}}</strong>
+                            <a href="/users/{{.UserId}}" style="color: inherit; text-decoration: none;"><strong>User #{{.UserId}}</strong></a>
+                            <span style="margin-left: auto; color: #6b7280; font-size: 0.875rem;"><i class="far fa-clock"></i> {{.CreatedAt}}</span>
                         </div>
                         <p style="margin: 0.5rem 0;">{{.Text}}</p>
                         <div style="display: flex; gap: 1rem; margin-top: 0.5rem; color: #6b7280; font-size: 0.875rem;">
@@ -41,30 +42,45 @@
         const centrifuge = new Centrifuge('ws://localhost:8000/connection/websocket', {
             token: jwt
         });
-        
+
         centrifuge.on('connecting', function(ctx) {
             console.log('Connecting to Centrifugo:', ctx);
         });
-        
+
         centrifuge.on('connected', function(ctx) {
             console.log('Connected to Centrifugo:', ctx);
         });
-        
+
         centrifuge.on('disconnected', function(ctx) {
             console.log('Disconnected from Centrifugo:', ctx);
         });
-        
+
         const channel = centrifuge.newSubscription("feed_user_id_" + userId);
-        
+
         channel.on('publication', function(message) {
-            console.log('Received message:', message);
-            var tag = document.createElement("p");
-            var text = document.createTextNode("User #" + message.data.user_id + ": " + message.data.text);
-            tag.appendChild(text);
+            console.log(message);
             var element = document.getElementById("feed");
-            element.prepend(tag);
+            var date = new Date(message.data.created_at);
+            var html = `
+                <div class="card" style="padding: 1rem; margin-bottom: 1rem;">
+                    <div style="display: flex; align-items: center; margin-bottom: 0.5rem;">
+                        <img src="/public/images/icons/avatar.jpg" alt="User Avatar" class="avatar-sm">
+                        <a href="/users/${message.data.user_id}" style="color: inherit; text-decoration: none;"><strong>User #${message.data.user_id}</strong></a>
+                        <span style="margin-left: auto; color: #6b7280; font-size: 0.875rem;"><i class="far fa-clock"></i> ${date.toLocaleString()}</span>
+                    </div>
+                    <p style="margin: 0.5rem 0;">${message.data.text}</p>
+                    <div style="display: flex; gap: 1rem; margin-top: 0.5rem; color: #6b7280; font-size: 0.875rem;">
+                        <button class="btn-icon" style="background: none; border: none; cursor: pointer; padding: 0.25rem 0.5rem; color: inherit;">
+                            <i class="far fa-heart"></i> Like
+                        </button>
+                        <button class="btn-icon" style="background: none; border: none; cursor: pointer; padding: 0.25rem 0.5rem; color: inherit;">
+                            <i class="far fa-comment"></i> Comment
+                        </button>
+                    </div>
+                </div>`;
+            element.insertAdjacentHTML('afterbegin', html);
         });
-        
+
         channel.subscribe();
         centrifuge.connect();
 

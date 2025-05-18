@@ -1,0 +1,16 @@
+<div class="card" id="friends-list-{{.Id}}">
+    <h2><i class="fas fa-users"></i> Friends</h2>
+    
+    {{if .Friends}}
+        <ul style="list-style: none; padding: 0;">
+        {{range .Friends}}
+            <li class="friend-item">
+                <img src="/public/images/icons/avatar.jpg" alt="{{.FirstName}} {{.LastName}}" class="avatar-sm">
+                <a href="/users/{{.Id}}" hx-get="/users/{{.Id}}" hx-target="#content-area" hx-push-url="true">{{.FirstName}} {{.LastName}}</a>
+            </li>
+        {{end}}
+        </ul>
+    {{else}}
+        <p>No friends yet</p>
+    {{end}}
+</div>

@@ -1,0 +1,24 @@
+{{if ne .Id .AuthUserID}}
+    <div class="friend-actions" style="margin-top: 1rem;" id="friend-actions-{{.Id}}">
+        {{if eq .Status 0}}
+            <button class="btn-icon" hx-post="/users/{{.Id}}/add" hx-target="#friend-actions-{{.Id}}" hx-swap="outerHTML">
+                <i class="fas fa-user-plus"></i> Add friend
+            </button>
+        {{else if eq .Status 2}}
+            <button class="btn-icon" hx-post="/users/{{.Id}}/approve" hx-target="#friend-actions-{{.Id}}" hx-swap="outerHTML">
+                <i class="fas fa-check"></i> Approve request
+            </button>
+        {{else if eq .Status 1}}
+            <button class="btn-icon" disabled>
+                <i class="fas fa-clock"></i> Waiting for approval
+            </button>
+        {{else if eq .Status 3}}
+            <button class="btn-icon" disabled>
+                <i class="fas fa-user-check"></i> Friends
+            </button>
+            <button class="btn-icon" hx-post="/users/{{.Id}}/chat" hx-swap="none">
+                <i class="fas fa-paper-plane"></i> Send message
+            </button>
+        {{end}}
+    </div>
+{{end}}

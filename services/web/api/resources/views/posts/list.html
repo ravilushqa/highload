@@ -1,0 +1,25 @@
+{{define "posts"}}
+{{if .Posts}}
+    {{range .Posts}}
+        <div class="card" style="padding: 1rem; margin-bottom: 1rem;">
+            <p style="margin: 0.5rem 0;">{{.Text}}</p>
+            <div style="display: flex; justify-content: space-between; margin-top: 1rem; color: #6b7280; font-size: 0.875rem;">
+                <span><i class="far fa-clock"></i> {{.CreatedAt}}</span>
+                <div>
+                    <button class="btn-icon" style="background: none; border: none; cursor: pointer; padding: 0.25rem 0.5rem; color: inherit;">
+                        <i class="far fa-edit"></i> Edit
+                    </button>
+                    <button class="btn-icon" style="background: none; border: none; cursor: pointer; padding: 0.25rem 0.5rem; color: inherit;">
+                        <i class="far fa-trash-alt"></i> Delete
+                    </button>
+                </div>
+            </div>
+        </div>
+    {{end}}
+{{else}}
+    <div style="text-align: center; padding: 2rem 0;">
+        <i class="fas fa-pencil-alt" style="font-size: 2rem; color: var(--primary); margin-bottom: 1rem;"></i>
+        <p>You haven't created any posts yet. Write your first post above!</p>
+    </div>
+{{end}}
+{{end}}

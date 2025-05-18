@@ -1,0 +1,9 @@
+{{define "messages"}}
+{{range .Messages}}
+    {{if eq .UserId $.AuthUserID}}
+        <div class="message-bubble message-sent">{{.Text}}</div>
+    {{else}}
+        <div class="message-bubble message-received"><strong>User #{{.UserId}}:</strong> {{.Text}}</div>
+    {{end}}
+{{end}}
+{{end}}
