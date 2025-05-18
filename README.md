@@ -1,143 +1,127 @@
 # Highload Social Network Platform
 
-A high-performance, scalable social network platform built with Go and a microservices architecture designed to handle intensive workloads.
-
-## Architecture Diagram
-
-![Highload Social Network Architecture](docs/architecture.svg)
-
-The architecture is also available in PlantUML format:
-- [PlantUML Diagram Source](docs/architecture.puml) - For custom rendering
+A high-performance, scalable social network platform built with Go and a microservices architecture designed to handle intensive workloads and demonstrate advanced distributed systems concepts.
 
 ## Project Overview
 
-This project demonstrates a robust implementation of distributed systems principles through a social networking platform with:
+Highload is a production-ready social network platform that showcases enterprise-level architecture patterns and performance optimization techniques. The platform features:
 
-- User authentication and profile management
-- Posts creation and feed generation
-- Real-time chat capabilities
-- Social relationship management (friend requests)
-- Activity counters and metrics
+- **User Management**: Authentication, profile management, and social relationships
+- **Content Sharing**: Post creation and personalized feed generation
+- **Real-time Messaging**: Scalable chat system with unread message tracking
+- **Live Updates**: WebSocket-based real-time feed updates
+- **Activity Metrics**: Distributed counter system for tracking user activities
 
-## Technical Architecture
+## System Architecture
 
-_Refer to the architecture diagram above for a visual representation of the system components and their interactions. The SVG format ensures the diagram is viewable in any modern browser without additional tools._
+The platform is built on a robust microservices architecture designed for high scalability, performance, and resilience:
 
+### Core Services Layer
 
-### Backend Services (Go)
+- **Web API Gateway**: RESTful API service using Chi router with JWT authentication, serving as the entry point for all client requests
+- **Users Service**: Manages user registration, authentication, profiles, and social relationships
+- **Posts Service**: Handles content creation with feed generation through Kafka-based event processing
+- **Chats Service**: Provides real-time messaging capabilities with horizontal database sharding
+- **Counters Service**: Tracks activity metrics with Redis-backed storage for high performance
 
-- **Web API Gateway**: RESTful API serving clients, using Chi router and JWT authentication
-- **User Service (gRPC)**: Profile management with bcrypt password hashing and social graph features
-- **Posts Service (gRPC)**: Content creation with asynchronous event processing via Kafka
-- **Chat Service (gRPC)**: Real-time messaging with database sharding for horizontal scaling
-- **Counters Service (gRPC)**: Activity tracking and metrics with Redis-backed storage
+### Data Storage Layer
 
-### Data Layer
+- **MySQL Cluster**: Master-slave replication setup with semi-synchronous replication for data consistency
+  - Read/write separation via HAProxy for optimal performance
+  - Horizontal sharding for message storage across dedicated nodes
+  
+- **Redis**: Multi-purpose in-memory data store used for:
+  - High-speed caching of frequently accessed data
+  - Feed storage and retrieval
+  - Distributed lock management
+  - Counter and metrics storage
 
-- **MySQL**: Master-slave replication setup with read/write separation via HAProxy
-- **Database Sharding**: Horizontal partitioning for message storage across dedicated nodes
-- **Redis**: High-speed caching, feed storage, and distributed lock management
-- **Kafka**: Event streaming for consistent asynchronous processing
+- **Kafka**: Event streaming platform for reliable asynchronous processing
+  - Used primarily for feed updates and event-driven workflows
 
-### Architecture Patterns
+### Infrastructure Components
 
-- **Dependency Injection**: Using Uber Fx/Dig for clean component wiring
-- **Saga Pattern**: Maintaining data consistency across microservices
-- **Circuit Breaking**: Resilient service communication
-- **Repository Pattern**: Clean data access layer implementation
-- **CQRS**: Command-query responsibility separation where appropriate
-
-### Infrastructure
-
-- **Docker & Docker Compose**: Full containerization of all services
-- **Load Balancing**: Service replication with Nginx
+- **Docker & Docker Compose**: Full containerization of all services for consistent deployment
+- **Nginx**: Front-facing load balancer and reverse proxy
 - **HAProxy**: Database connection pooling and traffic direction
-- **Prometheus & Grafana**: Comprehensive monitoring and visualization
-- **Centrifugo**: WebSocket server for real-time updates
+- **Centrifugo**: WebSocket server enabling real-time updates to client applications
+- **Prometheus & Grafana**: Comprehensive monitoring and performance visualization
 
-## Technical Features
+## Key Technical Features
 
 ### Performance Optimizations
 
-- Database read/write splitting for high throughput
-- Redis caching for frequently accessed data
-- Connection pooling for efficient resource utilization
-- Horizontal scaling capabilities for all services
-- Database sharding for distributing data load
+- **Database Read/Write Splitting**: Directs read operations to slave replicas, optimizing database load
+- **Multi-level Caching**: Redis-based caching for frequently accessed data
+- **Connection Pooling**: Efficient resource utilization across services
+- **Database Sharding**: Horizontal data distribution for improved throughput
+- **Asynchronous Processing**: Non-blocking operations via Kafka for improved responsiveness
 
-### Scalability Design
+### High Availability & Resilience
 
-- Stateless services allowing horizontal scaling
-- Message-based asynchronous processing
-- Master-slave database replication
-- Data sharding across multiple database nodes
-- Containerized deployment for flexible scaling
+- **Semi-synchronous Replication**: Prevents data loss during master database failures
+- **Service Replication**: Multiple instances of critical services
+- **Circuit Breaking**: Prevents cascading failures in the service mesh
+- **Saga Pattern**: Maintains data consistency across distributed transactions
+- **GTID-based Replication**: Simplifies failover and recovery processes
 
-### Security Implementations
+### Security Implementation
 
-- JWT-based authentication
-- Password hashing with bcrypt
-- HTTPS support via Nginx
-- Secure cookie management
-- Input validation
+- **JWT-based Authentication**: Secure, stateless authentication mechanism
+- **Password Hashing**: Industry-standard bcrypt implementation
+- **HTTPS Support**: TLS encryption for all client communication
+- **Secure Cookie Management**: Protection against XSS and CSRF attacks
+- **Input Validation**: Comprehensive request validation
 
-## Development
+## Getting Started
 
 ### Prerequisites
 
 - Go 1.24+
 - Docker and Docker Compose
 - Make
-- PlantUML (optional, for diagram rendering)
+
+### Installation
+
+Clone the repository:
+```bash
+git clone https://github.com/ravilushqa/highload.git
+cd highload
+```
 
 ### Running the Project
 
 Start the entire platform:
-```
+```bash
 make setup
 ```
 
-With monitoring:
-```
+Start with monitoring enabled:
+```bash
 make setup-with-monitoring
 ```
 
-Access specific databases:
-```
-make exec_master      # Connect to master database
-make exec_slave1      # Connect to first slave
-```
-
-Regenerate protocol buffers:
-```
-make gen-proto
+Stop all services:
+```bash
+make down
 ```
 
-View architecture diagram:
-```
-# The SVG diagram can be viewed directly in any browser
-# or SVG-compatible viewer without additional tools
-
-# If you want to modify the PlantUML diagram and regenerate:
-brew install plantuml    # macOS with Homebrew
-apt-get install plantuml # Debian/Ubuntu
-plantuml docs/architecture.puml
-```
-
-## API Services
+## Service Endpoints
 
 - Web API: `http://localhost:80`
-- Monitoring: `http://localhost:3000` (Grafana)
+- Monitoring Dashboard: `http://localhost:3000` (Grafana)
 - Metrics: `http://localhost:9090` (Prometheus)
 
-## Skills Demonstrated
+## Skills & Techniques Demonstrated
 
-- **Distributed Systems Design**: Microservices with well-defined boundaries and communication
-- **High-Load Handling**: Database optimization, caching strategies, connection pooling
-- **Go Programming**: Clean, idiomatic Go code with effective concurrency patterns
-- **Database Engineering**: Replication, sharding, and query optimization
-- **DevOps Practices**: Containerization, orchestration, and monitoring
-- **Protocol Design**: Well-structured gRPC service definitions
+- **Distributed Systems Design**: Microservices with well-defined boundaries
+- **High-Load Handling**: Database optimization, caching, connection pooling
+- **Go Programming**: Idiomatic Go code with effective concurrency patterns
+- **Database Engineering**: Replication, sharding, query optimization
+- **DevOps Practices**: Containerization, orchestration, monitoring
 - **Messaging Patterns**: Event sourcing with Kafka
 - **Caching Strategies**: Multi-level caching with Redis
-- **Security Implementation**: Authentication, authorization, and secure communication
+
+## License
+
+This project is licensed under the MIT License - see the LICENSE file for details.
