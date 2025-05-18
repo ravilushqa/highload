@@ -2,6 +2,8 @@
 binlog_format = ROW
 server_id = 1
 log-bin = mysql-bin
+gtid_mode = ON
+enforce_gtid_consistency = ON
 interactive_timeout = 3600
 wait_timeout = 3600
 max_allowed_packet = 32M

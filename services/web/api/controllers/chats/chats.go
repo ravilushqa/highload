@@ -9,6 +9,7 @@ import (
 	"go.uber.org/zap"
 
 	"github.com/ravilushqa/highload/services/chats/api/grpc"
+	apiLib "github.com/ravilushqa/highload/services/web/api/lib"
 	"github.com/ravilushqa/highload/services/web/lib"
 )
 
@@ -38,26 +39,19 @@ func (c *Controller) index(w http.ResponseWriter, r *http.Request) {
 		_, _ = w.Write([]byte("something was wrong"))
 		return
 	}
-	if len(res.ChatIds) == 0 {
-		_, _ = w.Write([]byte("no chats"))
-		return
-	}
 
-	tmpl, err := template.ParseFiles(
+	templateFiles := []string{
 		"resources/views/base.html",
 		"resources/views/chat/nav.html",
 		"resources/views/chat/index.html",
-	)
-	if err != nil {
-		c.logger.Error("failed parse templates", zap.NamedError("error", err))
-		w.WriteHeader(http.StatusInternalServerError)
-		return
 	}
 
-	err = tmpl.ExecuteTemplate(w, "layout", struct {
+	data := struct {
 		AuthUserID int
 		ChatIDs    []int64
-	}{uid, res.ChatIds})
+	}{uid, res.ChatIds}
+
+	err = apiLib.RenderTemplate(w, r, templateFiles, data)
 	if err != nil {
 		c.logger.Error("failed execute templates", zap.NamedError("error", err))
 		w.WriteHeader(http.StatusInternalServerError)
@@ -82,22 +76,25 @@ func (c *Controller) show(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	tmpl, err := template.ParseFiles(
+	templateFiles := []string{
 		"resources/views/base.html",
 		"resources/views/chat/nav.html",
 		"resources/views/chat/show.html",
-	)
-	if err != nil {
-		c.logger.Error("failed parse templates", zap.NamedError("error", err))
-		w.WriteHeader(http.StatusInternalServerError)
-		return
+		"resources/views/chat/messages.html",
 	}
 
-	_ = tmpl.ExecuteTemplate(w, "layout", struct {
+	data := struct {
 		AuthUserID int
 		Messages   []*grpc.Message
 		ChatID     int
-	}{uid, res.Messages, chatID})
+	}{uid, res.Messages, chatID}
+
+	err = apiLib.RenderTemplate(w, r, templateFiles, data)
+	if err != nil {
+		c.logger.Error("failed to render template", zap.NamedError("error", err))
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
 }
 
 func (c *Controller) postMessage(w http.ResponseWriter, r *http.Request) {
@@ -118,6 +115,35 @@ func (c *Controller) postMessage(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		c.logger.Error("failed insert message", zap.NamedError("error", err))
 		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+	if apiLib.IsHTMXRequest(r) {
+		// fetch latest messages and render only the new message bubble(s)
+		res, err := c.chatsClient.GetChatMessages(r.Context(), &grpc.GetChatMessagesRequest{ChatId: int64(chatID), UserId: int64(uid)})
+		if err != nil {
+			c.logger.Error("failed to get chat messages after store", zap.Error(err))
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+		msgs := res.Messages
+		if len(msgs) == 0 {
+			return
+		}
+		last := msgs[len(msgs)-1]
+		data := struct {
+			AuthUserID int
+			Messages   []*grpc.Message
+		}{uid, []*grpc.Message{last}}
+		tpl, err := template.ParseFiles("resources/views/chat/messages.html")
+		if err != nil {
+			c.logger.Error("failed to parse messages template", zap.Error(err))
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+		if err := tpl.ExecuteTemplate(w, "messages", data); err != nil {
+			c.logger.Error("failed to render messages partial", zap.NamedError("error", err))
+			w.WriteHeader(http.StatusInternalServerError)
+		}
 		return
 	}
 	http.Redirect(w, r, r.Header.Get("Referer"), http.StatusFound)

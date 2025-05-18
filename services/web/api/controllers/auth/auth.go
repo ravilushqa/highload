@@ -2,7 +2,6 @@ package auth
 
 import (
 	"fmt"
-	"html/template"
 	"net/http"
 	"strings"
 	"time"
@@ -13,6 +12,7 @@ import (
 	"golang.org/x/crypto/bcrypt"
 
 	usersGrpc "github.com/ravilushqa/highload/services/users/api/grpc"
+	apiLib "github.com/ravilushqa/highload/services/web/api/lib"
 	"github.com/ravilushqa/highload/services/web/lib"
 )
 
@@ -41,16 +41,14 @@ func (c *Controller) login(w http.ResponseWriter, r *http.Request) {
 	password := r.FormValue("login-form-password")
 
 	if len(email) == 0 || len(password) == 0 {
-		_, _ = w.Write([]byte("Please provide email and password to obtain the token"))
-		w.WriteHeader(http.StatusUnprocessableEntity)
+		c.renderSigninWithError(w, r, "Please provide both email and password to login", "", nil)
 		return
 	}
 
 	userResponse, err := c.usersClient.GetByEmail(r.Context(), &usersGrpc.GetByEmailRequest{Email: email})
 	if err != nil {
 		c.logger.Error("failed get email", zap.Error(err))
-		w.WriteHeader(http.StatusUnauthorized)
-		_, _ = w.Write([]byte("wrong email"))
+		c.renderSigninWithError(w, r, "Account not found. Please check your email or register a new account.", email, nil)
 		return
 	}
 
@@ -59,8 +57,7 @@ func (c *Controller) login(w http.ResponseWriter, r *http.Request) {
 	if err == nil {
 		token, err := c.auth.EncodeToken(int(userResponse.User.Id))
 		if err != nil {
-			w.WriteHeader(http.StatusInternalServerError)
-			_, _ = w.Write([]byte("Error generating JWT token: " + err.Error()))
+			c.renderSigninWithError(w, r, "Error generating authentication token. Please try again later.", email, nil)
 		} else {
 			http.SetCookie(w, &http.Cookie{
 				Name:    "jwt",
@@ -72,9 +69,52 @@ func (c *Controller) login(w http.ResponseWriter, r *http.Request) {
 			http.Redirect(w, r, fmt.Sprintf("/users/%d", userResponse.User.Id), http.StatusTemporaryRedirect)
 		}
 	} else {
-		w.WriteHeader(http.StatusUnauthorized)
-		_, _ = w.Write([]byte("Name and password do not match"))
+		c.renderSigninWithError(w, r, "Incorrect password. Please try again.", email, nil)
 		return
+	}
+}
+
+// renderSigninWithError renders the signin page with an error message
+func (c *Controller) renderSigninWithError(w http.ResponseWriter, r *http.Request, loginError string, email string, regData map[string]string) {
+	w.WriteHeader(http.StatusUnauthorized)
+
+	templateFiles := []string{
+		"resources/views/base.html",
+		"resources/views/auth/signin.html",
+	}
+
+	data := struct {
+		LoginError    string
+		Email         string
+		RegisterError string
+		RegEmail      string
+		FirstName     string
+		LastName      string
+		Birthday      string
+		Sex           string
+		Interests     string
+		City          string
+	}{
+		LoginError: loginError,
+		Email:      email,
+	}
+
+	// If we have registration data
+	if regData != nil {
+		data.RegisterError = regData["error"]
+		data.RegEmail = regData["email"]
+		data.FirstName = regData["firstName"]
+		data.LastName = regData["lastName"]
+		data.Birthday = regData["birthday"]
+		data.Sex = regData["sex"]
+		data.Interests = regData["interests"]
+		data.City = regData["city"]
+	}
+
+	err := apiLib.RenderTemplate(w, r, templateFiles, data)
+	if err != nil {
+		c.logger.Error("failed to render signin template with error", zap.NamedError("error", err))
+		_, _ = w.Write([]byte("An error occurred. Please try again."))
 	}
 }
 
@@ -82,61 +122,94 @@ func (c *Controller) signin(w http.ResponseWriter, r *http.Request) {
 	if lib.IsAuth(r) {
 		uid, _ := lib.GetAuthUserID(r.Context())
 		http.Redirect(w, r, fmt.Sprintf("/users/%d", uid), http.StatusTemporaryRedirect)
-	}
-	tmpl, err := template.ParseFiles("resources/views/base.html", "resources/views/auth/signin.html")
-	if err != nil {
-		c.logger.Error("failed parse templates", zap.NamedError("error", err))
-		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
 
-	_ = tmpl.ExecuteTemplate(w, "layout", nil)
+	templateFiles := []string{
+		"resources/views/base.html",
+		"resources/views/auth/signin.html",
+	}
+
+	// Empty data structure with no errors
+	data := struct {
+		LoginError    string
+		Email         string
+		RegisterError string
+		RegEmail      string
+		FirstName     string
+		LastName      string
+		Birthday      string
+		Sex           string
+		Interests     string
+		City          string
+	}{}
+
+	err := apiLib.RenderTemplate(w, r, templateFiles, data)
+	if err != nil {
+		c.logger.Error("failed to render signin template", zap.NamedError("error", err))
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
 }
 
 func (c *Controller) register(w http.ResponseWriter, r *http.Request) {
 	err := r.ParseForm()
 	if err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
+		c.renderSigninWithRegisterError(w, r, "Error processing form data. Please try again.", r)
 		return
 	}
 
-	bd, err := time.Parse("2006-01-02", r.FormValue("register-form-birthday"))
+	// Validate required fields
+	firstName := r.FormValue("register-form-first-name")
+	lastName := r.FormValue("register-form-last-name")
+	email := r.FormValue("register-form-email")
+	password := r.FormValue("register-form-password")
+	birthday := r.FormValue("register-form-birthday")
+	sex := r.FormValue("register-form-sex")
+	interests := r.FormValue("register-form-interests")
+	city := r.FormValue("register-form-city")
+
+	if firstName == "" || lastName == "" || email == "" || password == "" || birthday == "" {
+		c.renderSigninWithRegisterError(w, r, "All required fields must be filled out.", r)
+		return
+	}
+
+	bd, err := time.Parse("2006-01-02", birthday)
 	if err != nil {
-		w.WriteHeader(http.StatusUnprocessableEntity)
+		c.renderSigninWithRegisterError(w, r, "Invalid birthday format. Please use YYYY-MM-DD format.", r)
 		return
 	}
 	bdProto, err := ptypes.TimestampProto(bd)
 	if err != nil {
-		w.WriteHeader(http.StatusUnprocessableEntity)
+		c.renderSigninWithRegisterError(w, r, "Error processing birthday. Please try again.", r)
 		return
 	}
 
-	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(r.FormValue("register-form-password")), bcrypt.DefaultCost)
+	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
 	if err != nil {
-		w.WriteHeader(http.StatusUnprocessableEntity)
+		c.renderSigninWithRegisterError(w, r, "Error processing password. Please try again.", r)
 		return
 	}
 
 	storeResponse, err := c.usersClient.Store(r.Context(), &usersGrpc.StoreRequest{
-		Email:     r.FormValue("register-form-email"),
+		Email:     email,
 		Password:  string(hashedPassword),
-		FirstName: r.FormValue("register-form-first-name"),
-		LastName:  r.FormValue("register-form-last-name"),
+		FirstName: firstName,
+		LastName:  lastName,
 		Birthday:  bdProto,
-		Interests: r.FormValue("register-form-interests"),
-		Sex:       usersGrpc.Sex(usersGrpc.Sex_value[strings.Title(r.FormValue("register-form-sex"))]),
-		City:      r.FormValue("register-form-city"),
+		Interests: interests,
+		Sex:       usersGrpc.Sex(usersGrpc.Sex_value[strings.Title(sex)]),
+		City:      city,
 	})
 
 	if err != nil {
-		http.Redirect(w, r, r.Header.Get("Referer"), 302)
+		c.renderSigninWithRegisterError(w, r, "Error creating account. The email might already be in use.", r)
 		return
 	}
 
 	token, err := c.auth.EncodeToken(int(storeResponse.Id))
 	if err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
-		_, _ = w.Write([]byte("Error generating JWT token: " + err.Error()))
+		c.renderSigninWithRegisterError(w, r, "Error generating authentication token. Please try again later.", r)
 	} else {
 		http.SetCookie(w, &http.Cookie{
 			Name:    "jwt",
@@ -145,9 +218,29 @@ func (c *Controller) register(w http.ResponseWriter, r *http.Request) {
 			//HttpOnly: true,
 		})
 
+		// Add a small delay to allow database replication to complete
+		time.Sleep(500 * time.Millisecond)
+
 		http.Redirect(w, r, fmt.Sprintf("/users/%d", storeResponse.Id), http.StatusTemporaryRedirect)
 	}
+}
 
+// renderSigninWithRegisterError renders the signin page with a registration error
+func (c *Controller) renderSigninWithRegisterError(w http.ResponseWriter, r *http.Request, errorMessage string, formData *http.Request) {
+	w.WriteHeader(http.StatusUnprocessableEntity)
+
+	regData := map[string]string{
+		"error":     errorMessage,
+		"email":     formData.FormValue("register-form-email"),
+		"firstName": formData.FormValue("register-form-first-name"),
+		"lastName":  formData.FormValue("register-form-last-name"),
+		"birthday":  formData.FormValue("register-form-birthday"),
+		"sex":       formData.FormValue("register-form-sex"),
+		"interests": formData.FormValue("register-form-interests"),
+		"city":      formData.FormValue("register-form-city"),
+	}
+
+	c.renderSigninWithError(w, r, "", "", regData)
 }
 
 func (c *Controller) logout(w http.ResponseWriter, r *http.Request) {

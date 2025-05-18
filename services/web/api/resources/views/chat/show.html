@@ -1,39 +1,21 @@
 {{define "content"}}
-    <!-- Document Wrapper
-        ============================================= -->
-    <div id="wrapper" class="clearfix">
-
-        <!-- Content
-        ============================================= -->
-        <section id="content">
-            <div class="content-wrap">
-                <div class="container clearfix">
-                    <div class="row clearfix">
-                        <div class="col-md-3">
-                            {{template "nav" .}}
-                        </div>
-                        <div class="w-100 line d-block d-md-none"></div>
-                        <div class="col-md-9">
-                            <div class="container">
-                                <h3 class=" text-center">Chat</h3>
-                                {{range .Messages}}
-                                    <p>User #{{.UserId}}: {{.Text}}</p>
-                                {{end}}
-                                <form action="/chats/{{.ChatID}}/message" method="post">
-                                    <input type="text" name="text">
-                                    <button type="submit">Send</button>
-                                </form>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </section><!-- #content end -->
-
-
-    </div><!-- #wrapper end -->
-
-    <!-- Go To Top
-    ============================================= -->
-    <div id="gotoTop" class="icon-angle-up"></div>
+    {{template "nav" .}}
+    
+    <div class="card">
+        <div style="display: flex; align-items: center; margin-bottom: 1rem;">
+            <i class="fas fa-comments" style="font-size: 1.5rem; margin-right: 0.75rem; color: var(--primary);"></i>
+            <h1 style="margin: 0;">Chat</h1>
+        </div>
+        
+        <div id="messages" style="height: 400px; overflow-y: auto; padding: 1rem; background-color: #f8f9fa; border-radius: 8px; margin-bottom: 1rem;">
+            {{template "messages" .}}
+        </div>
+        
+        <form hx-post="/chats/{{.ChatID}}/message" hx-target="#messages" hx-swap="beforeend" style="display: flex; gap: 0.5rem;">
+            <input type="text" name="text" placeholder="Type your message..." style="flex-grow: 1;">
+            <button type="submit" class="btn-icon">
+                <i class="fas fa-paper-plane"></i> Send
+            </button>
+        </form>
+    </div>
 {{end}}

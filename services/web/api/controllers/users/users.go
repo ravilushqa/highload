@@ -10,6 +10,7 @@ import (
 
 	chatsGrpc "github.com/ravilushqa/highload/services/chats/api/grpc"
 	usersGrpc "github.com/ravilushqa/highload/services/users/api/grpc"
+	apiLib "github.com/ravilushqa/highload/services/web/api/lib"
 	"github.com/ravilushqa/highload/services/web/lib"
 )
 
@@ -31,6 +32,7 @@ func (c *Controller) Router(r chi.Router) chi.Router {
 			r.Post("/add", c.add)
 			r.Post("/approve", c.approve)
 			r.Post("/chat", c.chatOpen)
+			r.Get("/friends", c.getFriendsList) // New endpoint for HTMX to fetch updated friends list
 		})
 	})
 }
@@ -45,21 +47,23 @@ func (c *Controller) index(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	tmpl, err := template.ParseFiles(
+	templateFiles := []string{
 		"resources/views/base.html",
 		"resources/views/users/nav.html",
 		"resources/views/users/index.html",
-	)
+	}
+
+	data := struct {
+		AuthUserID int
+		Users      []*usersGrpc.User
+	}{uid, res.Users}
+
+	err = apiLib.RenderTemplate(w, r, templateFiles, data)
 	if err != nil {
-		c.logger.Error("failed parse templates", zap.NamedError("error", err))
+		c.logger.Error("failed to render template", zap.NamedError("error", err))
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
-
-	_ = tmpl.ExecuteTemplate(w, "layout", struct {
-		AuthUserID int
-		Users      []*usersGrpc.User
-	}{uid, res.Users})
 }
 
 func (c *Controller) profile(w http.ResponseWriter, r *http.Request) {
@@ -114,18 +118,18 @@ func (c *Controller) profile(w http.ResponseWriter, r *http.Request) {
 		Status  usersGrpc.UserRelation
 	}{authUserID, getUserResponse.User, getListByIdsResponse.Users, status.Relation}
 
-	tmpl, err := template.ParseFiles(
+	templateFiles := []string{
 		"resources/views/base.html",
 		"resources/views/users/nav.html",
 		"resources/views/users/profile.html",
-	)
+	}
+
+	err = apiLib.RenderTemplate(w, r, templateFiles, data)
 	if err != nil {
-		c.logger.Error("failed parse templates", zap.NamedError("error", err))
+		c.logger.Error("failed to render template", zap.NamedError("error", err))
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
-
-	_ = tmpl.ExecuteTemplate(w, "layout", data)
 }
 
 func (c *Controller) add(w http.ResponseWriter, r *http.Request) {
@@ -145,6 +149,42 @@ func (c *Controller) add(w http.ResponseWriter, r *http.Request) {
 		c.logger.Error("failed find friend request", zap.Error(err))
 		w.WriteHeader(http.StatusInternalServerError)
 		_, _ = w.Write([]byte("something was wrong"))
+		return
+	}
+
+	// If this is an HTMX request, update just the friend status button
+	if apiLib.IsHTMXRequest(r) {
+		// Get the current relationship status after the update
+		status, err := c.usersClient.GetRelation(r.Context(), &usersGrpc.GetRelationRequest{
+			FromUserId: int64(authUserID),
+			ToUserId:   int64(userID),
+		})
+		if err != nil {
+			c.logger.Error("failed get relation", zap.Error(err))
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+
+		// Render just the friend actions section
+		data := struct {
+			AuthUserID int
+			Id         int64
+			Status     usersGrpc.UserRelation
+		}{authUserID, int64(userID), status.Relation}
+
+		tmpl, err := template.ParseFiles("resources/views/users/friend_actions.html")
+		if err != nil {
+			c.logger.Error("failed to parse template", zap.Error(err))
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+
+		err = tmpl.Execute(w, data)
+		if err != nil {
+			c.logger.Error("failed to render template", zap.Error(err))
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
 		return
 	}
 
@@ -168,6 +208,59 @@ func (c *Controller) approve(w http.ResponseWriter, r *http.Request) {
 		c.logger.Error("approve friend request", zap.Error(err))
 		w.WriteHeader(http.StatusInternalServerError)
 		_, _ = w.Write([]byte("something was wrong"))
+		return
+	}
+
+	// If this is an HTMX request, update just the friend status button
+	if apiLib.IsHTMXRequest(r) {
+		// Get the current relationship status after the update
+		status, err := c.usersClient.GetRelation(r.Context(), &usersGrpc.GetRelationRequest{
+			FromUserId: int64(authUserID),
+			ToUserId:   int64(userID),
+		})
+		if err != nil {
+			c.logger.Error("failed get relation", zap.Error(err))
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+
+		// Render just the friend actions section
+		data := struct {
+			AuthUserID int
+			Id         int64
+			Status     usersGrpc.UserRelation
+		}{authUserID, int64(userID), status.Relation}
+
+		tmpl, err := template.ParseFiles("resources/views/users/friend_actions.html")
+		if err != nil {
+			c.logger.Error("failed to parse template", zap.Error(err))
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+
+		err = tmpl.Execute(w, data)
+		if err != nil {
+			c.logger.Error("failed to render template", zap.Error(err))
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+
+		// After approval, fetch and update the friends list section
+		getFriendsIdsResponse, err := c.usersClient.GetFriendsIds(r.Context(), &usersGrpc.GetFriendsIdsRequest{UserId: int64(userID)})
+		if err != nil {
+			c.logger.Error("failed get friends", zap.Error(err))
+			return
+		}
+
+		_, err = c.usersClient.GetListByIds(r.Context(), &usersGrpc.GetListByIdsRequest{UserIds: getFriendsIdsResponse.UserIds})
+		if err != nil {
+			c.logger.Error("failed GetListByIds", zap.Error(err))
+			return
+		}
+
+		// Add trigger to update friend list on the page
+		w.Header().Add("HX-Trigger", "friendsUpdated")
+
 		return
 	}
 
@@ -200,4 +293,61 @@ func (c *Controller) chatOpen(w http.ResponseWriter, r *http.Request) {
 	}
 
 	http.Redirect(w, r, "/chats/"+strconv.Itoa(int(res.ChatId)), http.StatusFound)
+}
+
+// getFriendsList renders just the friends list section for HTMX updates
+func (c *Controller) getFriendsList(w http.ResponseWriter, r *http.Request) {
+	authUserID, _ := lib.GetAuthUserID(r.Context())
+	userID, err := strconv.Atoi(chi.URLParam(r, "user_id"))
+	if err != nil {
+		w.WriteHeader(http.StatusUnprocessableEntity)
+		_, _ = w.Write([]byte("wrong user id"))
+		return
+	}
+
+	// Get user info
+	getUserResponse, err := c.usersClient.GetById(r.Context(), &usersGrpc.GetByIdRequest{UserId: int64(userID)})
+	if err != nil {
+		c.logger.Error("failed get user", zap.Error(err))
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	// Get friends list
+	getFriendsIdsResponse, err := c.usersClient.GetFriendsIds(r.Context(), &usersGrpc.GetFriendsIdsRequest{UserId: int64(userID)})
+	if err != nil {
+		c.logger.Error("failed get friends", zap.Error(err))
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	getListByIdsResponse, err := c.usersClient.GetListByIds(r.Context(), &usersGrpc.GetListByIdsRequest{UserIds: getFriendsIdsResponse.UserIds})
+	if err != nil {
+		c.logger.Error("failed GetListByIds", zap.Error(err))
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	// Prepare data for the template
+	data := struct {
+		AuthUserID int
+		Id         int64
+		Friends    []*usersGrpc.User
+	}{authUserID, getUserResponse.User.Id, getListByIdsResponse.Users}
+
+	// Parse the friends list template
+	tmpl, err := template.ParseFiles("resources/views/users/friends_list.html")
+	if err != nil {
+		c.logger.Error("failed to parse template", zap.Error(err))
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	// Render the template
+	err = tmpl.Execute(w, data)
+	if err != nil {
+		c.logger.Error("failed to render template", zap.Error(err))
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
 }

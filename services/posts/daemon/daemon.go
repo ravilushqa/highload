@@ -7,7 +7,6 @@ import (
 	"time"
 
 	"github.com/Shopify/sarama"
-	cluster "github.com/bsm/sarama-cluster"
 	"github.com/centrifugal/gocent"
 	"github.com/go-redis/redis"
 	"go.uber.org/zap"
@@ -28,41 +27,45 @@ type postMessage struct {
 type daemon struct {
 	logger      *zap.Logger
 	redis       *redis.Client
-	consumer    *cluster.Consumer
+	consumer    sarama.ConsumerGroup
 	usersClient usersGrpc.UsersClient
 	centrifugo  *gocent.Client
 }
 
-func newDaemon(logger *zap.Logger, redis *redis.Client, consumer *cluster.Consumer, usersClient usersGrpc.UsersClient, centrifugo *gocent.Client) *daemon {
+func newDaemon(logger *zap.Logger, redis *redis.Client, consumer sarama.ConsumerGroup, usersClient usersGrpc.UsersClient, centrifugo *gocent.Client) *daemon {
 	return &daemon{logger: logger, redis: redis, consumer: consumer, usersClient: usersClient, centrifugo: centrifugo}
 }
 
 func (d *daemon) run(ctx context.Context) error {
-	nackErrors := make(chan error, 1)
+	topics := []string{"posts_feed"}
+	for {
+		err := d.consumer.Consume(ctx, topics, d)
+		if err != nil {
+			d.logger.Error("consume error", zap.Error(err))
+		}
+		if ctx.Err() != nil {
+			return ctx.Err()
+		}
+	}
+}
+
+// Setup is run at the beginning of a new session, before ConsumeClaim
+func (d *daemon) Setup(_ sarama.ConsumerGroupSession) error { return nil }
+
+// Cleanup is run at the end of a session, once all ConsumeClaim goroutines have exited
+func (d *daemon) Cleanup(_ sarama.ConsumerGroupSession) error { return nil }
+
+// ConsumeClaim must start a consumer loop of ConsumerGroupClaim's Messages().
+func (d *daemon) ConsumeClaim(session sarama.ConsumerGroupSession, claim sarama.ConsumerGroupClaim) error {
 	for {
 		select {
-		case part, ok := <-d.consumer.Partitions():
-			if !ok {
-				return nil
+		case message := <-claim.Messages():
+			if err := d.handle(message); err != nil {
+				d.logger.Error("cannot handle event", zap.Error(err))
+				return err
 			}
-			d.logger.Info(fmt.Sprintf("start listening %s:%d", part.Topic(), part.Partition()))
-			go func(pc cluster.PartitionConsumer) {
-				for msg := range pc.Messages() {
-					if err := d.handle(msg); err != nil {
-						d.logger.Error("cannot handle event", zap.Error(err))
-						nackErrors <- err
-						return
-					}
-					d.consumer.MarkOffset(msg, "")
-				}
-			}(part)
-		case err := <-d.consumer.Errors():
-			d.logger.Error("listen error", zap.Error(err))
-		case ntf := <-d.consumer.Notifications():
-			d.logger.Debug("consumer rebalanced", zap.String("notification", fmt.Sprintf("%+v", ntf)))
-		case nackError := <-nackErrors:
-			return nackError
-		case <-ctx.Done():
+			session.MarkMessage(message, "")
+		case <-session.Context().Done():
 			return nil
 		}
 	}

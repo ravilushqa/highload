@@ -1,39 +1,21 @@
 {{define "content"}}
-    <!-- Document Wrapper
-        ============================================= -->
-    <div id="wrapper" class="clearfix">
-
-        <!-- Content
-        ============================================= -->
-        <section id="content">
-            <div class="content-wrap">
-                <div class="container clearfix">
-                    <div class="row clearfix">
-                        <div class="col-md-3">
-                            {{template "nav" .}}
-                        </div>
-                        <div class="w-100 line d-block d-md-none"></div>
-                        <div class="col-md-9">
-                            <div class="container">
-                                <h3 class=" text-center">Posts</h3>
-                                <form action="/posts" method="post">
-                                    <input type="text" name="text">
-                                    <button type="submit">Send</button>
-                                </form>
-                                {{range .Posts}}
-                                    <p>{{.CreatedAt}} : {{.Text}}</p>
-                                {{end}}
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </section><!-- #content end -->
-
-
-    </div><!-- #wrapper end -->
-
-    <!-- Go To Top
-    ============================================= -->
-    <div id="gotoTop" class="icon-angle-up"></div>
+    {{template "nav" .}}
+    
+    <div class="card">
+        <div style="display: flex; align-items: center; margin-bottom: 1rem;">
+            <i class="fas fa-file-alt" style="font-size: 1.5rem; margin-right: 0.75rem; color: var(--primary);"></i>
+            <h1 style="margin: 0;">My Posts</h1>
+        </div>
+        
+        <form hx-post="/posts" hx-target="#posts" style="margin-bottom: 2rem;">
+            <textarea name="text" placeholder="What's on your mind?" style="width: 100%; min-height: 80px; margin-bottom: 0.5rem;"></textarea>
+            <button type="submit" class="btn-icon" style="float: right;">
+                <i class="fas fa-paper-plane"></i> Post
+            </button>
+        </form>
+        
+        <div id="posts">
+            {{template "posts" .}}
+        </div>
+    </div>
 {{end}}

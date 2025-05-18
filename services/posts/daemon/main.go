@@ -1,7 +1,7 @@
 package main
 
 import (
-	cluster "github.com/bsm/sarama-cluster"
+	"github.com/Shopify/sarama"
 	"github.com/centrifugal/gocent"
 	"github.com/go-redis/redis"
 	_ "github.com/go-sql-driver/mysql"
@@ -12,7 +12,6 @@ import (
 	"google.golang.org/grpc"
 
 	centrifugoclient "github.com/ravilushqa/highload/providers/centrifugo-client"
-	kafkaconsumerprovider "github.com/ravilushqa/highload/providers/kafka-consumer"
 	redisprovider "github.com/ravilushqa/highload/providers/redis"
 	usersGrpc "github.com/ravilushqa/highload/services/users/api/grpc"
 )
@@ -25,8 +24,12 @@ func buildContainer() (*dig.Container, error) {
 		func(c *config) (*redis.Client, error) {
 			return redisprovider.New(c.RedisURL)
 		},
-		func(c *config) (*cluster.Consumer, error) {
-			return kafkaconsumerprovider.New(c.KafkaBrokers, c.KafkaGroupID, []string{c.KafkaTopic}, nil)
+		func(c *config) (sarama.ConsumerGroup, error) {
+			config := sarama.NewConfig()
+			config.Version = sarama.V2_8_1_0
+			config.Consumer.Group.Rebalance.Strategy = sarama.BalanceStrategyRoundRobin
+
+			return sarama.NewConsumerGroup(c.KafkaBrokers, c.KafkaGroupID, config)
 		},
 		func(c *config) *gocent.Client {
 			return centrifugoclient.New(c.CentrifugoURL, c.CentrifugoApiKey)

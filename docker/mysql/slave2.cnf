@@ -1,2 +1,10 @@
 [mysqld]
 server-id=3
+binlog_format=ROW
+log-bin = mysql-slave2-bin
+gtid_mode = ON
+enforce_gtid_consistency = ON
+master_info_repository = TABLE
+relay_log_info_repository = TABLE
+relay_log_recovery = ON
+log_slave_updates = ON
