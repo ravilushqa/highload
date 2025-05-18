@@ -121,7 +121,3 @@ make down
 - **DevOps Practices**: Containerization, orchestration, monitoring
 - **Messaging Patterns**: Event sourcing with Kafka
 - **Caching Strategies**: Multi-level caching with Redis
-
-## License
-
-This project is licensed under the MIT License - see the LICENSE file for details.
